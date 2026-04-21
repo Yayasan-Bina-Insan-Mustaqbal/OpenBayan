@@ -1,0 +1,4 @@
+name: bayan-stack
+include:
+  - OpenBayanBackend/docker-compose.yml
+  - OpenBayanFrontend/docker-compose.yml
