@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # ---------------------------------------------------------
+  # 1. SURREALDB (The All-in-One Database)
+  # Replaces Postgres, pgvector, and Meilisearch.
+  # Handles Document JSON, Graph Relations, and Hybrid Vector Search.
+  # ---------------------------------------------------------
+  surrealdb:
+    image: surrealdb/surrealdb:latest
+    container_name: bayan_surrealdb
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    # Starts SurrealDB with file persistence and root credentials
+    command: start --log trace --user root --pass root file://data/database.db
+    volumes:
+      - surreal_data:/data
+    networks:
+      - bayan_network
+
+  # ---------------------------------------------------------
+  # 2. PREFECT SERVER (The Orchestrator)
+  # Manages the scheduling and monitoring of Python AI jobs.
+  # ---------------------------------------------------------
+  prefect-server:
+    image: prefecthq/prefect:3.6.27-python3.12-conda
+    container_name: bayan_prefect
+    restart: unless-stopped
+    command: prefect server start --host 0.0.0.0 --port 4200
+    ports:
+      - "4200:4200"
+    volumes:
+      # We persist the internal SQLite database so you don't need Postgres!
+      - prefect_data:/home/prefect/.prefect
+    networks:
+      - bayan_network
+
+  # ---------------------------------------------------------
+  # 3. PYTHON WORKER (The AI Factory)
+  # Polls Prefect for jobs, runs the AI models, and writes to SurrealDB.
+  # ---------------------------------------------------------
+  data-worker:
+    build: 
+      context: ./worker
+    container_name: bayan_worker
+    restart: unless-stopped
+    # The Worker CMD: Listens to the specific ingestion pool
+    command: prefect worker start --pool "bayan-ingestion-pool"
+    environment:
+      - PREFECT_API_URL=http://prefect-server:4200/api
+      # SurrealDB Connection Details for the Python SDK
+      - SURREAL_WS_URL=ws://surrealdb:8000/rpc
+      - SURREAL_USER=root
+      - SURREAL_PASS=root
+    volumes:
+      # Mounts your local Jupyter notebooks/scripts directly into the container
+      - ./notebooks:/app/notebooks
+    depends_on:
+      - prefect-server
+      - surrealdb
+    networks:
+      - bayan_network
+
+volumes:
+  surreal_data:
+  prefect_data:
+
+networks:
+  bayan_network:
+    driver: bridge
