@@ -6,6 +6,7 @@ Welcome to the OpenBayan developer documentation. This directory contains detail
 
 ### 🚀 Getting Started
 - [Local Development Setup](local_dev_setup.md) — Step-by-step guide to run the full stack locally using Docker. Covers environment variables, schema initialization, and common troubleshooting.
+- [Old Code vs New Code: Porting and Duplication Guide](old_new_code_comparison.md) — Compares the legacy Laravel implementation in `oldCode` with the new React/FastAPI/SurrealDB direction and identifies what should be duplicated or rewritten.
 
 ### 🗄️ Database
 - [SurrealDB Schema & Knowledge Graph](database_surrealdb_schema.md) — Full SurrealQL table definitions, row-level permissions, and graph relation design for the Sahifah, Faidah, Majmu, and Alamah entities.
