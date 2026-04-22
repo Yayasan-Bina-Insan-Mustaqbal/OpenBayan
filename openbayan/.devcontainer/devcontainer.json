@@ -1,0 +1,24 @@
+{
+  "name": "OpenBayan Frontend",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "frontend",
+  "workspaceFolder": "/workspaces/openbayan",
+  "shutdownAction": "stopCompose",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Next.js dev server",
+      "onAutoForward": "notify"
+    }
+  },
+  "postCreateCommand": "npm ci",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "bradlc.vscode-tailwindcss"
+      ]
+    }
+  }
+}
+

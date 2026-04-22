@@ -2,6 +2,28 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+### Dev Container
+
+Use this workflow when host `npm` or `bun` is unstable. All Node commands run inside Docker, and `node_modules` stays in a Docker volume instead of your host filesystem.
+
+Open this `openbayan` folder in VS Code and choose **Dev Containers: Reopen in Container**. The container runs `npm ci` after creation.
+
+Inside the container, start the Next.js server:
+
+```bash
+npm run dev -- --hostname 0.0.0.0
+```
+
+Or start the dev server directly with Docker Compose from this folder:
+
+```bash
+docker compose up next-dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser.
+
+### Native Node
+
 First, run the development server:
 
 ```bash

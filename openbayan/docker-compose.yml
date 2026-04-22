@@ -1,0 +1,33 @@
+name: openbayan-frontend
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    command: sleep infinity
+    working_dir: /workspaces/openbayan
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/workspaces/openbayan:cached
+      - openbayan_node_modules:/workspaces/openbayan/node_modules
+      - openbayan_next_cache:/workspaces/openbayan/.next
+
+  next-dev:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    command: sh -lc "npm ci && npm run dev -- --hostname 0.0.0.0"
+    working_dir: /workspaces/openbayan
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/workspaces/openbayan:cached
+      - openbayan_node_modules:/workspaces/openbayan/node_modules
+      - openbayan_next_cache:/workspaces/openbayan/.next
+
+volumes:
+  openbayan_node_modules:
+  openbayan_next_cache:
+
