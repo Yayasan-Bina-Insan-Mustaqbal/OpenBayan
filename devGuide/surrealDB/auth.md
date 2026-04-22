@@ -52,7 +52,7 @@ The Next.js app reads these values from `openbayan/.env.local`:
 NEXTAUTH_SECRET=replace-with-a-long-random-secret
 NEXTAUTH_URL=http://localhost:3000
 
-SURREAL_HTTP_URL=http://localhost:8000
+SURREAL_HTTP_URL=http://host.docker.internal:8000
 SURREAL_NAMESPACE=main
 SURREAL_DATABASE=main
 SURREAL_ACCESS=account
@@ -232,7 +232,7 @@ If the frontend cannot connect to SurrealDB, check:
 
 - `docker ps` shows `bayan_surrealdb`
 - `http://localhost:8000` is reachable from the host
-- `SURREAL_HTTP_URL` does not use the Docker service name from the browser host
+- `SURREAL_HTTP_URL` points to `http://host.docker.internal:8000` when Next.js runs in Docker
 
 If NextAuth redirects but the session is missing, check:
 

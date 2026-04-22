@@ -6,13 +6,13 @@ This guide compares the current OpenBayan implementation with the legacy code li
 
 | Area | New Code | Old Code | Migration Read |
 |:---|:---|:---|:---|
-| Application shell | `OpenBayanFrontend/` Vite + React + TypeScript skeleton | Laravel 13 + Livewire 4 + Blade + Filament | Rebuild UI behavior in React; do not copy Blade/Livewire components directly. |
-| Backend gateway | Not implemented yet; guides describe FastAPI | Laravel controllers, services, jobs, policies, Horizon | Port contracts and workflow semantics into FastAPI; leave Laravel framework code behind. |
+| Application shell | `openbayan/` Next.js + React + TypeScript app | Laravel 13 + Livewire 4 + Blade + Filament | Rebuild UI behavior in React; do not copy Blade/Livewire components directly. |
+| Backend gateway | No separate gateway; Next.js server routes talk to SurrealDB | Laravel controllers, services, jobs, policies, Horizon | Port contracts and workflow semantics into Next.js routes, SurrealQL, and Prefect jobs; leave Laravel framework code behind. |
 | Database | SurrealDB schema guide for `researcher`, `sahifah`, `faidah`, `majmu`, `alamah`, graph edges | PostgreSQL migrations for sentences, source books, translations, lexicon, tags, entities, notebooks, personalization | Duplicate domain concepts, not table structure. Map relational joins to SurrealDB records and `RELATE` edges. |
 | Search | Guide-level SurrealDB BM25 + vector RRF design | Implemented Laravel `SearchService`, `QueryParser`, Meilisearch, pgvector, reranker API, personalization filters | Strong duplication candidate at behavior/API shape level. Rewrite query layer for SurrealQL. |
 | Data pipeline | Docker worker with Prefect server and placeholder worker image | Prefect flows under `ai-scripts/`, Ollama embeddings, CAMeL roots, classification, translation, transliteration, KG enrichment | Highest direct-reuse candidate. Python task logic can be moved with database adapter changes. |
-| Auth | Guides describe NextAuth JWT + FastAPI scopes and optional direct SurrealDB auth | Quran Foundation OAuth controller, Laravel session auth, Filament login | Reuse Quran OAuth provider details and role mapping, not session/controller code. |
-| Admin/ops | Prefect UI only | Filament resources, Telescope, Horizon, Pest/Dusk tests | Keep monitoring ideas; new stack needs FastAPI/Prefect/React alternatives. |
+| Auth | SurrealDB record access + NextAuth session storage | Quran Foundation OAuth controller, Laravel session auth, Filament login | Reuse Quran OAuth provider details and role mapping, not session/controller code. |
+| Admin/ops | Prefect UI and SurrealDB admin workflows | Filament resources, Telescope, Horizon, Pest/Dusk tests | Keep monitoring ideas; new stack needs React, Prefect, and SurrealDB alternatives. |
 
 ## 2. What the New Code Actually Contains
 
@@ -20,8 +20,8 @@ The current repository is intentionally small:
 
 - `OpenBayanBackend/docker-compose.yml` runs SurrealDB, Prefect Server, and a Python worker.
 - `OpenBayanBackend/worker/Dockerfile` installs `surrealdb`, `transformers`, `spacy`, and `camel-tools`.
-- `OpenBayanFrontend/src/App.tsx` is still a Vite starter screen.
-- `devGuide/` defines the intended architecture: FastAPI + NextAuth, SurrealDB graph schema, hybrid search, Prefect ingestion, and a future React/Tauri research IDE.
+- `openbayan/` contains the Next.js app, Auth routes, and SurrealDB auth helper.
+- `devGuide/` defines the intended architecture: NextAuth + SurrealDB record access, SurrealDB graph schema, hybrid search, Prefect ingestion, and a future React/Tauri research IDE.
 
 This means old-code migration should prioritize reusable domain behavior and pipeline code before UI polish.
 
@@ -47,12 +47,12 @@ These pieces map cleanly to the new architecture and have high product value.
 |:---|:---|:---|
 | `ai-scripts/tasks/text_prep.py` | `OpenBayanBackend/notebooks/tasks/prep.py` | Keep Harakat stripping, manual verse delimiters, SpaCy sentence boundaries, CAMeL root extraction. Normalize function names to match `data_pipeline_prefect_flows.md`. |
 | `ai-scripts/tasks/vectorize.py` | `OpenBayanBackend/notebooks/tasks/enrich.py` or `tasks/vectorize.py` | Keep Ollama embedding calls and 1024-dim validation. Replace returned keys with SurrealDB schema fields such as `embedding`. |
-| `ai-scripts/main_pipeline.py` | `OpenBayanBackend/notebooks/main_pipeline.py` | Keep stage ordering: fetch job, classify, NER, tags, translation, transliteration, embeddings, persist, artifact. Replace Laravel database/webhook calls with SurrealDB writes and FastAPI/Prefect run status. |
+| `ai-scripts/main_pipeline.py` | `OpenBayanBackend/notebooks/main_pipeline.py` | Keep stage ordering: fetch job, classify, NER, tags, translation, transliteration, embeddings, persist, artifact. Replace Laravel database/webhook calls with SurrealDB writes and Prefect run status. |
 | `ai-scripts/flows/knowledge_graph.py` | `OpenBayanBackend/notebooks/flows/knowledge_graph.py` | Keep recursion guardrails and enrichment cadence. Replace `entities`/`entity_relationships` relational writes with SurrealDB entity tables and `RELATE`. |
 | `reference/taxonomy/main.json` and markdown taxonomy files | `OpenBayanBackend/reference/taxonomy/` or a seed flow | Keep as source taxonomy vocabulary for `alamah` tags/categories. Create an idempotent SurrealDB seed script. |
-| `app/Services/QueryParser.php` behavior | FastAPI `services/query_parser.py` | Reimplement in Python. Preserve query normalization, root lookup, and entity alias matching. |
-| `app/Services/SearchService.php` response shape | FastAPI `routes/search.py` and `services/search.py` | Preserve `/search/pipeline` structured response shape. Rewrite retrieval using SurrealDB BM25/vector queries. |
-| `app/Http/Controllers/QuranAuthController.php` provider details | NextAuth provider config or FastAPI OAuth helper | Reuse OAuth endpoints, scopes, state validation concept, and role mapping. Do not port Laravel session code. |
+| `app/Services/QueryParser.php` behavior | SurrealDB lookup queries and optional worker utilities | Preserve query normalization, root lookup, and entity alias matching. |
+| `app/Services/SearchService.php` response shape | Next.js `app/api/search` route and SurrealQL query modules | Preserve `/search/pipeline` structured response shape. Rewrite retrieval using SurrealDB BM25/vector queries. |
+| `app/Http/Controllers/QuranAuthController.php` provider details | NextAuth provider config | Reuse OAuth endpoints, scopes, state validation concept, and role mapping. Do not port Laravel session code. |
 
 ### Duplicate Later
 
@@ -64,7 +64,7 @@ These are useful but depend on missing new-stack foundations.
 | `UserWorkspace`, `UserJourney`, `UserNotebook`, `Collection` models | Needs final SurrealDB schema for notebook/workspace persistence. |
 | `UserFeedback` and personalization filters | Valuable for search quality, but requires user identity, owner model, and feedback permissions. |
 | Filament admin resources/widgets | New stack needs a React admin surface or Prefect/SurrealDB admin workflows. |
-| Pest/Dusk test cases | Port scenarios after FastAPI routes and React UI exist. |
+| Pest/Dusk test cases | Port scenarios after SurrealDB-backed route handlers and React UI exist. |
 
 ### Do Not Duplicate Directly
 
@@ -96,7 +96,7 @@ The current SurrealDB schema is simpler than the legacy relational model. Before
 
 ## 6. Search Behavior to Preserve
 
-The old `SearchService` is the clearest product specification for search. The new FastAPI search should preserve these output layers even if internal storage changes:
+The old `SearchService` is the clearest product specification for search. The new SurrealDB-backed search should preserve these output layers even if internal storage changes:
 
 - `category_clusters`: grouped discovery by taxonomy/source path.
 - `sentence_results`: ranked atomic text results with Arabic, translation, transliteration, citations, and sniped fragments.
@@ -128,7 +128,7 @@ The old Prefect code should become the implementation behind the current pipelin
 8. Persist text, embeddings, tags, lexical data, and graph edges in one transaction-like unit.
 9. Emit Prefect artifacts and status updates.
 
-Primary rewrite point: old pipeline reads/writes PostgreSQL through `database.py` and notifies Laravel. New pipeline should write SurrealDB directly and let FastAPI expose any user-triggered run endpoints.
+Primary rewrite point: old pipeline reads/writes PostgreSQL through `database.py` and notifies Laravel. New pipeline should write SurrealDB directly. User-triggered work should create SurrealDB `ingestion_job` records that Prefect workers pick up.
 
 ## 8. Auth Behavior to Preserve
 
@@ -141,17 +141,17 @@ The old Quran Foundation OAuth flow is still useful as a reference:
 - Security behavior: generate and validate `state`
 - User behavior: create or update user by email, assign default researcher role
 
-In the new stack, implement this as a NextAuth provider if the frontend owns login. FastAPI should verify the issued JWT and map roles/scopes as described in `backend_fastapi_nextauth_integration.md`.
+In the new stack, implement this as a NextAuth provider if the frontend owns login. Store the resulting user identity in SurrealDB and keep row-level permissions in SurrealQL, as described in `backend_surrealdb_nextauth_integration.md`.
 
 ## 9. Suggested Migration Order
 
-1. Create real backend module structure under `OpenBayanBackend/` for FastAPI routes and Prefect notebooks.
+1. Finalize the SurrealDB schema and record access model.
 2. Port old Python pipeline tasks first, replacing PostgreSQL/Laravel calls with SurrealDB helpers.
 3. Extend `database_surrealdb_schema.md` for lexical roots, entities, translations, transliterations, source metadata, and personalization tables.
 4. Seed old taxonomy reference files into `alamah`.
-5. Implement FastAPI search with the old structured response contract.
-6. Port Quran OAuth configuration into NextAuth and verify FastAPI JWT scopes.
-7. Replace the Vite starter frontend with the React Scholar IDE shell, using old UX docs as behavior references.
+5. Implement SurrealDB-backed search with the old structured response contract.
+6. Port Quran OAuth configuration into NextAuth and verify SurrealDB record permissions.
+7. Build out the React Scholar IDE shell, using old UX docs as behavior references.
 8. Port tests as API contract tests and pipeline unit tests.
 
 ## 10. Main Risk

@@ -191,7 +191,7 @@ async def save_to_surrealdb(
     """
     async with Surreal(os.getenv("SURREAL_WS_URL")) as db:
         await db.signin({"user": os.getenv("SURREAL_USER"), "pass": os.getenv("SURREAL_PASS")})
-        await db.use("bayan", "knowledge_graph")
+        await db.use("main", "main")
 
         # 1. Create the Sahifah (source document)
         sahifah = await db.create("sahifah", {
@@ -221,43 +221,69 @@ async def save_to_surrealdb(
 
 ---
 
-## 6. Triggering Flows from FastAPI
+## 6. Triggering Flows Without a Gateway
 
-The FastAPI backend can programmatically trigger Prefect flows using the Prefect Python SDK:
+OpenBayan does not need a separate API gateway to trigger ingestion. Use one of these patterns:
 
-```python
-# In your FastAPI worker API (e.g., api/routes/ingest.py)
-from prefect.deployments import run_deployment
-from fastapi import APIRouter, Security
-from ..auth import get_current_user
+- **Manual/local:** run Prefect CLI commands inside the worker container.
+- **Scheduled:** configure Prefect deployments and schedules.
+- **User-triggered:** a Next.js server route validates the session, creates an `ingestion_job` record in SurrealDB, and the worker polls or subscribes to pending jobs.
 
-router = APIRouter()
+The SurrealDB job pattern keeps authorization in the database and keeps Python focused on long-running work.
 
-@router.post("/api/ingest")
-async def trigger_ingestion(
-    source_title: str,
-    raw_text: str,
-    current_user: dict = Security(get_current_user, scopes=["user"])
-):
-    """
-    Triggers the Prefect ingestion flow without blocking the HTTP response.
-    Returns a flow run ID for tracking.
-    """
-    flow_run = await run_deployment(
-        name="OpenBayan Text Ingestion/default",
-        parameters={
-            "raw_text": raw_text,
-            "owner_id": current_user["id"],
-            "source_title": source_title,
-        },
-        timeout=0,  # Non-blocking: returns immediately
-    )
-    return {
-        "status": "queued",
-        "flow_run_id": str(flow_run.id),
-        "tracking_url": f"http://localhost:4200/flow-runs/flow-run/{flow_run.id}",
-    }
+```surrealql
+DEFINE TABLE IF NOT EXISTS ingestion_job SCHEMAFULL
+  PERMISSIONS
+    FOR select WHERE owner = $auth.id,
+    FOR create WHERE $auth.id != NONE,
+    FOR update, delete NONE;
+
+DEFINE FIELD IF NOT EXISTS owner ON ingestion_job TYPE record<user>;
+DEFINE FIELD IF NOT EXISTS source_title ON ingestion_job TYPE string;
+DEFINE FIELD IF NOT EXISTS raw_text ON ingestion_job TYPE string;
+DEFINE FIELD IF NOT EXISTS status ON ingestion_job TYPE string DEFAULT "pending"
+  ASSERT $value IN ["pending", "running", "done", "failed"];
+DEFINE FIELD IF NOT EXISTS flow_run_id ON ingestion_job TYPE option<string>;
+DEFINE FIELD IF NOT EXISTS error ON ingestion_job TYPE option<string>;
+DEFINE FIELD IF NOT EXISTS created_at ON ingestion_job TYPE datetime DEFAULT time::now();
+DEFINE FIELD IF NOT EXISTS updated_at ON ingestion_job TYPE datetime VALUE time::now();
+DEFINE INDEX IF NOT EXISTS ingestion_job_status ON ingestion_job FIELDS status;
 ```
+
+```ts
+// openbayan/app/api/ingest/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { surrealQuery } from "@/lib/surreal-query";
+
+export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.surrealToken) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { sourceTitle, rawText } = await request.json();
+
+  const sourceTitleLiteral = JSON.stringify(sourceTitle);
+  const rawTextLiteral = JSON.stringify(rawText);
+
+  const result = await surrealQuery(session.user.surrealToken, `
+    LET $sourceTitle = ${sourceTitleLiteral};
+    LET $rawText = ${rawTextLiteral};
+
+    CREATE ingestion_job CONTENT {
+      owner: $auth.id,
+      source_title: $sourceTitle,
+      raw_text: $rawText,
+      status: "pending"
+    };
+  `);
+
+  return NextResponse.json({ status: "queued", job: result });
+}
+```
+
+The worker can poll pending jobs, mark one as `running`, execute `ingest_text`, then update the job with `done` or `failed`.
 
 ---
 

@@ -1,6 +1,6 @@
 # Hybrid Vector Search: SurrealDB Implementation
 
-OpenBayan enables Islamic research discovery through **Hybrid Search** — a combination of **full-text BM25 ranking** (for keyword precision) and **semantic vector search** (for conceptual meaning). This guide explains how to implement it end-to-end within the minimal FastAPI + SurrealDB architecture.
+OpenBayan enables Islamic research discovery through **Hybrid Search** — a combination of **full-text BM25 ranking** (for keyword precision) and **semantic vector search** (for conceptual meaning). This guide explains how to implement it end-to-end with SurrealDB as the search backend and Next.js as the thin web boundary.
 
 ## 1. What is Hybrid Search?
 
@@ -62,81 +62,103 @@ LIMIT 10;
 
 ---
 
-## 4. FastAPI Search Endpoint
+## 4. Next.js Search Route
 
-The React frontend sends a user query string to FastAPI, which:
-1. Converts the query to a vector embedding using the same Arabic model used during ingestion.
-2. Executes the hybrid SurrealQL search.
-3. Returns ranked results.
+The React frontend sends a user query string to a Next.js route handler, which:
 
-```python
-# api/routes/search.py
+1. Reads the current NextAuth session when private results are needed.
+2. Gets or generates the query embedding using the same model family used during ingestion.
+3. Executes the hybrid SurrealQL search.
+4. Returns ranked results.
 
-from fastapi import APIRouter, Depends, Query
-from surrealdb import Surreal
-from transformers import AutoTokenizer, AutoModel
-import torch
+For local development, keep heavy embedding generation in the Python worker or Jupyter container. The route handler should prefer cached query embeddings from SurrealDB and only call a worker-backed embedding path when needed.
 
-router = APIRouter()
+```ts
+// openbayan/app/api/search/route.ts
+import { NextRequest, NextResponse } from "next/server";
 
-# Load the same model used during ingestion (e.g., CAMeL-BERT or mxbai-embed-large)
-MODEL_NAME = "CAMeL-Lab/bert-base-arabic-camelbert-ca"
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-model = AutoModel.from_pretrained(MODEL_NAME)
+export const runtime = "nodejs";
 
-def embed_query(text: str) -> list[float]:
-    """Convert a search query string into a vector embedding."""
-    encoded = tokenizer([text], padding=True, truncation=True, return_tensors='pt')
-    with torch.no_grad():
-        output = model(**encoded)
+type SearchRow = {
+  id: string;
+  body: string;
+  source_ref: string | null;
+  bm25_score: number;
+  vector_score: number;
+};
 
-    # Mean pooling
-    token_embeddings = output[0]
-    attention_mask = encoded['attention_mask']
-    input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-    embedding = (token_embeddings * input_mask_expanded).sum(1) / input_mask_expanded.sum(1).clamp(min=1e-9)
+async function surrealQuery<T>(
+  sql: string,
+): Promise<T> {
+  const response = await fetch(`${process.env.SURREAL_HTTP_URL}/sql`, {
+    method: "POST",
+    headers: {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+      "Surreal-NS": process.env.SURREAL_NAMESPACE ?? "main",
+      "Surreal-DB": process.env.SURREAL_DATABASE ?? "main",
+      "Authorization": `Basic ${Buffer.from(
+        `${process.env.SURREAL_USER}:${process.env.SURREAL_PASS}`,
+      ).toString("base64")}`,
+    },
+    body: sql,
+  });
 
-    return embedding[0].tolist()
+  if (!response.ok) {
+    throw new Error(`SurrealDB search failed: ${response.status}`);
+  }
 
-@router.get("/api/search")
-async def hybrid_search(
-    q: str = Query(..., min_length=2, description="Arabic search query"),
-    limit: int = Query(10, le=50),
-):
-    """
-    Public hybrid search endpoint.
-    Combines BM25 full-text and cosine vector similarity.
-    """
-    # 1. Convert user query to vector
-    query_embedding = embed_query(q)
+  return response.json() as Promise<T>;
+}
 
-    # 2. Execute hybrid SurrealQL
-    async with Surreal("ws://surrealdb:8000/rpc") as db:
-        await db.signin({"user": "root", "pass": "root"})
-        await db.use("bayan", "knowledge_graph")
+async function getQueryEmbedding(query: string): Promise<number[]> {
+  const queryLiteral = JSON.stringify(query);
+  const cached = await surrealQuery<Array<{ result: Array<{ embedding: number[] }> }>>(
+    `SELECT embedding FROM query_cache WHERE query = ${queryLiteral} LIMIT 1;`,
+  );
 
-        result = await db.query(
-            """
-            SELECT
-                id, body, owner, source_ref,
-                search::score(1) AS bm25_score,
-                vector::similarity::cosine(embedding, $embedding) AS vector_score
-            FROM faidah
-            WHERE
-                (body @@ $query)
-                OR
-                embedding <|20|> $embedding
-            ORDER BY (search::score(1) + vector::similarity::cosine(embedding, $embedding)) DESC
-            LIMIT $limit;
-            """,
-            {
-                "query": q,
-                "embedding": query_embedding,
-                "limit": limit,
-            }
-        )
+  const embedding = cached[0]?.result?.[0]?.embedding;
+  if (embedding) return embedding;
 
-    return {"query": q, "results": result[0]["result"]}
+  throw new Error("Missing query embedding. Generate it through the Python worker first.");
+}
+
+export async function GET(request: NextRequest) {
+  const q = request.nextUrl.searchParams.get("q")?.trim();
+  const limit = Math.min(Number(request.nextUrl.searchParams.get("limit") ?? 10), 50);
+
+  if (!q || q.length < 2) {
+    return NextResponse.json({ error: "Query must be at least 2 characters." }, { status: 400 });
+  }
+
+  const embedding = await getQueryEmbedding(q);
+  const queryLiteral = JSON.stringify(q);
+  const embeddingLiteral = JSON.stringify(embedding);
+
+  const result = await surrealQuery<Array<{ result: SearchRow[] }>>(
+    `
+    LET $query = ${queryLiteral};
+    LET $embedding = ${embeddingLiteral};
+    LET $limit = ${limit};
+
+    SELECT
+      id,
+      body,
+      source_ref,
+      search::score(1) AS bm25_score,
+      vector::similarity::cosine(embedding, $embedding) AS vector_score
+    FROM faidah
+    WHERE
+      (body @@ $query)
+      OR
+      embedding <|20|> $embedding
+    ORDER BY (search::score(1) + vector::similarity::cosine(embedding, $embedding)) DESC
+    LIMIT $limit;
+    `,
+  );
+
+  return NextResponse.json({ query: q, results: result[0]?.result ?? [] });
+}
 ```
 
 ---
@@ -222,28 +244,20 @@ export function SearchBar() {
 
 ---
 
-## 6. Caching Search Embeddings (Performance Optimization)
+## 6. Caching Search Embeddings
 
 Embedding generation is CPU/GPU intensive. For frequently searched terms, caching the computed vectors drastically reduces latency and server load:
 
-```python
-# api/routes/search.py (enhanced with in-memory LRU cache)
-from functools import lru_cache
-
-@lru_cache(maxsize=512)
-def embed_query_cached(text: str) -> tuple:
-    """
-    Cached wrapper for embed_query.
-    Converts text -> embedding as a hashable tuple (for LRU caching).
-    """
-    return tuple(embed_query(text))
-
-# In the route, convert back to list:
-query_embedding = list(embed_query_cached(q))
+```surrealql
+DEFINE TABLE IF NOT EXISTS query_cache SCHEMAFULL;
+DEFINE FIELD IF NOT EXISTS query ON query_cache TYPE string;
+DEFINE FIELD IF NOT EXISTS embedding ON query_cache TYPE array<float>;
+DEFINE FIELD IF NOT EXISTS created_at ON query_cache TYPE datetime DEFAULT time::now();
+DEFINE INDEX IF NOT EXISTS query_cache_query ON query_cache FIELDS query UNIQUE;
 ```
 
 > [!TIP]
-> **Scalability Tip:** For production environments running multiple FastAPI Server Workers, replace the in-memory `lru_cache` with a dedicated **Redis** instance or a SurrealDB `query_cache` table keyed by the hash of the query string. This ensures the cache is shared globally across all workers.
+> Store query embeddings in SurrealDB instead of an in-memory cache. This keeps the cache shared across all Next.js containers and avoids adding Redis before it is actually needed.
 
 ---
 

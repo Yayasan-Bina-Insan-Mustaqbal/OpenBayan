@@ -19,7 +19,7 @@ SurrealDB's **graph relations** (`RELATE`) model this natively without JOIN tabl
 Run these once to initialize the database schema. These definitions also encode the **row-level security rules** for the React frontend.
 
 > [!IMPORTANT]
-> Run all `DEFINE` statements while authenticated as `root`. The row-level `PERMISSIONS` rules apply to non-root users (i.e., the NextAuth JWT tokens used by the React frontend).
+> Run all `DEFINE` statements while authenticated as `root`. The row-level `PERMISSIONS` rules apply to record users authenticated through SurrealDB access tokens stored by NextAuth.
 
 ### The Researcher (User)
 
@@ -27,7 +27,8 @@ Run these once to initialize the database schema. These definitions also encode 
 DEFINE TABLE researcher SCHEMAFULL
     PERMISSIONS
         FOR select WHERE id = $auth.id,
-        FOR create, update, delete NONE; -- Managed by FastAPI only
+        FOR create NONE,
+        FOR update, delete WHERE id = $auth.id;
 
 DEFINE FIELD email    ON researcher TYPE string  ASSERT string::is::email($value);
 DEFINE FIELD name     ON researcher TYPE string;
@@ -163,7 +164,24 @@ FROM majmu:my_collection_id FETCH fawaid.->tagged_with->alamah.*;
 
 ---
 
-## 4. Connecting from the Python Worker
+## 4. Connecting from Next.js and the Python Worker
+
+Next.js server routes and server actions should query SurrealDB with the logged-in record token from the NextAuth session. This lets SurrealDB enforce `$auth.id` permissions directly.
+
+```ts
+// Server-side only
+await fetch(`${process.env.SURREAL_HTTP_URL}/sql`, {
+  method: "POST",
+  headers: {
+    "Accept": "application/json",
+    "Content-Type": "application/json",
+    "Surreal-NS": "main",
+    "Surreal-DB": "main",
+    "Authorization": `Bearer ${session.user.surrealToken}`,
+  },
+  body: "SELECT * FROM faidah WHERE owner = $auth.id OR is_public = true;",
+});
+```
 
 The Prefect data worker connects as `root` to perform high-privilege schema setup and data ingestion tasks.
 
@@ -179,7 +197,7 @@ async def get_db_connection():
         "user": os.getenv("SURREAL_USER", "root"),
         "pass": os.getenv("SURREAL_PASS", "root"),
     })
-    await db.use("bayan", "knowledge_graph")
+    await db.use("main", "main")
     return db
 
 async def ingest_faidah(owner_id: str, body: str, embedding: list[float]):
@@ -206,7 +224,7 @@ Save as `notebooks/setup_schema.py` and run once after the Docker stack is up:
 docker exec -it bayan_surrealdb surreal sql \
   --conn ws://localhost:8000/rpc \
   --user root --pass root \
-  --ns bayan --db knowledge_graph \
+  --ns main --db main \
   --file /app/schema.surql
 ```
 

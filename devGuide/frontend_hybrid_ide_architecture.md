@@ -1,17 +1,17 @@
 # Development Guideline: Hybrid Web & Desktop IDE
 
-This document outlines the architecture, data flow, and integration strategies for the Omni-Storage Hybrid IDE. It explains how Vite, React, Shadcn, Zustand, BlockNote, Reveal.js (with Chalkboard), **FastAPI + SurrealDB**, and Tauri work together in a single codebase.
+This document outlines the architecture, data flow, and integration strategies for the Omni-Storage Hybrid IDE. It explains how React, Shadcn, Zustand, BlockNote, Reveal.js (with Chalkboard), **SurrealDB**, and Tauri work together in a single codebase.
 
 ## 1. The Technology Stack & Responsibilities
 
 Every tool in this stack has a strict, isolated responsibility. Keeping these boundaries intact is crucial for maintaining the "Omni-Storage" capabilities (running on both Web and Desktop).
 
-*   **Vite + React**: The application shell and build tool. Compiles into static files (`/dist`) for both Nginx (Web) and Tauri (Desktop).
+*   **Next.js + React**: The web application shell, route handlers, and build tool.
 *   **Zustand**: The "Brain." It manages global state (auth status, active tabs, open files, layout toggles) without prop-drilling.
 *   **Shadcn UI + Tailwind CSS**: The visual layer. Specifically, the Resizable component handles the complex math of dragging and splitting the 3-pane IDE layout.
 *   **BlockNote**: The authoring engine. It sits inside a Shadcn pane and translates user typing into a structured JSON array.
 *   **Reveal.js + Chalkboard Plugin**: The presentation engine. It consumes data and renders it as fullscreen slides with a drawable canvas overlay.
-*   **FastAPI + SurrealDB**: The Cloud backend. FastAPI handles business logic, authentication (integrating with NextAuth), and data orchestration, while SurrealDB provides multi-model remote storage for the Web version.
+*   **Next.js + SurrealDB**: The Cloud backend boundary. Next.js handles server routes, server actions, and NextAuth sessions, while SurrealDB provides auth, permissions, graph relations, search, vectors, and remote storage for the Web version.
 *   **Tauri**: The Desktop wrapper. Provides access to the native OS file system (`@tauri-apps/api/fs`) for true offline, local-first editing.
 
 ## 2. Codebase Directory Structure
@@ -49,7 +49,7 @@ Here is the exact lifecycle of how data moves between these different libraries:
 4.  The function calls `StorageService.autoSaveDocument(fileId, json, target)`.
 5.  **The Omni-Storage Split:**
     *   If `isTauri()`, the service writes the JSON to the native hard drive using Tauri's FS API.
-    *   If **Web + Cloud**, the service sends a request to the **FastAPI backend**, which persists the data in **SurrealDB**.
+    *   If **Web + Cloud**, the service sends a request to a **Next.js server route**, which persists the data in **SurrealDB** using the logged-in user's record token.
 
 ### C. Presenting the File (BlockNote -> Reveal.js)
 This is the trickiest integration. BlockNote produces JSON, but Reveal.js expects HTML `<section>` tags.
@@ -70,8 +70,8 @@ This is the trickiest integration. BlockNote produces JSON, but Reveal.js expect
 
 To prevent the web app from breaking when compiled to a desktop app (and vice versa), adhere strictly to these rules:
 
-*   **Rule 1: No Direct Backend/Database Calls in Components**
-    Never import your backend client (FastAPI fetchers or SurrealDB drivers) directly into a React component like `<EditorPane />`. If you do, Tauri offline mode will crash. Always route data operations through `StorageService.ts` so the environment checks (`isTauri()`) can decide where the data goes.
+*   **Rule 1: No Direct Database Calls in Components**
+    Never import SurrealDB drivers or server-only query helpers directly into a React component like `<EditorPane />`. If you do, Tauri offline mode will crash and browser bundles may leak server-only assumptions. Always route data operations through `StorageService.ts` so the environment checks (`isTauri()`) can decide where the data goes.
 *   **Rule 2: Zustand is the Single Source of Truth for UI**
     Do not use `useState` for anything that affects the layout (like `isSidebarOpen`). If you use local state, the "Toggle Sidebar" button inside the EditorPane won't be able to communicate with the Sidebar component. Put it in Zustand.
 *   **Rule 3: Guard Browser-Specific APIs**
@@ -83,16 +83,16 @@ To prevent the web app from breaking when compiled to a desktop app (and vice ve
 
 *   **To run the Web Version (Development):**
     ```bash
-    npm run dev
-    # Vite starts at localhost:5173. FastAPI will connect to your SurrealDB instance.
+    docker compose -f openbayan/docker-compose.yml up next-dev
+    # The web app starts in Docker and connects to SurrealDB through the Compose network.
     ```
 *   **To run the Desktop Version (Development):**
     ```bash
-    npm run tauri dev
-    # Compiles Vite, launches a native window. isTauri() evaluates to true.
+    # Add a desktop-dev Compose service before enabling Tauri development.
+    docker compose -f openbayan/docker-compose.yml run --rm desktop-dev
     ```
 *   **To build for Production:**
     ```bash
-    npm run build       # Builds the static web files (for Docker/Nginx)
-    npm run tauri build # Compiles the .exe (Windows) or .dmg (Mac) installers
+    docker compose -f openbayan/docker-compose.yml run --rm frontend npm run build
+    docker compose -f openbayan/docker-compose.yml run --rm desktop-dev npm run tauri build
     ```

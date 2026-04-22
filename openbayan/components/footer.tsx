@@ -48,7 +48,7 @@ const links = [
         group: 'Platform',
         items: [
             {
-                title: 'FastAPI',
+                title: 'Next.js',
                 href: '/#pipeline',
             },
             {

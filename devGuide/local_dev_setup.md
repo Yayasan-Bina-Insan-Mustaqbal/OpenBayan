@@ -10,7 +10,6 @@ Ensure the following are installed on your machine:
 |:---|:---|:---|
 | **Docker Desktop / Docker Engine** | Container runtime | `docker --version` |
 | **Docker Compose** | Multi-service orchestration | `docker compose version` |
-| **Node.js 20+** | Frontend development server | `node --version` |
 | **Git** | Source control | `git --version` |
 
 ---
@@ -24,10 +23,10 @@ OpenBayan/                        ← Clone root
 │   ├── .env                      ← Backend secrets (copy from .env.example)
 │   └── worker/
 │       └── Dockerfile
-├── OpenBayanFrontend/            ← React + Vite frontend
+├── openbayan/                    ← Next.js frontend
 │   ├── docker-compose.yml        ← Optional: Run frontend in Docker too
 │   ├── package.json
-│   └── src/
+│   └── app/
 └── devGuide/                     ← You are here
 ```
 
@@ -46,7 +45,7 @@ Create `OpenBayanBackend/.env` (never commit this file to Git):
 SURREAL_USER=root
 SURREAL_PASS=your_strong_password_here
 
-# Shared secret between NextAuth (frontend) and any future FastAPI gateway
+# Shared secret used by NextAuth in the frontend container
 NEXTAUTH_SECRET=your_32_character_random_secret_here
 
 # Prefect configuration (optional, for remote orchestration)
@@ -60,19 +59,20 @@ openssl rand -base64 32
 
 ### Frontend `.env.local`
 
-Create `OpenBayanFrontend/.env.local`:
+Create `openbayan/.env.local`:
 
 ```bash
-# OpenBayanFrontend/.env.local
+# openbayan/.env.local
 
-# Points to SurrealDB (running in Docker on your machine)
-VITE_SURREAL_WS_URL=ws://localhost:8000/rpc
-VITE_SURREAL_NS=bayan
-VITE_SURREAL_DB=knowledge_graph
+# Server-side SurrealDB connection used by Next.js route handlers
+SURREAL_HTTP_URL=http://host.docker.internal:8000
+SURREAL_NAMESPACE=main
+SURREAL_DATABASE=main
+SURREAL_ACCESS=account
 
-# NextAuth (when you add it)
-# NEXTAUTH_URL=http://localhost:5173
-# NEXTAUTH_SECRET=same_secret_as_backend
+# NextAuth
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=same_secret_as_backend
 ```
 
 ---
@@ -123,7 +123,7 @@ Run the schema setup script once to create all tables, indexes, and graph relati
 docker exec -it bayan_surrealdb surreal sql \
   --conn ws://localhost:8000/rpc \
   --user root --pass root \
-  --ns bayan --db knowledge_graph \
+  --ns main --db main \
   --hide-welcome
 ```
 
@@ -134,51 +134,31 @@ Then paste and run the schema definitions from `devGuide/database_surrealdb_sche
 
 ---
 
-## 6. Step 4: Start the Frontend (Option A — Native Node)
+## 6. Step 4: Start the Frontend
 
-The recommended approach for fastest hot-reloading during frontend development:
-
-```bash
-cd OpenBayanFrontend
-
-# Install dependencies (first time only)
-npm install
-
-# Start the Vite dev server
-npm run dev
-```
-
-The React app will be available at: **http://localhost:5173**
-
-Vite's HMR (Hot Module Replacement) will automatically reload changed components without losing application state.
-
----
-
-## 7. Step 4: Start the Frontend (Option B — Docker)
-
-Use this if you want a fully containerized environment:
+Development runs through Docker only:
 
 ```bash
-cd OpenBayanFrontend
+cd openbayan
 
-# Starts the Vite dev server in Docker with live volume mounting
-docker compose up ide-dev
+# Starts the frontend dev server in Docker with live volume mounting
+docker compose up next-dev
 ```
 
-Available at: **http://localhost:5173**
+Available at: **http://localhost:3000**
 
 > [!NOTE]
-> Option B is slightly slower for hot-reload because file change events must cross the Docker volume bridge. For daily development, Option A (native Node) is preferred. Use Docker for production (`ide-web` service) or CI validation.
+> Do not run `npm run dev`, `bun run dev`, or other development servers directly on the host. Use the Compose service so local development matches the project runtime.
 
 ---
 
-## 8. Service Dashboard & URLs
+## 7. Service Dashboard & URLs
 
 Once everything is running, access these URLs:
 
 | Service | URL | Purpose |
 |:---|:---|:---|
-| **React Frontend** | http://localhost:5173 | The main application UI |
+| **React Frontend** | http://localhost:3000 | The main application UI |
 | **SurrealDB** | http://localhost:8000 | Database API (WebSocket) |
 | **Prefect UI** | http://localhost:4200 | AI pipeline monitoring dashboard |
 | **Jupyter Lab** | http://localhost:8888 | Notebook workspace for AI research and pipeline tests |
@@ -192,7 +172,7 @@ OLLAMA_EMBED_MODEL=mxbai-embed-large:latest
 
 ---
 
-## 9. Common Commands Reference
+## 8. Common Commands Reference
 
 ```bash
 # === BACKEND ===
@@ -227,22 +207,19 @@ docker exec -it bayan_worker prefect deployment run "OpenBayan Text Ingestion/de
 
 # === FRONTEND ===
 
-# Start (native)
-cd OpenBayanFrontend && npm run dev
+# Start frontend development container
+docker compose -f openbayan/docker-compose.yml up next-dev
 
-# Lint
-cd OpenBayanFrontend && npm run lint
+# Lint inside the frontend container
+docker compose -f openbayan/docker-compose.yml run --rm frontend npm run lint
 
-# Build production bundle
-cd OpenBayanFrontend && npm run build
-
-# Preview production build locally
-cd OpenBayanFrontend && npm run preview
+# Build production bundle inside the frontend container
+docker compose -f openbayan/docker-compose.yml run --rm frontend npm run build
 ```
 
 ---
 
-## 10. Troubleshooting
+## 9. Troubleshooting
 
 ### `bayan_worker` exits immediately on startup
 
@@ -271,9 +248,15 @@ If using Linux with UFW firewall, allow the port:
 sudo ufw allow 8000
 ```
 
-### Frontend can't reach SurrealDB (CORS error)
+### Frontend can't reach SurrealDB
 
-SurrealDB by default allows all origins in development. If you see CORS errors, verify your `VITE_SURREAL_WS_URL` in `.env.local` points to `ws://localhost:8000/rpc` (not `http://`).
+When the frontend uses `openbayan/docker-compose.yml` and the backend uses `OpenBayanBackend/docker-compose.yml`, server-side Next.js code should reach SurrealDB through the Docker host:
+
+```dotenv
+SURREAL_HTTP_URL=http://host.docker.internal:8000
+```
+
+Browser-side code should not use root credentials or server-only query helpers.
 
 > [!WARNING]
-> Never expose `SURREAL_PASS` (root password) in the frontend `.env` files prefixed with `VITE_`. Any variable prefixed with `VITE_` is embedded in the browser bundle and is publicly visible. Use row-level permissions with scoped tokens for frontend database access.
+> Never expose `SURREAL_PASS` or root credentials in frontend public variables. Any variable prefixed with `NEXT_PUBLIC_` or `VITE_` is embedded in the browser bundle and is publicly visible. Use row-level permissions with scoped tokens for user database access.

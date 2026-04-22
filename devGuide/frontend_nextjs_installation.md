@@ -1,14 +1,18 @@
 # Next.js Installation & Configuration Guide
 
-This guide walks you through setting up Next.js for the OpenBayan architecture. It covers bootstrapping the app, configuring it for Docker's "Standalone" mode, and setting up the internal connection to FastAPI.
+This guide walks you through setting up Next.js for the OpenBayan architecture. It covers bootstrapping the app, configuring it for Docker's "Standalone" mode, and setting up server-side access to SurrealDB.
 
 ## Step 1: Bootstrap the Next.js App
 
-Open your terminal at the root of your bayan-workspace repository. If you already have a frontend folder from your Vite experiments, delete it or rename it first.
+Open your terminal at the root of your bayan-workspace repository. If you already have a frontend folder from earlier experiments, rename it first.
 
-Run the official Next.js creation command:
+Run the official Next.js creation command inside Docker:
 ```bash
-npx create-next-app@latest frontend
+docker run --rm -it \
+  -v "$PWD":/workspace \
+  -w /workspace \
+  node:20-alpine \
+  npx create-next-app@latest openbayan
 ```
 
 When prompted, answer with these exact configurations to match modern standards:
@@ -21,26 +25,24 @@ When prompted, answer with these exact configurations to match modern standards:
 
 ## Step 2: Install Core Dependencies
 
-Navigate into your new `frontend` folder and install the essential libraries for your Scholar UI (Auth, BlockNote, and Icons).
+Install the essential libraries for your Scholar UI (Auth, BlockNote, and Icons) through a temporary Node container.
 
 ```bash
-cd frontend
-
 # Install NextAuth for authentication
-npm install next-auth
+docker run --rm -it -v "$PWD/openbayan":/app -w /app node:20-alpine npm install next-auth
 
 # Install BlockNote for the Markdown/Block editor
-npm install @blocknote/core @blocknote/react
+docker run --rm -it -v "$PWD/openbayan":/app -w /app node:20-alpine npm install @blocknote/core @blocknote/react
 
 # Install Lucide for beautiful UI icons
-npm install lucide-react
+docker run --rm -it -v "$PWD/openbayan":/app -w /app node:20-alpine npm install lucide-react
 ```
 
 ## Step 3: Enable Docker Standalone Mode
 
 To make Next.js run efficiently inside your Docker container without taking up gigabytes of space, you must enable standalone output.
 
-Open `frontend/next.config.js` (or `next.config.mjs`) and update it:
+Open `openbayan/next.config.js` (or `next.config.mjs`) and update it:
 
 ```javascript
 /** @type {import('next').NextConfig} */
@@ -61,10 +63,10 @@ export default nextConfig;
 
 ## Step 4: Add the Production Dockerfile
 
-Create a new file at `frontend/Dockerfile`. This is a Multi-Stage build. It uses a temporary "builder" container to compile your React code, and then copies only the tiny optimized output into the final "runner" container.
+Create a new file at `openbayan/Dockerfile`. This is a Multi-Stage build. It uses a temporary "builder" container to compile your React code, and then copies only the tiny optimized output into the final "runner" container.
 
 ```dockerfile
-# frontend/Dockerfile
+# openbayan/Dockerfile
 FROM node:20-alpine AS base
 
 # 1. Install dependencies only when needed
@@ -104,21 +106,20 @@ CMD ["node", "server.js"]
 
 ## Step 5: Configure Environment Variables
 
-Create a `.env.local` file inside the `frontend/` folder. This tells Next.js how to talk to FastAPI, both from the server side (Docker-to-Docker) and the client side (Browser-to-Docker).
+Create a `.env.local` file inside the `openbayan/` folder. This tells Next.js how to talk to SurrealDB from server-side route handlers, server actions, and NextAuth callbacks.
 
 ```bash
-# frontend/.env.local
+# openbayan/.env.local
 
 # 1. NextAuth Configuration
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="generate-a-random-string-here-like-32-chars-long"
 
-# 2. API Routes
-# Server-Side API URL (Used by Next.js Server Components to talk to FastAPI directly)
-INTERNAL_API_URL="http://api-server:8080"
-
-# Client-Side API URL (Used by React 'use client' components in the browser)
-NEXT_PUBLIC_API_URL="http://localhost:8080"
+# 2. SurrealDB server-side connection
+SURREAL_HTTP_URL="http://host.docker.internal:8000"
+SURREAL_NAMESPACE="main"
+SURREAL_DATABASE="main"
+SURREAL_ACCESS="account"
 ```
 
 ## Step 6: Update Docker Compose
@@ -129,28 +130,37 @@ Finally, ensure your root `docker-compose.yml` is pointing to this new setup cor
   # ==========================================
   # 💻 FRONTEND (Next.js App Router)
   # ==========================================
-  frontend:
+  next-dev:
     build:
-      context: ./frontend
+      context: ./openbayan
       # Note: For dev, you can override the Dockerfile CMD
       # by using the command below to enable Hot Reloading
     container_name: bayan_frontend
-    command: sh -c "npm install && npm run dev"
+    command: sh -c "npm install && npm run dev -- --hostname 0.0.0.0"
     ports:
       - "3000:3000"
     volumes:
-      - ./frontend:/app
+      - ./openbayan:/app
       - /app/node_modules # Prevents host OS from overwriting Docker's node_modules
     environment:
       - NEXTAUTH_URL=http://localhost:3000
-      - INTERNAL_API_URL=http://api-server:8080
+      - SURREAL_HTTP_URL=http://host.docker.internal:8000
+      - SURREAL_NAMESPACE=main
+      - SURREAL_DATABASE=main
+      - SURREAL_ACCESS=account
     networks:
       - bayan_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 ```
 
 > [!NOTE]
 > The compose file uses `npm run dev` and maps a volume so you get instant Hot Reloading while you code. When you deploy to production, you will remove the `command:` and `volumes:` lines so Docker runs the built `server.js` from Step 4.
 
-You are ready! Run `docker compose up -d` from the root of your workspace.
+You are ready. Run the frontend through Docker Compose:
 
-You can now visit http://localhost:3000 to see your Next.js app running, fully networked to your backend AI stack!
+```bash
+docker compose -f openbayan/docker-compose.yml up next-dev
+```
+
+You can now visit http://localhost:3000 to see your Next.js app running, fully networked to SurrealDB and the backend AI stack.
