@@ -137,7 +137,7 @@ export default function HeroSection() {
                   </Link>
                 </Button>
                 <Button size="lg" variant="outline" asChild>
-                  <Link href="#search">View search model</Link>
+                  <Link href="#features">View features</Link>
                 </Button>
               </div>
             </div>
@@ -176,7 +176,7 @@ export default function HeroSection() {
                   </div>
                 </aside>
 
-                <div className="p-4 md:p-6" id="search">
+                <div className="p-4 md:p-6" id="search-preview">
                   <div className="rounded-lg border bg-background p-3">
                     <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
                       <IconDatabaseSearch className="size-4" />
@@ -216,7 +216,7 @@ export default function HeroSection() {
                   </div>
                 </div>
 
-                <aside className="border-t bg-muted/20 p-4 lg:border-s lg:border-t-0" id="workspace">
+                <aside className="border-t bg-muted/20 p-4 lg:border-s lg:border-t-0" id="workspace-preview">
                   <div className="flex items-center gap-2 text-sm font-medium">
                     <IconBook2 className="size-4" />
                     Intelligence Panel
@@ -249,61 +249,38 @@ export default function HeroSection() {
           </div>
         </section>
 
-        <section className="bg-background py-16 md:py-24" id="docs">
+        <section className="bg-background py-16 md:py-24" id="features">
           <div className="mx-auto max-w-6xl px-6">
-            <div className="max-w-2xl">
+            <div className="max-w-3xl">
               <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                 <IconRoute className="size-4" />
-                From raw corpus to reviewed knowledge
+                Deep research tools for classical sources
               </div>
               <h2 className="mt-4 text-3xl font-semibold md:text-4xl">
-                Built around ingestion, enrichment, retrieval, and scholar correction.
-              </h2>
-            </div>
-
-            <div className="mt-10 grid gap-4 md:grid-cols-3">
-              {features.map((feature) => {
-                const Icon = feature.icon
-
-                return (
-                  <article key={feature.title} className="rounded-lg border bg-card p-5">
-                    <Icon className="size-5 text-primary" />
-                    <h3 className="mt-4 font-medium">{feature.title}</h3>
-                    <p className="mt-3 text-sm leading-6 text-muted-foreground">{feature.body}</p>
-                  </article>
-                )
-              })}
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-muted/30 py-16 md:py-24">
-          <div className="mx-auto max-w-6xl px-6">
-            <div className="max-w-2xl">
-              <h2 className="text-3xl font-semibold md:text-4xl">
-                Deep research tools for classical sources and modern workflows.
+                Built around ingestion, enrichment, retrieval, and modern research workflows.
               </h2>
               <p className="mt-4 text-lg text-muted-foreground">
-                The older IslamResearch product centered on advanced search, knowledge graphs,
-                and notebooks. OpenBayan ports those domain ideas into a Next.js, FastAPI,
-                SurrealDB, and Prefect architecture.
+                OpenBayan ports classical scholarship into a modern architecture, combining 
+                semantic search, knowledge graphs, and structured notebooks for deep analysis.
               </p>
             </div>
 
-            <div className="mt-10 grid gap-4 md:grid-cols-3">
-              {researchModes.map((mode) => {
-                const Icon = mode.icon
+            <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[...features, ...researchModes].map((feature) => {
+                const Icon = feature.icon
 
                 return (
-                  <article key={mode.title} className="rounded-lg border bg-card p-6">
+                  <article key={feature.title} className="flex flex-col rounded-lg border bg-card p-6">
                     <div className="flex items-center justify-between gap-4">
                       <Icon className="size-5 text-primary" />
-                      <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
-                        {mode.label}
-                      </span>
+                      {"label" in feature && (
+                        <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
+                          {(feature as any).label}
+                        </span>
+                      )}
                     </div>
-                    <h3 className="mt-6 text-xl font-semibold">{mode.title}</h3>
-                    <p className="mt-3 text-sm leading-6 text-muted-foreground">{mode.body}</p>
+                    <h3 className="mt-4 font-semibold">{feature.title}</h3>
+                    <p className="mt-3 text-sm leading-6 text-muted-foreground">{feature.body}</p>
                   </article>
                 )
               })}
@@ -370,53 +347,6 @@ export default function HeroSection() {
                     </p>
                   </div>
                 ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-background py-16 md:py-24">
-          <div className="mx-auto max-w-6xl px-6">
-            <div className="max-w-2xl">
-              <h2 className="text-3xl font-semibold md:text-4xl">
-                Built for scholars who need context to stay attached to evidence.
-              </h2>
-              <p className="mt-4 text-lg text-muted-foreground">
-                OpenBayan keeps retrieval, interpretation, notebooks, and review panels in one
-                workspace so a research path can move from query to source to reflection.
-              </p>
-            </div>
-
-            <div className="mt-10 grid gap-4 md:grid-cols-3">
-              {workspacePanels.map((panel) => (
-                <article key={panel.title} className="rounded-lg border bg-card p-5">
-                  <h3 className="font-medium">{panel.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">{panel.body}</p>
-                </article>
-              ))}
-            </div>
-
-            <div className="mt-10 grid gap-4 rounded-lg border bg-card p-4 md:grid-cols-3">
-              <div className="flex items-center gap-3 rounded-md bg-muted/40 p-4">
-                <IconFileText className="size-5 text-primary" />
-                <div>
-                  <p className="text-sm font-medium">Source fidelity</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Sahifah records keep source references.</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 rounded-md bg-muted/40 p-4">
-                <IconLanguage className="size-5 text-primary" />
-                <div>
-                  <p className="text-sm font-medium">Translation aware</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Arabic, translation, and transliteration can coexist.</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 rounded-md bg-muted/40 p-4">
-                <IconShieldCheck className="size-5 text-primary" />
-                <div>
-                  <p className="text-sm font-medium">Research ownership</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Rows respect owner and public visibility rules.</p>
-                </div>
               </div>
             </div>
           </div>

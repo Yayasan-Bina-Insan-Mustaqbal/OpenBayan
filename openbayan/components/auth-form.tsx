@@ -5,6 +5,10 @@ import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { signIn } from "next-auth/react"
+import { IconChevronLeft } from "@tabler/icons-react"
+
+import { motion, AnimatePresence } from "motion/react"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -98,11 +102,27 @@ export function AuthForm({ className, initialMode = "login", ...props }: AuthFor
     })
   }
 
+  const isMobile = useIsMobile()
+  const targetHeight = isSignup 
+    ? (isMobile ? 800 : 720) 
+    : (isMobile ? 520 : 480)
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
+      <Link
+        href="/"
+        className="flex w-fit items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <IconChevronLeft className="size-4" />
+        Back to home
+      </Link>
       <Card className="overflow-hidden p-0">
         <CardContent className="grid p-0 md:grid-cols-2">
-          <div className="relative min-h-[620px] overflow-hidden md:min-h-[560px]">
+          <motion.div 
+            animate={{ height: targetHeight }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="relative overflow-hidden"
+          >
             <LoginPanel
               active={!isSignup}
               error={error}
@@ -123,7 +143,7 @@ export function AuthForm({ className, initialMode = "login", ...props }: AuthFor
                 setMode("login")
               }}
             />
-          </div>
+          </motion.div>
 
           <div className="relative hidden overflow-hidden bg-muted md:block">
             <Image

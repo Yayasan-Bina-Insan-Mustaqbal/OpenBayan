@@ -76,7 +76,7 @@ DEFINE TABLE IF NOT EXISTS user SCHEMAFULL
     FOR select, update, delete WHERE id = $auth.id,
     FOR create NONE;
 
-DEFINE FIELD IF NOT EXISTS username ON TABLE user TYPE string;
+DEFINE FIELD OVERWRITE username ON TABLE user TYPE string ASSERT string::is_alphanum($value);
 DEFINE FIELD IF NOT EXISTS name ON TABLE user TYPE option<string>;
 DEFINE FIELD IF NOT EXISTS email ON TABLE user TYPE string ASSERT string::is_email($value);
 DEFINE FIELD IF NOT EXISTS password ON TABLE user TYPE string;
@@ -92,7 +92,7 @@ The unique email index prevents duplicate accounts.
 OpenBayan uses `DEFINE ACCESS ... TYPE RECORD`.
 
 ```surql
-DEFINE ACCESS IF NOT EXISTS account ON DATABASE TYPE RECORD
+DEFINE ACCESS OVERWRITE account ON DATABASE TYPE RECORD
   SIGNUP (
     CREATE user CONTENT {
       username: $username,
@@ -123,7 +123,7 @@ curl -X POST \
     "DB": "main",
     "AC": "account",
     "name": "John Doe",
-    "username": "John Doe",
+    "username": "johndoe",
     "email": "john.doe@example.com",
     "password": "VerySecurePassword!"
   }' \

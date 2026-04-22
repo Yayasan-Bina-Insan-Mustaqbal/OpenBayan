@@ -35,7 +35,7 @@ export async function signupWithSurreal({
 }) {
   const token = await surrealAuthRequest("/signup", {
     name,
-    username: name,
+    username: buildUsername(name, email),
     email,
     password,
   })
@@ -127,6 +127,33 @@ function buildAuthResponse(token: string, email: string, name?: string): AuthRes
       name: name ?? null,
     },
   }
+}
+
+function buildUsername(name: string, email: string) {
+  const base =
+    name
+      .normalize("NFKD")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "") ||
+    email
+      .split("@")[0]
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "") ||
+    "user"
+  const suffix = Math.abs(hashString(email)).toString(36)
+
+  return `${base}${suffix}`
+}
+
+function hashString(value: string) {
+  let hash = 0
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(index)
+    hash |= 0
+  }
+
+  return hash
 }
 
 function decodeJwtClaims(token: string) {

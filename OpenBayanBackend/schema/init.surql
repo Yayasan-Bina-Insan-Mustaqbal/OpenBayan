@@ -14,7 +14,7 @@ DEFINE TABLE IF NOT EXISTS sahifah SCHEMAFULL
     FOR create, update, delete WHERE author = $auth.id;
 
 -- 2. DEFINE FIELDS (User)
-DEFINE FIELD IF NOT EXISTS username ON TABLE user TYPE string;
+DEFINE FIELD OVERWRITE username ON TABLE user TYPE string ASSERT string::is_alphanum($value);
 DEFINE FIELD IF NOT EXISTS name ON TABLE user TYPE option<string>;
 DEFINE FIELD IF NOT EXISTS email ON TABLE user TYPE string ASSERT string::is_email($value);
 DEFINE FIELD IF NOT EXISTS password ON TABLE user TYPE string;
@@ -30,7 +30,7 @@ DEFINE FIELD IF NOT EXISTS created_at ON TABLE sahifah TYPE datetime DEFAULT tim
 DEFINE FIELD IF NOT EXISTS updated_at ON TABLE sahifah TYPE datetime DEFAULT time::now() VALUE time::now();
 
 -- 4. DEFINE ACCESS (Authentication)
-DEFINE ACCESS IF NOT EXISTS account ON DATABASE TYPE RECORD
+DEFINE ACCESS OVERWRITE account ON DATABASE TYPE RECORD
   SIGNUP (
     CREATE user CONTENT {
       username: $username,
