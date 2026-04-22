@@ -1,0 +1,9 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+surrealdb
+numpy<2
+torch==2.5.1+cpu
+transformers==4.43.4
+spacy
+camel-tools==1.5.7
+jupyterlab

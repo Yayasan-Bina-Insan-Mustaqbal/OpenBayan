@@ -18,6 +18,7 @@ Welcome to the OpenBayan developer documentation. This directory contains detail
 - [Data Pipeline: Prefect Flows & Arabic NLP](data_pipeline_prefect_flows.md) — The AI Factory: orchestrating Arabic text ingestion, SpaCy segmentation, CamelBERT embedding generation, and SurrealDB graph creation with Prefect.
 
 ### 💻 Frontend
+- [Next.js Installation & Configuration](frontend_nextjs_installation.md) — Comprehensive guide to bootstrapping Next.js, Dockerizing with Standalone mode, and connecting to FastAPI.
 - [Hybrid Web & Desktop IDE Architecture](frontend_hybrid_ide_architecture.md) — Deep dive into the Omni-Storage IDE strategy using React, FastAPI, SurrealDB, and Tauri.
 
 ---
@@ -27,8 +28,8 @@ Welcome to the OpenBayan developer documentation. This directory contains detail
 ```
 [OpenBayan]
     │
-    ├── OpenBayanFrontend/     ← Vite + React + TypeScript
-    │   └── Connects to SurrealDB (WebSocket) & FastAPI (REST)
+    ├── frontend/              ← Next.js + Tailwind + Lucide
+    │   └── Connects to FastAPI (INTERNAL_API_URL & NEXT_PUBLIC_API_URL)
     │
     └── OpenBayanBackend/      ← Docker Compose Stack
         ├── SurrealDB          ← Multi-model DB (Graph + Vector + Document)
@@ -38,6 +39,6 @@ Welcome to the OpenBayan developer documentation. This directory contains detail
 
 | Port | Service | Description |
 |:---|:---|:---|
-| **5173** | Vite Frontend | React development server |
+| **3000** | Next.js Frontend | Scholar UI (Auth, BlockNote, Icons) |
 | **8000** | SurrealDB | Database (WebSocket + HTTP REST) |
 | **4200** | Prefect UI | AI pipeline monitoring dashboard |

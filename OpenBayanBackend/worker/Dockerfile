@@ -8,19 +8,19 @@ RUN apt-get update && apt-get install -y gcc g++ curl && rm -rf /var/lib/apt/lis
 # Set the working directory
 WORKDIR /app
 
-# Create a requirements file directly in the Dockerfile for simplicity
-# (Prefect is already installed in the base image, so we omit it here)
-RUN echo "surrealdb" > requirements.txt && \
-    echo "transformers" >> requirements.txt && \
-    echo "spacy" >> requirements.txt && \
-    echo "camel-tools" >> requirements.txt
+# Prefect is already installed in the base image, so we omit it here.
+COPY requirements.txt .
 
 # Install the Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Download CAMeL Tools default datasets (required for Analyzer)
-# Note: This is around 500MB
-RUN camel_data -i defaults
+# Download only the CAMeL Tools MSA data needed for local morphology.
+# Heavier inference/embedding work can be pointed at an external Ollama host.
+RUN camel_data -i morphology-db-msa-r13 && \
+    camel_data -i disambig-mle-calima-msa-r13
+
+# Make ad-hoc docker compose exec commands use the same Python env as Prefect/Jupyter.
+ENV PATH="/opt/conda/envs/prefect/bin:${PATH}"
 
 # (Running as root for simplicity in dev environment)
 # (No official SpaCy Arabic model exists, so we use blank("ar") in code if needed)

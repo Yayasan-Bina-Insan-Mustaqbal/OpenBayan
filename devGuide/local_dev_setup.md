@@ -102,6 +102,7 @@ NAME              IMAGE                                    STATUS          PORTS
 bayan_surrealdb   surrealdb/surrealdb:latest               Up              0.0.0.0:8000->8000/tcp
 bayan_prefect     prefecthq/prefect:3.6.27-python3.12-...  Up              0.0.0.0:4200->4200/tcp
 bayan_worker      openbayan-backend-data-worker            Up
+bayan_jupyter     openbayan-backend-jupyter                Up              0.0.0.0:8888->8888/tcp
 ```
 
 ### Verify SurrealDB is ready
@@ -180,6 +181,14 @@ Once everything is running, access these URLs:
 | **React Frontend** | http://localhost:5173 | The main application UI |
 | **SurrealDB** | http://localhost:8000 | Database API (WebSocket) |
 | **Prefect UI** | http://localhost:4200 | AI pipeline monitoring dashboard |
+| **Jupyter Lab** | http://localhost:8888 | Notebook workspace for AI research and pipeline tests |
+
+If you use a separate Ollama machine for embeddings or inference, set `OLLAMA_URL` in `OpenBayanBackend/.env` before starting the backend:
+
+```dotenv
+OLLAMA_URL=http://<ollama-pc-ip>:11434
+OLLAMA_EMBED_MODEL=mxbai-embed-large:latest
+```
 
 ---
 
@@ -200,8 +209,14 @@ docker compose -f OpenBayanBackend/docker-compose.yml down -v
 # Rebuild the worker image (after changing Dockerfile or requirements)
 docker compose -f OpenBayanBackend/docker-compose.yml build data-worker
 
+# Rebuild and start Jupyter Lab
+docker compose -f OpenBayanBackend/docker-compose.yml up -d --build jupyter
+
 # Follow live logs from the Python worker
 docker logs bayan_worker -f
+
+# Follow live logs from Jupyter Lab
+docker logs bayan_jupyter -f
 
 # Follow live logs from SurrealDB
 docker logs bayan_surrealdb -f
