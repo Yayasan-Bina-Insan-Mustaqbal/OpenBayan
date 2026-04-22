@@ -1,0 +1,848 @@
+[
+  {
+    "model": "llama3.2:3b",
+    "chunk_size": 80,
+    "chunk_index": 0,
+    "target_refs": [
+      "1:1",
+      "1:2",
+      "1:3",
+      "1:4",
+      "1:5",
+      "1:6",
+      "1:7",
+      "2:255",
+      "2:285"
+    ],
+    "previous_refs": [],
+    "next_refs": [
+      "2:285",
+      "2:286"
+    ],
+    "target_word_count": 80,
+    "prompt_word_count": 108,
+    "elapsed_seconds": 3.028,
+    "eval_count": 77,
+    "prompt_eval_count": 535,
+    "tokens_per_second": 125.51,
+    "score": {
+      "json_valid": true,
+      "required_key_count": 6,
+      "entity_count": 1,
+      "relation_count": 0,
+      "primary_category": "duaa",
+      "quality_score": 0.717
+    },
+    "parsed": {
+      "primary_category": "duaa",
+      "secondary_categories": [],
+      "entities": [
+        {
+          "name_ar": "",
+          "type": ""
+        }
+      ],
+      "relations": [],
+      "summary_ar": "",
+      "surrealdb_notes": {
+        "chunk_kind": "quran",
+        "relation_strategy": ""
+      }
+    },
+    "raw_response_preview": "{\n  \"primary_category\": \"duaa\",\n  \"secondary_categories\": [],\n  \"entities\": [\n    {\n      \"name_ar\": \"\",\n      \"type\": \"\"\n    }\n  ],\n  \"relations\": [],\n  \"summary_ar\": \"\",\n  \"surrealdb_notes\": {\n    \"chunk_kind\": \"quran\",\n    \"relation_strategy\": \"\"\n  }\n}"
+  },
+  {
+    "model": "llama3.2:3b",
+    "chunk_size": 80,
+    "chunk_index": 1,
+    "target_refs": [
+      "2:285",
+      "2:286",
+      "36:1",
+      "36:2",
+      "36:3"
+    ],
+    "previous_refs": [
+      "2:255",
+      "2:285"
+    ],
+    "next_refs": [
+      "36:3",
+      "36:4",
+      "36:5",
+      "36:6",
+      "36:7",
+      "36:8"
+    ],
+    "target_word_count": 80,
+    "prompt_word_count": 136,
+    "elapsed_seconds": 5.72,
+    "eval_count": 163,
+    "prompt_eval_count": 621,
+    "tokens_per_second": 122.95,
+    "score": {
+      "json_valid": true,
+      "required_key_count": 6,
+      "entity_count": 1,
+      "relation_count": 2,
+      "primary_category": "duaa",
+      "quality_score": 0.817
+    },
+    "parsed": {
+      "primary_category": "duaa",
+      "secondary_categories": [],
+      "entities": [
+        {
+          "name_ar": "",
+          "type": "divine_name"
+        }
+      ],
+      "relations": [
+        {
+          "subject": "الرسول",
+          "predicate": "بالما أنزل إليه من ربه",
+          "object": ""
+        },
+        {
+          "subject": "المؤمنون",
+          "predicate": "كل آمن بالله",
+          "object": ""
+        }
+      ],
+      "summary_ar": "",
+      "surrealdb_notes": {
+        "chunk_kind": "quran",
+        "relation_strategy": "RELATE source_chunk->mentions/entity->entity and source_chunk->has_category->category"
+      }
+    },
+    "raw_response_preview": "{\n  \"primary_category\": \"duaa\",\n  \"secondary_categories\": [],\n  \"entities\": [\n    {\n      \"name_ar\": \"\",\n      \"type\": \"divine_name\"\n    }\n  ],\n  \"relations\": [\n    {\n      \"subject\": \"الرسول\",\n      \"predicate\": \"بالما أنزل إليه من ربه\",\n      \"object\": \"\"\n    },\n    {\n      \"subject\": \"المؤمنون\",\n      \"predicate\": \"كل آمن بالله\",\n      \"object\": \"\"\n    }\n  ],\n  \"summary_ar\": \"\",\n  \"surrealdb_notes\": {\n    \"chunk_kind\": \"quran\",\n    \"relation_strategy\": \"RELATE source_chunk->mentions/entity->e"
+  },
+  {
+    "model": "llama3.2:3b",
+    "chunk_size": 80,
+    "chunk_index": 2,
+    "target_refs": [
+      "36:3",
+      "36:4",
+      "36:5",
+      "36:6",
+      "36:7",
+      "36:8",
+      "36:9",
+      "36:10",
+      "36:11",
+      "36:12",
+      "112:1"
+    ],
+    "previous_refs": [
+      "2:286",
+      "36:1",
+      "36:2",
+      "36:3"
+    ],
+    "next_refs": [
+      "112:1",
+      "112:2",
+      "112:3",
+      "112:4",
+      "113:1",
+      "113:2",
+      "113:3",
+      "113:4"
+    ],
+    "target_word_count": 80,
+    "prompt_word_count": 136,
+    "elapsed_seconds": 3.452,
+    "eval_count": 91,
+    "prompt_eval_count": 667,
+    "tokens_per_second": 124.72,
+    "score": {
+      "json_valid": true,
+      "required_key_count": 6,
+      "entity_count": 1,
+      "relation_count": 1,
+      "primary_category": "duaa",
+      "quality_score": 0.767
+    },
+    "parsed": {
+      "primary_category": "duaa",
+      "secondary_categories": [],
+      "entities": [
+        {
+          "name_ar": "",
+          "type": "divine_name"
+        }
+      ],
+      "relations": [
+        {
+          "subject": "",
+          "predicate": "",
+          "object": ""
+        }
+      ],
+      "summary_ar": "",
+      "surrealdb_notes": {
+        "chunk_kind": "quran",
+        "relation_strategy": ""
+      }
+    },
+    "raw_response_preview": "{\n  \"primary_category\": \"duaa\",\n  \"secondary_categories\": [],\n  \"entities\": [\n    {\"name_ar\": \"\", \"type\": \"divine_name\"}\n  ],\n  \"relations\": [\n    {\"subject\": \"\", \"predicate\": \"\", \"object\": \"\"}\n  ],\n  \"summary_ar\": \"\",\n  \"surrealdb_notes\": {\n    \"chunk_kind\": \"quran\",\n    \"relation_strategy\": \"\"\n  }\n}"
+  },
+  {
+    "model": "llama3.2:3b",
+    "chunk_size": 160,
+    "chunk_index": 0,
+    "target_refs": [
+      "1:1",
+      "1:2",
+      "1:3",
+      "1:4",
+      "1:5",
+      "1:6",
+      "1:7",
+      "2:255",
+      "2:285",
+      "2:286",
+      "36:1",
+      "36:2",
+      "36:3"
+    ],
+    "previous_refs": [],
+    "next_refs": [
+      "36:3",
+      "36:4",
+      "36:5",
+      "36:6",
+      "36:7",
+      "36:8",
+      "36:9",
+      "36:10",
+      "36:11"
+    ],
+    "target_word_count": 160,
+    "prompt_word_count": 216,
+    "elapsed_seconds": 3.08,
+    "eval_count": 79,
+    "prompt_eval_count": 823,
+    "tokens_per_second": 122.66,
+    "score": {
+      "json_valid": true,
+      "required_key_count": 6,
+      "entity_count": 1,
+      "relation_count": 0,
+      "primary_category": "duaa",
+      "quality_score": 0.717
+    },
+    "parsed": {
+      "primary_category": "duaa",
+      "secondary_categories": [],
+      "entities": [
+        {
+          "name_ar": "",
+          "type": "concept"
+        }
+      ],
+      "relations": [],
+      "summary_ar": "",
+      "surrealdb_notes": {
+        "chunk_kind": "quran",
+        "relation_strategy": ""
+      }
+    },
+    "raw_response_preview": "{\n  \"primary_category\": \"duaa\",\n  \"secondary_categories\": [],\n  \"entities\": [\n    {\n      \"name_ar\": \"\",\n      \"type\": \"concept\"\n    }\n  ],\n  \"relations\": [],\n  \"summary_ar\": \"\",\n  \"surrealdb_notes\": {\n    \"chunk_kind\": \"quran\",\n    \"relation_strategy\": \"\"\n  }\n}"
+  },
+  {
+    "model": "llama3.2:3b",
+    "chunk_size": 160,
+    "chunk_index": 1,
+    "target_refs": [
+      "36:3",
+      "36:4",
+      "36:5",
+      "36:6",
+      "36:7",
+      "36:8",
+      "36:9",
+      "36:10",
+      "36:11",
+      "36:12",
+      "112:1",
+      "112:2",
+      "112:3",
+      "112:4",
+      "113:1",
+      "113:2",
+      "113:3",
+      "113:4",
+      "113:5",
+      "114:1",
+      "114:2",
+      "114:3",
+      "114:4",
+      "114:5",
+      "114:6"
+    ],
+    "previous_refs": [
+      "2:285",
+      "2:286",
+      "36:1",
+      "36:2",
+      "36:3"
+    ],
+    "next_refs": [],
+    "target_word_count": 136,
+    "prompt_word_count": 192,
+    "elapsed_seconds": 6.271,
+    "eval_count": 174,
+    "prompt_eval_count": 812,
+    "tokens_per_second": 121.25,
+    "score": {
+      "json_valid": true,
+      "required_key_count": 6,
+      "entity_count": 1,
+      "relation_count": 5,
+      "primary_category": "duaa",
+      "quality_score": 0.867
+    },
+    "parsed": {
+      "primary_category": "duaa",
+      "secondary_categories": [],
+      "entities": [
+        {
+          "name_ar": "",
+          "type": ""
+        }
+      ],
+      "relations": [
+        {
+          "subject": "",
+          "predicate": "",
+          "object": ""
+        },
+        {
+          "subject": "",
+          "predicate": "",
+          "object": ""
+        },
+        {
+          "subject": "",
+          "predicate": "",
+          "object": ""
+        },
+        {
+          "subject": "",
+          "predicate": "",
+          "object": ""
+        },
+        {
+          "subject": "",
+          "predicate": "",
+          "object": ""
+        }
+      ],
+      "summary_ar": "",
+      "surrealdb_notes": {
+        "chunk_kind": "quran",
+        "relation_strategy": ""
+      }
+    },
+    "raw_response_preview": "{\n  \"primary_category\": \"duaa\",\n  \"secondary_categories\": [],\n  \"entities\": [\n    {\n      \"name_ar\": \"\",\n      \"type\": \"\"\n    }\n  ],\n  \"relations\": [\n    {\n      \"subject\": \"\",\n      \"predicate\": \"\",\n      \"object\": \"\"\n    },\n    {\n      \"subject\": \"\",\n      \"predicate\": \"\",\n      \"object\": \"\"\n    },\n    {\n      \"subject\": \"\",\n      \"predicate\": \"\",\n      \"object\": \"\"\n    },\n    {\n      \"subject\": \"\",\n      \"predicate\": \"\",\n      \"object\": \"\"\n    },\n    {\n      \"subject\": \"\",\n      \"predicate\": "
+  },
+  {
+    "model": "qwen2.5:7b",
+    "chunk_size": 80,
+    "chunk_index": 0,
+    "target_refs": [
+      "1:1",
+      "1:2",
+      "1:3",
+      "1:4",
+      "1:5",
+      "1:6",
+      "1:7",
+      "2:255",
+      "2:285"
+    ],
+    "previous_refs": [],
+    "next_refs": [
+      "2:285",
+      "2:286"
+    ],
+    "target_word_count": 80,
+    "prompt_word_count": 108,
+    "elapsed_seconds": 14.072,
+    "eval_count": 318,
+    "prompt_eval_count": 533,
+    "tokens_per_second": 65.84,
+    "score": {
+      "json_valid": true,
+      "required_key_count": 6,
+      "entity_count": 5,
+      "relation_count": 4,
+      "primary_category": "aqidah",
+      "quality_score": 1.0
+    },
+    "parsed": {
+      "primary_category": "aqidah",
+      "secondary_categories": [
+        "other"
+      ],
+      "entities": [
+        {
+          "name_ar": "الله",
+          "type": "divine_name"
+        },
+        {
+          "name_ar": "رب العالمين",
+          "type": "concept"
+        },
+        {
+          "name_ar": "الرحمن الرحيم",
+          "type": "concept"
+        },
+        {
+          "name_ar": "مالك يوم الدين",
+          "type": "concept"
+        },
+        {
+          "name_ar": "اليوم الآخر",
+          "type": "concept"
+        }
+      ],
+      "relations": [
+        {
+          "subject": "الله",
+          "predicate": "is_honored_with",
+          "object": "الرحمن الرحيم"
+        },
+        {
+          "subject": "الله",
+          "predicate": "is_honored_with",
+          "object": "رب العالمين"
+        },
+        {
+          "subject": "الله",
+          "predicate": "is_owner_of",
+          "object": "اليوم الآخر"
+        },
+        {
+          "subject": "الرسول",
+          "predicate": "receives_revelation_from",
+          "object": "ربه"
+        }
+      ],
+      "summary_ar": "آية بداية سورة الفاتحة تبدأ ببسم الله ثم الثناء لله وحده، وتذكر عظمة الله وصفاته، ويطلب الهداية إلى الصراط المستقيم.",
+      "surrealdb_notes": {
+        "chunk_kind": "quran",
+        "relation_strategy": "RELATE source_chunk->mentions/entity->entity and source_chunk->has_category->category"
+      }
+    },
+    "raw_response_preview": "{\n  \"primary_category\": \"aqidah\",\n  \"secondary_categories\": [\"other\"],\n  \"entities\": [\n    {\"name_ar\": \"الله\", \"type\": \"divine_name\"},\n    {\"name_ar\": \"رب العالمين\", \"type\": \"concept\"},\n    {\"name_ar\": \"الرحمن الرحيم\", \"type\": \"concept\"},\n    {\"name_ar\": \"مالك يوم الدين\", \"type\": \"concept\"},\n    {\"name_ar\": \"اليوم الآخر\", \"type\": \"concept\"}\n  ],\n  \"relations\": [\n    {\"subject\": \"الله\", \"predicate\": \"is_honored_with\", \"object\": \"الرحمن الرحيم\"},\n    {\"subject\": \"الله\", \"predicate\": \"is_honored_wi"
+  },
+  {
+    "model": "qwen2.5:7b",
+    "chunk_size": 80,
+    "chunk_index": 1,
+    "target_refs": [
+      "2:285",
+      "2:286",
+      "36:1",
+      "36:2",
+      "36:3"
+    ],
+    "previous_refs": [
+      "2:255",
+      "2:285"
+    ],
+    "next_refs": [
+      "36:3",
+      "36:4",
+      "36:5",
+      "36:6",
+      "36:7",
+      "36:8"
+    ],
+    "target_word_count": 80,
+    "prompt_word_count": 136,
+    "elapsed_seconds": 14.446,
+    "eval_count": 326,
+    "prompt_eval_count": 627,
+    "tokens_per_second": 65.68,
+    "score": {
+      "json_valid": true,
+      "required_key_count": 6,
+      "entity_count": 6,
+      "relation_count": 5,
+      "primary_category": "ibadah",
+      "quality_score": 1.0
+    },
+    "parsed": {
+      "primary_category": "ibadah",
+      "secondary_categories": [
+        "other"
+      ],
+      "entities": [
+        {
+          "name_ar": "الرسول",
+          "type": "person"
+        },
+        {
+          "name_ar": "المؤمنون",
+          "type": "group"
+        },
+        {
+          "name_ar": "الله",
+          "type": "divine_name"
+        },
+        {
+          "name_ar": "ملائكة",
+          "type": "concept"
+        },
+        {
+          "name_ar": "كتاب",
+          "type": "scripture"
+        },
+        {
+          "name_ar": "رسل",
+          "type": "person"
+        }
+      ],
+      "relations": [
+        {
+          "subject": "الرسول",
+          "predicate": "receives_revelation_from",
+          "object": "الله"
+        },
+        {
+          "subject": "المؤمنون",
+          "predicate": "believe_in",
+          "object": "الله"
+        },
+        {
+          "subject": "المؤمنون",
+          "predicate": "believe_in",
+          "object": "ملائكة"
+        },
+        {
+          "subject": "المؤمنون",
+          "predicate": "believe_in",
+          "object": "كتاب"
+        },
+        {
+          "subject": "المؤمنون",
+          "predicate": "believe_in",
+          "object": "رسل"
+        }
+      ],
+      "summary_ar": "رسول الله وأتباعه يؤمنون بالله وملائكته وكتبه ورسله.",
+      "surrealdb_notes": {
+        "chunk_kind": "quran",
+        "relation_strategy": "RELATE source_chunk->mentions/entity->entity and source_chunk->has_category->category"
+      }
+    },
+    "raw_response_preview": "{\n  \"primary_category\": \"ibadah\",\n  \"secondary_categories\": [\"other\"],\n  \"entities\": [\n    {\"name_ar\": \"الرسول\", \"type\": \"person\"},\n    {\"name_ar\": \"المؤمنون\", \"type\": \"group\"},\n    {\"name_ar\": \"الله\", \"type\": \"divine_name\"},\n    {\"name_ar\": \"ملائكة\", \"type\": \"concept\"},\n    {\"name_ar\": \"كتاب\", \"type\": \"scripture\"},\n    {\"name_ar\": \"رسل\", \"type\": \"person\"}\n  ],\n  \"relations\": [\n    {\"subject\": \"الرسول\", \"predicate\": \"receives_revelation_from\", \"object\": \"الله\"},\n    {\"subject\": \"المؤمنون\", \"pred"
+  },
+  {
+    "model": "qwen2.5:7b",
+    "chunk_size": 80,
+    "chunk_index": 2,
+    "target_refs": [
+      "36:3",
+      "36:4",
+      "36:5",
+      "36:6",
+      "36:7",
+      "36:8",
+      "36:9",
+      "36:10",
+      "36:11",
+      "36:12",
+      "112:1"
+    ],
+    "previous_refs": [
+      "2:286",
+      "36:1",
+      "36:2",
+      "36:3"
+    ],
+    "next_refs": [
+      "112:1",
+      "112:2",
+      "112:3",
+      "112:4",
+      "113:1",
+      "113:2",
+      "113:3",
+      "113:4"
+    ],
+    "target_word_count": 80,
+    "prompt_word_count": 136,
+    "elapsed_seconds": 10.375,
+    "eval_count": 238,
+    "prompt_eval_count": 691,
+    "tokens_per_second": 65.71,
+    "score": {
+      "json_valid": true,
+      "required_key_count": 6,
+      "entity_count": 3,
+      "relation_count": 2,
+      "primary_category": "ibadah",
+      "quality_score": 0.95
+    },
+    "parsed": {
+      "primary_category": "ibadah",
+      "secondary_categories": [
+        "other"
+      ],
+      "entities": [
+        {
+          "name_ar": "المرسلين",
+          "type": "concept"
+        },
+        {
+          "name_ar": "صراط مستقيم",
+          "type": "concept"
+        },
+        {
+          "name_ar": "تنزيل العزيز الرحيم",
+          "type": "concept"
+        }
+      ],
+      "relations": [
+        {
+          "subject": "المرسلين",
+          "predicate": "on",
+          "object": "صراط مستقيم"
+        },
+        {
+          "subject": "تنزيل العزيز الرحيم",
+          "predicate": "for",
+          "object": "تنذر قوما ما أنذر آباؤهم"
+        }
+      ],
+      "summary_ar": "المرسلين على صراط مستقيم تنزيل العزيز الرحيم لتنذر قوما ما أنذر آباؤهم",
+      "surrealdb_notes": {
+        "chunk_kind": "quran",
+        "relation_strategy": "RELATE source_chunk->mentions/entity->entity and source_chunk->has_category->category"
+      }
+    },
+    "raw_response_preview": "{\n  \"primary_category\": \"ibadah\",\n  \"secondary_categories\": [\"other\"],\n  \"entities\": [\n    {\"name_ar\": \"المرسلين\", \"type\": \"concept\"},\n    {\"name_ar\": \"صراط مستقيم\", \"type\": \"concept\"},\n    {\"name_ar\": \"تنزيل العزيز الرحيم\", \"type\": \"concept\"}\n  ],\n  \"relations\": [\n    {\"subject\": \"المرسلين\", \"predicate\": \"on\", \"object\": \"صراط مستقيم\"},\n    {\"subject\": \"تنزيل العزيز الرحيم\", \"predicate\": \"for\", \"object\": \"تنذر قوما ما أنذر آباؤهم\"}\n  ],\n  \"summary_ar\": \"المرسلين على صراط مستقيم تنزيل العزيز الرح"
+  },
+  {
+    "model": "qwen2.5:7b",
+    "chunk_size": 160,
+    "chunk_index": 0,
+    "target_refs": [
+      "1:1",
+      "1:2",
+      "1:3",
+      "1:4",
+      "1:5",
+      "1:6",
+      "1:7",
+      "2:255",
+      "2:285",
+      "2:286",
+      "36:1",
+      "36:2",
+      "36:3"
+    ],
+    "previous_refs": [],
+    "next_refs": [
+      "36:3",
+      "36:4",
+      "36:5",
+      "36:6",
+      "36:7",
+      "36:8",
+      "36:9",
+      "36:10",
+      "36:11"
+    ],
+    "target_word_count": 160,
+    "prompt_word_count": 216,
+    "elapsed_seconds": 12.338,
+    "eval_count": 277,
+    "prompt_eval_count": 832,
+    "tokens_per_second": 65.17,
+    "score": {
+      "json_valid": true,
+      "required_key_count": 6,
+      "entity_count": 3,
+      "relation_count": 4,
+      "primary_category": "aqidah",
+      "quality_score": 1.0
+    },
+    "parsed": {
+      "primary_category": "aqidah",
+      "secondary_categories": [
+        "other"
+      ],
+      "entities": [
+        {
+          "name_ar": "الله",
+          "type": "divine_name"
+        },
+        {
+          "name_ar": "رسول الله",
+          "type": "person"
+        },
+        {
+          "name_ar": "المؤمنون",
+          "type": "group"
+        }
+      ],
+      "relations": [
+        {
+          "subject": "الله",
+          "predicate": "has_attribute",
+          "object": "رحمن الرحيم"
+        },
+        {
+          "subject": "الله",
+          "predicate": "has_attribute",
+          "object": "مالك يوم الدين"
+        },
+        {
+          "subject": "رسول الله",
+          "predicate": "obeys",
+          "object": "الله"
+        },
+        {
+          "subject": "المؤمنون",
+          "predicate": "believe_in",
+          "object": "الله وملائكته وكتبه ورسله"
+        }
+      ],
+      "summary_ar": "بسم الله الرحمن الرحيم، الحمد لله رب العالمين. يدعو الرسول والمؤمنون الله ويؤمنون بوجود الملائكة والكتب والسنة.",
+      "surrealdb_notes": {
+        "chunk_kind": "quran",
+        "relation_strategy": "RELATE source_chunk->mentions/entity->entity and source_chunk->has_category->category"
+      }
+    },
+    "raw_response_preview": "{\n  \"primary_category\": \"aqidah\",\n  \"secondary_categories\": [\"other\"],\n  \"entities\": [\n    {\"name_ar\": \"الله\", \"type\": \"divine_name\"},\n    {\"name_ar\": \"رسول الله\", \"type\": \"person\"},\n    {\"name_ar\": \"المؤمنون\", \"type\": \"group\"}\n  ],\n  \"relations\": [\n    {\"subject\": \"الله\", \"predicate\": \"has_attribute\", \"object\": \"رحمن الرحيم\"},\n    {\"subject\": \"الله\", \"predicate\": \"has_attribute\", \"object\": \"مالك يوم الدين\"},\n    {\"subject\": \"رسول الله\", \"predicate\": \"obeys\", \"object\": \"الله\"},\n    {\"subject\": \""
+  },
+  {
+    "model": "qwen2.5:7b",
+    "chunk_size": 160,
+    "chunk_index": 1,
+    "target_refs": [
+      "36:3",
+      "36:4",
+      "36:5",
+      "36:6",
+      "36:7",
+      "36:8",
+      "36:9",
+      "36:10",
+      "36:11",
+      "36:12",
+      "112:1",
+      "112:2",
+      "112:3",
+      "112:4",
+      "113:1",
+      "113:2",
+      "113:3",
+      "113:4",
+      "113:5",
+      "114:1",
+      "114:2",
+      "114:3",
+      "114:4",
+      "114:5",
+      "114:6"
+    ],
+    "previous_refs": [
+      "2:285",
+      "2:286",
+      "36:1",
+      "36:2",
+      "36:3"
+    ],
+    "next_refs": [],
+    "target_word_count": 136,
+    "prompt_word_count": 192,
+    "elapsed_seconds": 18.518,
+    "eval_count": 428,
+    "prompt_eval_count": 847,
+    "tokens_per_second": 65.07,
+    "score": {
+      "json_valid": true,
+      "required_key_count": 6,
+      "entity_count": 7,
+      "relation_count": 5,
+      "primary_category": "aqidah",
+      "quality_score": 1.0
+    },
+    "parsed": {
+      "primary_category": "aqidah",
+      "secondary_categories": [
+        "other"
+      ],
+      "entities": [
+        {
+          "name_ar": "المرسلين",
+          "type": "group"
+        },
+        {
+          "name_ar": "العزيز الرحيم",
+          "type": "divine_name"
+        },
+        {
+          "name_ar": "الذكر",
+          "type": "concept"
+        },
+        {
+          "name_ar": "الرحمن",
+          "type": "divine_name"
+        },
+        {
+          "name_ar": "الفلق",
+          "type": "scripture"
+        },
+        {
+          "name_ar": "النفثات في العقد",
+          "type": "concept"
+        },
+        {
+          "name_ar": "الوسواس الخناس",
+          "type": "concept"
+        }
+      ],
+      "relations": [
+        {
+          "subject": "المرسلين",
+          "predicate": "sent_on_straight_path",
+          "object": "صراط مستقيم"
+        },
+        {
+          "subject": "تنزيل العزيز الرحيم",
+          "predicate": "revealed_to",
+          "object": "قوما ما أنذر آباؤهم"
+        },
+        {
+          "subject": "الأغلال",
+          "predicate": "bound_to",
+          "object": "أعناقهم"
+        },
+        {
+          "subject": "السدا",
+          "predicate": "blocked_by",
+          "object": "من بين أيديهم ومن خلفهم"
+        },
+        {
+          "subject": "المؤمنون",
+          "predicate": "respond_to",
+          "object": "من اتبع الذكر وخشي الرحمن بالغيب"
+        }
+      ],
+      "summary_ar": "الآيات تتحدث عن المرسلين وتنزيل العزيز الرحيم، وتذكر كيفية إرسال الرسالة إلى قوم لم يُنذر آباؤهم. تشير إلى غفلة هؤلاء الناس وعدم استجابة بعضهم رغم الإرشاد.",
+      "surrealdb_notes": {
+        "chunk_kind": "quran",
+        "relation_strategy": "RELATE source_chunk->mentions/entity->entity and source_chunk->has_category->category"
+      }
+    },
+    "raw_response_preview": "{\n  \"primary_category\": \"aqidah\",\n  \"secondary_categories\": [\"other\"],\n  \"entities\": [\n    {\"name_ar\": \"المرسلين\", \"type\": \"group\"},\n    {\"name_ar\": \"العزيز الرحيم\", \"type\": \"divine_name\"},\n    {\"name_ar\": \"الذكر\", \"type\": \"concept\"},\n    {\"name_ar\": \"الرحمن\", \"type\": \"divine_name\"},\n    {\"name_ar\": \"الفلق\", \"type\": \"scripture\"},\n    {\"name_ar\": \"النفثات في العقد\", \"type\": \"concept\"},\n    {\"name_ar\": \"الوسواس الخناس\", \"type\": \"concept\"}\n  ],\n  \"relations\": [\n    {\"subject\": \"المرسلين\", \"predicat"
+  }
+]

@@ -17,6 +17,7 @@ Welcome to the OpenBayan developer documentation. This directory contains detail
 - [SurrealDB & NextAuth Integration](backend_surrealdb_nextauth_integration.md) — How Next.js/NextAuth uses SurrealDB record access without a separate API gateway.
 - [SurrealDB Deployment & Worker Boundaries](backend_surrealdb_deployment.md) — Runtime service boundaries for SurrealDB, Next.js, Prefect, and Python workers.
 - [Data Pipeline: Prefect Flows & Arabic NLP](data_pipeline_prefect_flows.md) — The AI Factory: orchestrating Arabic text ingestion, SpaCy segmentation, CamelBERT embedding generation, and SurrealDB graph creation with Prefect.
+- [Pydantic AI for Knowledge Graph](pydantic_ai_knowledge_graph.md) — How to use Pydantic AI, Pydantic Graph, Logfire, Prefect, and SurrealDB together for typed knowledge graph extraction.
 - [Jupyter Notebook Integration Best Practices](jupyter_notebook_integration_best_practices.md) — How notebooks should run inside the Docker-hosted Jupyter service and graduate into Prefect pipeline code.
 - [Jupyter Notebook Integration Best Practices](jupyter_notebook_integration_best_practices.md) — How to structure Docker-hosted Jupyter notebooks that integrate with Prefect, CAMeL Tools, Ollama, and OpenBayan backend services.
 

@@ -1,0 +1,54 @@
+[
+  {
+    "model": "qwen2.5:7b",
+    "chunk_size": 160,
+    "runs": 2,
+    "avg_seconds_per_chunk": 15.428,
+    "avg_quality_score": 1.0,
+    "json_valid_rate": 1.0,
+    "avg_entities": 5,
+    "avg_relations": 4.5,
+    "estimated_quran_chunks": 484,
+    "estimated_total_minutes": 124.5,
+    "estimated_total_hours": 2.07
+  },
+  {
+    "model": "qwen2.5:7b",
+    "chunk_size": 80,
+    "runs": 3,
+    "avg_seconds_per_chunk": 12.964,
+    "avg_quality_score": 0.983,
+    "json_valid_rate": 1.0,
+    "avg_entities": 4.67,
+    "avg_relations": 3.67,
+    "estimated_quran_chunks": 968,
+    "estimated_total_minutes": 209.2,
+    "estimated_total_hours": 3.49
+  },
+  {
+    "model": "llama3.2:3b",
+    "chunk_size": 160,
+    "runs": 2,
+    "avg_seconds_per_chunk": 4.675,
+    "avg_quality_score": 0.792,
+    "json_valid_rate": 1.0,
+    "avg_entities": 1,
+    "avg_relations": 2.5,
+    "estimated_quran_chunks": 484,
+    "estimated_total_minutes": 37.7,
+    "estimated_total_hours": 0.63
+  },
+  {
+    "model": "llama3.2:3b",
+    "chunk_size": 80,
+    "runs": 3,
+    "avg_seconds_per_chunk": 4.067,
+    "avg_quality_score": 0.767,
+    "json_valid_rate": 1.0,
+    "avg_entities": 1,
+    "avg_relations": 1,
+    "estimated_quran_chunks": 968,
+    "estimated_total_minutes": 65.6,
+    "estimated_total_hours": 1.09
+  }
+]
