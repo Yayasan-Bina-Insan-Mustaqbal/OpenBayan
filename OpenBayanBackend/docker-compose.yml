@@ -9,18 +9,19 @@ services:
   surrealdb:
     image: surrealdb/surrealdb:latest
     container_name: bayan_surrealdb
+    user: root
     restart: unless-stopped
     ports:
       - "8000:8000"
     # Starts SurrealDB with file persistence and root credentials
-    command: start --log trace --user root --pass root file://data/database.db
+    command: start --log trace --user root --pass root surrealkv:/data/database.db
     volumes:
       - surreal_data:/data
     networks:
       - bayan_network
 
   # ---------------------------------------------------------
-  # 2. PREFECT SERVER (The Orchestrator)
+  # 2. PREFECT SERVER (The Orchestrator) - DISABLED
   # Manages the scheduling and monitoring of Python AI jobs.
   # ---------------------------------------------------------
   prefect-server:
@@ -37,7 +38,7 @@ services:
       - bayan_network
 
   # ---------------------------------------------------------
-  # 3. PYTHON WORKER (The AI Factory)
+  # 3. PYTHON WORKER (The AI Factory) - DISABLED
   # Polls Prefect for jobs, runs the AI models, and writes to SurrealDB.
   # ---------------------------------------------------------
   data-worker:
@@ -61,6 +62,7 @@ services:
       - surrealdb
     networks:
       - bayan_network
+
 
 volumes:
   surreal_data:
