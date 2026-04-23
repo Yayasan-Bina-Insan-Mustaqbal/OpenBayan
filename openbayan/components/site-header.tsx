@@ -9,10 +9,11 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 
 const menuItems = [
-  { name: "Workspace", href: "/#workspace" },
+  { name: "Search", href: "/#features" },
+  { name: "Connections", href: "/#connections" },
   { name: "Pipeline", href: "/#pipeline" },
-  { name: "Search", href: "/#search" },
-  { name: "Taxonomy", href: "/#taxonomy" },
+  { name: "Sahifah", href: "/#sahifah" },
+  { name: "Future", href: "/#future" },
 ]
 
 export function SiteHeader() {

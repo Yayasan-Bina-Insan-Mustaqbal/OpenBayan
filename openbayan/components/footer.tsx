@@ -7,19 +7,23 @@ const links = [
         items: [
             {
                 title: 'Search',
-                href: '/#search',
+                href: '/#features',
+            },
+            {
+                title: 'Connections',
+                href: '/#connections',
             },
             {
                 title: 'Pipeline',
                 href: '/#pipeline',
             },
             {
-                title: 'Taxonomy',
-                href: '/#taxonomy',
+                title: 'Sahifah',
+                href: '/#sahifah',
             },
             {
-                title: 'Dashboard',
-                href: '/dashboard',
+                title: 'Future',
+                href: '/#future',
             },
         ],
     },
@@ -39,7 +43,7 @@ const links = [
                 href: '/#search',
             },
             {
-                title: 'Lexicon',
+                title: 'Arabic Roots',
                 href: '/#search',
             },
         ],
@@ -48,20 +52,20 @@ const links = [
         group: 'Platform',
         items: [
             {
-                title: 'Next.js',
-                href: '/#pipeline',
+                title: 'Semantic Search',
+                href: '/#features',
             },
             {
-                title: 'SurrealDB',
-                href: '/#pipeline',
+                title: 'Knowledge Graph',
+                href: '/#connections',
             },
             {
-                title: 'Prefect',
-                href: '/#pipeline',
+                title: 'Alamat',
+                href: '/#sahifah',
             },
             {
-                title: 'Quran Foundation',
-                href: '/#taxonomy',
+                title: "Majmu'",
+                href: '/#sahifah',
             },
         ],
     },
@@ -101,8 +105,8 @@ export default function FooterSection() {
                             <Logo />
                         </Link>
                         <p className="max-w-xs text-sm leading-6 text-muted-foreground">
-                            OpenBayan is a research workspace for Islamic texts, hybrid search,
-                            Arabic roots, notebooks, and scholar review.
+                            OpenBayan is an unbiased semantic search workspace for multi-source
+                            Islamic knowledge, rich connections, alamat, majmu&apos;, and sahifah.
                         </p>
                     </div>
 

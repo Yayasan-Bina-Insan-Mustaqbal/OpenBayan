@@ -1,0 +1,54 @@
+.card-swap-container {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  transform: translate(5%, 20%);
+  transform-origin: bottom right;
+  perspective: 900px;
+  overflow: visible;
+}
+
+.rich-connection-stack .card-swap-container {
+  bottom: 8rem;
+  left: 3rem;
+  right: auto;
+  transform: translate(0, 0);
+}
+
+.card-swap-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--card-foreground);
+  transform-style: preserve-3d;
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+@media (max-width: 768px) {
+  .card-swap-container {
+    transform: scale(0.78) translate(22%, 25%);
+  }
+
+  .rich-connection-stack .card-swap-container {
+    bottom: 6rem;
+    left: 2rem;
+    transform: scale(0.78) translate(0, 0);
+  }
+}
+
+@media (max-width: 480px) {
+  .card-swap-container {
+    transform: scale(0.62) translate(24%, 28%);
+  }
+
+  .rich-connection-stack .card-swap-container {
+    bottom: 5rem;
+    left: 1rem;
+    transform: scale(0.62) translate(0, 0);
+  }
+}
