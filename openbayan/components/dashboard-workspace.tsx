@@ -2,9 +2,11 @@
 
 import * as React from "react"
 import { AnimatePresence, motion } from "motion/react"
+import { useIsMobile } from "@/hooks/use-mobile"
 import {
   IconBook,
   IconFileText,
+  IconLayoutSidebarRight,
   IconX,
 } from "@tabler/icons-react"
 
@@ -100,6 +102,7 @@ function getFile(path: string): EditorFile {
 }
 
 export function DashboardWorkspace({ user }: DashboardWorkspaceProps) {
+  const isMobile = useIsMobile()
   const [openFiles, setOpenFiles] = React.useState<string[]>([
     "components/ui/button.tsx",
     "app/page.tsx",
@@ -110,6 +113,44 @@ export function DashboardWorkspace({ user }: DashboardWorkspaceProps) {
     "README.md",
   ])
   const [rightActiveFile, setRightActiveFile] = React.useState("README.md")
+  const [showRightPane, setShowRightPane] = React.useState(true)
+  const [savedRightFiles, setSavedRightFiles] = React.useState<{files: string[], active: string} | null>(null)
+
+  function toggleRightPane() {
+    if (showRightPane) {
+      setSavedRightFiles({ files: rightOpenFiles, active: rightActiveFile })
+      setOpenFiles((prev) => Array.from(new Set([...prev, ...rightOpenFiles])))
+      setRightOpenFiles([])
+      setShowRightPane(false)
+    } else {
+      if (savedRightFiles && savedRightFiles.files.length > 0) {
+        setRightOpenFiles(savedRightFiles.files)
+        setRightActiveFile(savedRightFiles.active)
+        setOpenFiles((prev) => prev.filter((f) => !savedRightFiles.files.includes(f)))
+        if (savedRightFiles.files.includes(activeFile)) {
+          setActiveFile((prev) => {
+            const remaining = openFiles.filter((f) => !savedRightFiles.files.includes(f))
+            return remaining.length > 0 ? remaining[0] : "app/page.tsx"
+          })
+        }
+      } else {
+        setRightOpenFiles(["README.md"])
+        setRightActiveFile("README.md")
+      }
+      setShowRightPane(true)
+      setSavedRightFiles(null)
+    }
+  }
+
+  function openRightFile(path: string) {
+    if (!showRightPane) {
+      setShowRightPane(true)
+    }
+    setRightOpenFiles((current) =>
+      current.includes(path) ? current : [...current, path]
+    )
+    setRightActiveFile(path)
+  }
 
   function openFile(path: string) {
     setOpenFiles((current) =>
@@ -163,7 +204,7 @@ export function DashboardWorkspace({ user }: DashboardWorkspaceProps) {
 
   return (
     <SidebarProvider>
-      <AppSidebar activeFile={activeFile} onOpenFile={openFile} />
+      <AppSidebar activeFile={activeFile} onOpenFile={openFile} onOpenRightFile={openRightFile} />
       <SidebarInset className="min-h-svh">
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ms-1" />
@@ -192,33 +233,39 @@ export function DashboardWorkspace({ user }: DashboardWorkspaceProps) {
 
         <section className="min-h-0 flex-1 p-3">
           <ResizablePanelGroup
-            orientation="horizontal"
+            orientation={isMobile ? "vertical" : "horizontal"}
             className="h-[calc(100svh-5.5rem)] min-h-[560px] rounded-lg border bg-background"
           >
-            <ResizablePanel defaultSize={50} minSize={20} className="min-w-0 overflow-hidden">
+            <ResizablePanel defaultSize={showRightPane ? 50 : 100} minSize={20} className="min-w-0 overflow-hidden">
               <EditorTabs
                 activeFile={activeFile}
                 openFiles={openFiles}
                 onSelectFile={setActiveFile}
                 onCloseFile={closeFile}
+                onToggleRightPane={toggleRightPane}
+                isRightPaneVisible={showRightPane}
               />
             </ResizablePanel>
-            <ResizableHandle
-              withHandle
-              className="w-2 bg-border/70 transition-colors hover:bg-primary/40 after:w-3"
-            />
-            <ResizablePanel
-              defaultSize={50}
-              minSize={20}
-              className="min-w-0 overflow-hidden"
-            >
-              <EditorTabs
-                activeFile={rightActiveFile}
-                openFiles={rightOpenFiles}
-                onSelectFile={setRightActiveFile}
-                onCloseFile={rightCloseFile}
-              />
-            </ResizablePanel>
+            {showRightPane && (
+              <>
+                <ResizableHandle
+                  withHandle
+                  className="w-2 bg-border/70 transition-colors hover:bg-primary/40 after:w-3"
+                />
+                <ResizablePanel
+                  defaultSize={50}
+                  minSize={20}
+                  className="min-w-0 overflow-hidden"
+                >
+                  <EditorTabs
+                    activeFile={rightActiveFile}
+                    openFiles={rightOpenFiles}
+                    onSelectFile={setRightActiveFile}
+                    onCloseFile={rightCloseFile}
+                  />
+                </ResizablePanel>
+              </>
+            )}
           </ResizablePanelGroup>
         </section>
       </SidebarInset>
@@ -231,11 +278,15 @@ function EditorTabs({
   openFiles,
   onSelectFile,
   onCloseFile,
+  onToggleRightPane,
+  isRightPaneVisible,
 }: {
   activeFile: string
   openFiles: string[]
   onSelectFile: (file: string) => void
   onCloseFile: (file: string) => void
+  onToggleRightPane?: () => void
+  isRightPaneVisible?: boolean
 }) {
   return (
     <Tabs value={activeFile} onValueChange={onSelectFile} className="h-full gap-0">
@@ -273,6 +324,18 @@ function EditorTabs({
             )
           })}
         </TabsList>
+        {onToggleRightPane && (
+          <div className="ml-auto flex items-center mb-1">
+            <button
+              type="button"
+              onClick={onToggleRightPane}
+              className="p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground rounded-sm transition-colors"
+              title={isRightPaneVisible ? "Hide second pane" : "Show second pane"}
+            >
+              <IconLayoutSidebarRight size={18} />
+            </button>
+          </div>
+        )}
       </div>
 
       {openFiles.map((path) => {

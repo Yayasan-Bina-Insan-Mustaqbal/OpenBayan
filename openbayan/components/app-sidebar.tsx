@@ -22,7 +22,7 @@ import {
   SidebarMenuSub,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { IconFile, IconChevronRight, IconFolder } from "@tabler/icons-react"
+import { IconFile, IconChevronRight, IconFolder, IconLayoutSidebarRight } from "@tabler/icons-react"
 
 type TreeItem = string | [string, ...TreeItem[]]
 
@@ -92,11 +92,13 @@ const data = {
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
   activeFile?: string
   onOpenFile?: (file: string) => void
+  onOpenRightFile?: (file: string) => void
 }
 
 export function AppSidebar({
   activeFile,
   onOpenFile,
+  onOpenRightFile,
   ...props
 }: AppSidebarProps) {
   return (
@@ -110,16 +112,24 @@ export function AppSidebar({
               {data.changes.map((item, index) => (
                 <SidebarMenuItem key={index}>
                   <motion.div variants={rowVariants}>
-                    <SidebarMenuButton
-                      isActive={activeFile === item.file}
-                      className="transition-[background-color,transform] duration-150 ease-out hover:translate-x-0.5 active:scale-[0.99]"
-                      onClick={() => onOpenFile?.(item.file)}
-                    >
-                      <IconFile
-                      />
-                      {item.file}
-                    </SidebarMenuButton>
-                    <SidebarMenuBadge>{item.state}</SidebarMenuBadge>
+                    <div className="group flex items-center relative w-full">
+                      <SidebarMenuButton
+                        isActive={activeFile === item.file}
+                        className="transition-[background-color,transform] duration-150 ease-out hover:translate-x-0.5 active:scale-[0.99] pr-8"
+                        onClick={() => onOpenFile?.(item.file)}
+                      >
+                        <IconFile />
+                        {item.file}
+                      </SidebarMenuButton>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onOpenRightFile?.(item.file) }}
+                        className="absolute right-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 hover:bg-muted text-muted-foreground p-1 rounded-sm transition-opacity z-10"
+                        title="Open to the Side"
+                      >
+                        <IconLayoutSidebarRight size={14} />
+                      </button>
+                      <SidebarMenuBadge>{item.state}</SidebarMenuBadge>
+                    </div>
                   </motion.div>
                 </SidebarMenuItem>
               ))}
@@ -138,6 +148,7 @@ export function AppSidebar({
                   item={item}
                   activeFile={activeFile}
                   onOpenFile={onOpenFile}
+                  onOpenRightFile={onOpenRightFile}
                 />
               ))}
             </SidebarMenu>
@@ -154,11 +165,13 @@ function Tree({
   item,
   activeFile,
   onOpenFile,
+  onOpenRightFile,
   parentPath = "",
 }: {
   item: TreeItem
   activeFile?: string
   onOpenFile?: (file: string) => void
+  onOpenRightFile?: (file: string) => void
   parentPath?: string
 }) {
   const [name, ...items] = Array.isArray(item) ? item : [item]
@@ -169,15 +182,23 @@ function Tree({
     return (
       <SidebarMenuItem>
         <motion.div variants={rowVariants}>
-          <SidebarMenuButton
-            isActive={activeFile === path}
-            className="transition-[background-color,transform] duration-150 ease-out hover:translate-x-0.5 active:scale-[0.99] data-[active=true]:bg-transparent"
-            onClick={() => onOpenFile?.(path)}
-          >
-            <IconFile
-            />
-            {name}
-          </SidebarMenuButton>
+          <div className="group flex items-center relative w-full">
+            <SidebarMenuButton
+              isActive={activeFile === path}
+              className="transition-[background-color,transform] duration-150 ease-out hover:translate-x-0.5 active:scale-[0.99] data-[active=true]:bg-transparent pr-8"
+              onClick={() => onOpenFile?.(path)}
+            >
+              <IconFile />
+              {name}
+            </SidebarMenuButton>
+            <button
+              onClick={(e) => { e.stopPropagation(); onOpenRightFile?.(path) }}
+              className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 hover:bg-muted text-muted-foreground p-1 rounded-sm transition-opacity z-10"
+              title="Open to the Side"
+            >
+              <IconLayoutSidebarRight size={14} />
+            </button>
+          </div>
         </motion.div>
       </SidebarMenuItem>
     )
@@ -222,6 +243,7 @@ function Tree({
                       item={subItem}
                       activeFile={activeFile}
                       onOpenFile={onOpenFile}
+                      onOpenRightFile={onOpenRightFile}
                       parentPath={path}
                     />
                   ))}
