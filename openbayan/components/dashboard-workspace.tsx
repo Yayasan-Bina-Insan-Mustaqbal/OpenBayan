@@ -35,6 +35,19 @@ import {
 } from "@/components/ui/sidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
+import dynamic from "next/dynamic"
+
+const BlockNoteEditor = dynamic(() => import("@/components/blocknote-editor"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full w-full items-center justify-center bg-muted/5">
+      <div className="flex flex-col items-center gap-2">
+        <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <span className="text-xs text-muted-foreground">Initializing Sahifah...</span>
+      </div>
+    </div>
+  ),
+})
 
 type AccountUser = {
   name?: string | null
@@ -422,14 +435,8 @@ function EditorTabs({
                     {file.summary}
                   </p>
                 </div>
-                <div className="min-h-0 flex-1 overflow-auto p-5">
-                  <div className="mx-auto max-w-3xl rounded-lg border bg-card p-5">
-                    <div className="flex flex-col gap-4 font-mono text-sm leading-7">
-                      {file.content.map((line, index) => (
-                        <p key={index}>{line}</p>
-                      ))}
-                    </div>
-                  </div>
+                <div className="min-h-0 flex-1 overflow-auto">
+                  <BlockNoteEditor initialContent={file.content} />
                 </div>
               </motion.div>
             </AnimatePresence>
