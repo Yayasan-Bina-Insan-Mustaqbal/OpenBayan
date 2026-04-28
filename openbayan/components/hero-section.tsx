@@ -376,13 +376,13 @@ function ConnectionsSection() {
       <div className="mx-auto grid max-w-6xl gap-10 px-6 lg:grid-cols-[1.08fr_0.92fr] lg:items-center">
         <div className="rich-connection-stack relative min-h-[560px] overflow-hidden rounded-lg">
           <CardSwap
-            width={360}
-            height={260}
-            cardDistance={52}
-            verticalDistance={58}
-            delay={4200}
+            width={340}
+            height={240}
+            cardDistance={24}
+            verticalDistance={-32}
+            delay={4500}
             onCardClick={() => undefined}
-            skewAmount={0}
+            skewAmount={3}
             easing="elastic"
           >
             <SwapCard className="p-5 shadow-2xl">
@@ -452,19 +452,8 @@ function PipelineSection() {
   }, [])
 
   return (
-    <AnimatedSection id="pipeline" className="bg-background py-16 md:py-24 [content-visibility:auto] [contain-intrinsic-size:1px_600px]">
-      <div className="mx-auto grid max-w-6xl gap-10 px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-        <div>
-          <SectionLabel icon={IconBrain}>Custom processing pipeline</SectionLabel>
-          <h2 className="mt-4 text-3xl font-semibold md:text-4xl">
-            Each source are prepared with a pipeline shaped for that text.
-          </h2>
-          <p className="mt-4 text-lg leading-8 text-muted-foreground">
-            A Qur&apos;an corpus, hadith collection, tafsir, fiqh book, or modern work may need
-            different cleaning, segmentation, translation, entity extraction, and graph rules.
-          </p>
-        </div>
-
+    <AnimatedSection id="pipeline" className="border-y bg-muted/25 py-16 md:py-24 [content-visibility:auto] [contain-intrinsic-size:1px_600px]">
+      <div className="mx-auto grid max-w-6xl gap-10 px-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
         <div>
           <Tabs value={activePipelineTab} onValueChange={setActivePipelineTab} className="w-full gap-5">
             <TabsList className="flex min-h-12 w-full flex-wrap items-stretch justify-start gap-1.5 p-1.5">
@@ -497,6 +486,17 @@ function PipelineSection() {
               </AnimatePresence>
             </TabsContent>
           </Tabs>
+        </div>
+
+        <div>
+          <SectionLabel icon={IconBrain}>Custom processing pipeline</SectionLabel>
+          <h2 className="mt-4 text-3xl font-semibold md:text-4xl">
+            Each source are prepared with a pipeline shaped for that text.
+          </h2>
+          <p className="mt-4 text-lg leading-8 text-muted-foreground">
+            A Qur&apos;an corpus, hadith collection, tafsir, fiqh book, or modern work may need
+            different cleaning, segmentation, translation, entity extraction, and graph rules.
+          </p>
         </div>
       </div>
     </AnimatedSection>
@@ -831,9 +831,9 @@ export default function HeroSection() {
         </section>
 
         <SearchSourceSection />
-        <ConnectionsSection />
+        {/* <ConnectionsSection /> */}
         <PipelineSection />
-        <SahifahSection />
+        {/* <SahifahSection /> */}
         <FutureSection />
       </main>
     </>
