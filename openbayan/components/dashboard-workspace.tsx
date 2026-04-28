@@ -5,10 +5,13 @@ import { AnimatePresence, motion } from "motion/react"
 import { useIsMobile } from "@/hooks/use-mobile"
 import {
   IconBook,
+  IconChevronRight,
   IconFileText,
   IconLayoutSidebarRight,
   IconX,
 } from "@tabler/icons-react"
+
+import { HeroBackground } from "@/components/hero-background"
 
 import { AccountMenu } from "@/components/account-menu"
 import { AppSidebar } from "@/components/app-sidebar"
@@ -205,36 +208,45 @@ export function DashboardWorkspace({ user }: DashboardWorkspaceProps) {
   return (
     <SidebarProvider>
       <AppSidebar activeFile={activeFile} onOpenFile={openFile} onOpenRightFile={openRightFile} />
-      <SidebarInset className="min-h-svh">
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ms-1" />
-          <Separator
-            orientation="vertical"
-            className="me-2 data-vertical:h-4 data-vertical:self-auto"
-          />
-          <Breadcrumb>
-            <BreadcrumbList>
-              {breadcrumbParts.map((part, index) => (
-                <React.Fragment key={`${part}-${index}`}>
-                  {index > 0 ? (
-                    <BreadcrumbSeparator className="hidden md:block" />
-                  ) : null}
-                  <BreadcrumbItem className={index === 0 ? "hidden md:block" : ""}>
-                    <BreadcrumbPage>{part}</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </React.Fragment>
-              ))}
-            </BreadcrumbList>
-          </Breadcrumb>
-          <div className="ms-auto">
-            <AccountMenu user={user} />
+      <SidebarInset className="relative min-h-svh bg-muted/15">
+        <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
+          <HeroBackground />
+        </div>
+        <header className="relative z-10 flex flex-col shrink-0 bg-background/80 backdrop-blur">
+          <div className="flex h-14 items-center gap-2 border-b border-dashed px-4">
+            <SidebarTrigger className="-ms-1" />
+            <Separator
+              orientation="vertical"
+              className="me-2 border-dashed data-vertical:h-4 data-vertical:self-auto"
+            />
+            <div className="ms-auto">
+              <AccountMenu user={user} />
+            </div>
+          </div>
+          <div className="flex h-10 items-center gap-2 border-b border-dashed bg-muted/5 px-4 text-[11px] text-muted-foreground">
+            <Breadcrumb>
+              <BreadcrumbList className="gap-1.5">
+                {breadcrumbParts.map((part, index) => (
+                  <React.Fragment key={`${part}-${index}`}>
+                    {index > 0 ? (
+                      <BreadcrumbSeparator className="hidden md:block">
+                        <IconChevronRight className="size-3" />
+                      </BreadcrumbSeparator>
+                    ) : null}
+                    <BreadcrumbItem className={index === 0 ? "hidden md:block" : ""}>
+                      <BreadcrumbPage className={cn("text-[11px]", index === breadcrumbParts.length - 1 && "text-foreground")}>{part}</BreadcrumbPage>
+                    </BreadcrumbItem>
+                  </React.Fragment>
+                ))}
+              </BreadcrumbList>
+            </Breadcrumb>
           </div>
         </header>
 
-        <section className="min-h-0 flex-1 p-3">
+        <section className="relative z-10 min-h-0 flex-1 p-3">
           <ResizablePanelGroup
             orientation={isMobile ? "vertical" : "horizontal"}
-            className="h-[calc(100svh-5.5rem)] min-h-[560px] rounded-lg border bg-background"
+            className="h-[calc(100svh-5.5rem)] min-h-[560px] rounded-lg border border-dashed bg-background/95 backdrop-blur shadow-sm"
           >
             <ResizablePanel
               defaultSize={showRightPane ? 50 : 100}
@@ -322,7 +334,7 @@ function EditorTabs({
 }) {
   return (
     <Tabs value={activeFile} onValueChange={onSelectFile} className="h-full gap-0">
-      <div className="flex min-h-10 items-end border-b bg-muted/30 px-2">
+      <div className="flex min-h-10 items-end border-b border-dashed bg-muted/20 px-2">
         <TabsList
           variant="line"
           className="h-10 gap-1 overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden"
@@ -347,9 +359,9 @@ function EditorTabs({
               >
                 <TabsTrigger
                   value={path}
-                  className="h-9 min-w-32 justify-start px-3 pe-8 text-xs"
+                  className="h-9 min-w-32 justify-start px-3 pe-8 text-xs data-[state=active]:bg-background data-[state=active]:rounded-t-md data-[state=active]:border data-[state=active]:border-b-0"
                 >
-                  <IconFileText data-icon="inline-start" />
+                  <IconFileText data-icon="inline-start" className={cn("size-3.5", activeFile === path && "text-primary")} />
                   <span className="truncate">{file.title}</span>
                 </TabsTrigger>
                 <button
