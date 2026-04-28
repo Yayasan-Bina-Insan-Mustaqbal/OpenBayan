@@ -5,9 +5,6 @@ import { AnimatePresence, motion } from "motion/react"
 import {
   IconBook,
   IconFileText,
-  IconGitBranch,
-  IconSearch,
-  IconTerminal2,
   IconX,
 } from "@tabler/icons-react"
 
@@ -109,6 +106,11 @@ export function DashboardWorkspace({ user }: DashboardWorkspaceProps) {
   ])
   const [activeFile, setActiveFile] = React.useState("components/ui/button.tsx")
 
+  const [rightOpenFiles, setRightOpenFiles] = React.useState<string[]>([
+    "README.md",
+  ])
+  const [rightActiveFile, setRightActiveFile] = React.useState("README.md")
+
   function openFile(path: string) {
     setOpenFiles((current) =>
       current.includes(path) ? current : [...current, path]
@@ -130,6 +132,26 @@ export function DashboardWorkspace({ user }: DashboardWorkspaceProps) {
           nextFiles[Math.min(closedIndex, nextFiles.length - 1)] ?? nextFiles[0]
 
         setActiveFile(nextActive)
+      }
+
+      return nextFiles
+    })
+  }
+
+  function rightCloseFile(path: string) {
+    setRightOpenFiles((current) => {
+      if (current.length === 1) {
+        return current
+      }
+
+      const nextFiles = current.filter((file) => file !== path)
+
+      if (rightActiveFile === path) {
+        const closedIndex = current.indexOf(path)
+        const nextActive =
+          nextFiles[Math.min(closedIndex, nextFiles.length - 1)] ?? nextFiles[0]
+
+        setRightActiveFile(nextActive)
       }
 
       return nextFiles
@@ -173,32 +195,29 @@ export function DashboardWorkspace({ user }: DashboardWorkspaceProps) {
             orientation="horizontal"
             className="h-[calc(100svh-5.5rem)] min-h-[560px] rounded-lg border bg-background"
           >
-            <ResizablePanel defaultSize={65} minSize={20} className="min-w-0 overflow-hidden">
-              <ResizablePanelGroup orientation="vertical">
-                <ResizablePanel defaultSize={72} minSize={35} className="min-w-0 overflow-hidden">
-                  <EditorTabs
-                    activeFile={activeFile}
-                    openFiles={openFiles}
-                    onSelectFile={setActiveFile}
-                    onCloseFile={closeFile}
-                  />
-                </ResizablePanel>
-                <ResizableHandle withHandle />
-                <ResizablePanel defaultSize={28} minSize={16} className="min-w-0 overflow-hidden">
-                  <BottomPanel activeFile={activeFile} />
-                </ResizablePanel>
-              </ResizablePanelGroup>
+            <ResizablePanel defaultSize={50} minSize={20} className="min-w-0 overflow-hidden">
+              <EditorTabs
+                activeFile={activeFile}
+                openFiles={openFiles}
+                onSelectFile={setActiveFile}
+                onCloseFile={closeFile}
+              />
             </ResizablePanel>
             <ResizableHandle
               withHandle
               className="w-2 bg-border/70 transition-colors hover:bg-primary/40 after:w-3"
             />
             <ResizablePanel
-              defaultSize={35}
-              minSize={16}
+              defaultSize={50}
+              minSize={20}
               className="min-w-0 overflow-hidden"
             >
-              <InspectorPanel file={active} />
+              <EditorTabs
+                activeFile={rightActiveFile}
+                openFiles={rightOpenFiles}
+                onSelectFile={setRightActiveFile}
+                onCloseFile={rightCloseFile}
+              />
             </ResizablePanel>
           </ResizablePanelGroup>
         </section>
@@ -298,54 +317,3 @@ function EditorTabs({
   )
 }
 
-function InspectorPanel({ file }: { file: EditorFile }) {
-  return (
-    <aside className="flex h-full flex-col">
-      <div className="border-b px-4 py-3">
-        <div className="text-sm font-medium">Inspector</div>
-        <div className="mt-1 truncate text-xs text-muted-foreground">
-          {file.path}
-        </div>
-      </div>
-      <div className="flex flex-1 flex-col gap-3 overflow-auto p-4 text-sm">
-        <div className="rounded-lg border bg-card p-3">
-          <div className="text-xs text-muted-foreground">Type</div>
-          <div className="mt-1 font-medium capitalize">{file.kind}</div>
-        </div>
-        <div className="rounded-lg border bg-card p-3">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <IconSearch />
-            Search context
-          </div>
-          <p className="mt-2 text-muted-foreground">
-            Placeholder for source matches, roots, entities, and saved alamat.
-          </p>
-        </div>
-        <div className="rounded-lg border bg-card p-3">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <IconGitBranch />
-            Connections
-          </div>
-          <p className="mt-2 text-muted-foreground">
-            Graph links will appear here once research data is connected.
-          </p>
-        </div>
-      </div>
-    </aside>
-  )
-}
-
-function BottomPanel({ activeFile }: { activeFile: string }) {
-  return (
-    <div className="flex h-full flex-col">
-      <div className="flex h-10 items-center gap-2 border-b px-4 text-xs font-medium">
-        <IconTerminal2 />
-        Panel
-      </div>
-      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-auto p-4 text-sm text-muted-foreground">
-        <p>Active file: {activeFile}</p>
-        <p>Use this area later for logs, source previews, search results, or notes.</p>
-      </div>
-    </div>
-  )
-}

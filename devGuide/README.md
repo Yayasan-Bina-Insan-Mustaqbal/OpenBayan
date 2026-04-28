@@ -21,6 +21,7 @@ Welcome to the OpenBayan developer documentation. This directory contains detail
 - [Hybrid Vector Search](database/backend_surrealdb_hybrid_search.md) — BM25 + semantic vector search implementation.
 - [NextAuth Integration](database/backend_surrealdb_nextauth_integration.md) — Session management with SurrealDB.
 - [Deployment & Worker Boundaries](database/backend_surrealdb_deployment.md) — Service boundaries for the full stack.
+- [Default Development Accounts](database/default_accounts.md) — Default credentials for seeded users.
 
 ### 🧠 AI & Knowledge Graph
 - [Data Pipeline: Prefect Flows](ai-knowledge/data_pipeline_prefect_flows.md) — Orchestrating Arabic text ingestion and embedding generation.
