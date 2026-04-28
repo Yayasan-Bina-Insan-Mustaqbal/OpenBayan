@@ -323,7 +323,15 @@ function EditorTabs({
   return (
     <Tabs value={activeFile} onValueChange={onSelectFile} className="h-full gap-0">
       <div className="flex min-h-10 items-end border-b bg-muted/30 px-2">
-        <TabsList variant="line" className="h-10 gap-1 overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden">
+        <TabsList
+          variant="line"
+          className="h-10 gap-1 overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden"
+          onWheel={(e) => {
+            if (e.deltaY !== 0 && e.deltaX === 0) {
+              e.currentTarget.scrollLeft += e.deltaY
+            }
+          }}
+        >
           {openFiles.map((path) => {
             const file = getFile(path)
 
