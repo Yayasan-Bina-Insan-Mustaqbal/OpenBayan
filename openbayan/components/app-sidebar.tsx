@@ -112,7 +112,13 @@ export function AppSidebar({
               {data.changes.map((item, index) => (
                 <SidebarMenuItem key={index}>
                   <motion.div variants={rowVariants}>
-                    <div className="group flex items-center relative w-full">
+                    <div
+                      className="group flex items-center relative w-full"
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData("text/plain", item.file)
+                      }}
+                    >
                       <SidebarMenuButton
                         isActive={activeFile === item.file}
                         className="transition-[background-color,transform] duration-150 ease-out hover:translate-x-0.5 active:scale-[0.99] pr-8"
@@ -182,7 +188,13 @@ function Tree({
     return (
       <SidebarMenuItem>
         <motion.div variants={rowVariants}>
-          <div className="group flex items-center relative w-full">
+          <div
+            className="group flex items-center relative w-full"
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.setData("text/plain", path)
+            }}
+          >
             <SidebarMenuButton
               isActive={activeFile === path}
               className="transition-[background-color,transform] duration-150 ease-out hover:translate-x-0.5 active:scale-[0.99] data-[active=true]:bg-transparent pr-8"

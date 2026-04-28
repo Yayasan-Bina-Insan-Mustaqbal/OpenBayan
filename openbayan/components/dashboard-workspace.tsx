@@ -236,8 +236,25 @@ export function DashboardWorkspace({ user }: DashboardWorkspaceProps) {
             orientation={isMobile ? "vertical" : "horizontal"}
             className="h-[calc(100svh-5.5rem)] min-h-[560px] rounded-lg border bg-background"
           >
-            <ResizablePanel defaultSize={showRightPane ? 50 : 100} minSize={20} className="min-w-0 overflow-hidden">
+            <ResizablePanel
+              defaultSize={showRightPane ? 50 : 100}
+              minSize={20}
+              className="min-w-0 overflow-hidden"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault()
+                const path = e.dataTransfer.getData("text/plain")
+                const sourcePane = e.dataTransfer.getData("application/x-tab-source")
+                if (path) {
+                  if (sourcePane === "right") {
+                    rightCloseFile(path)
+                  }
+                  openFile(path)
+                }
+              }}
+            >
               <EditorTabs
+                paneId="left"
                 activeFile={activeFile}
                 openFiles={openFiles}
                 onSelectFile={setActiveFile}
@@ -256,8 +273,21 @@ export function DashboardWorkspace({ user }: DashboardWorkspaceProps) {
                   defaultSize={50}
                   minSize={20}
                   className="min-w-0 overflow-hidden"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    const path = e.dataTransfer.getData("text/plain")
+                    const sourcePane = e.dataTransfer.getData("application/x-tab-source")
+                    if (path) {
+                      if (sourcePane === "left") {
+                        closeFile(path)
+                      }
+                      openRightFile(path)
+                    }
+                  }}
                 >
                   <EditorTabs
+                    paneId="right"
                     activeFile={rightActiveFile}
                     openFiles={rightOpenFiles}
                     onSelectFile={setRightActiveFile}
@@ -274,6 +304,7 @@ export function DashboardWorkspace({ user }: DashboardWorkspaceProps) {
 }
 
 function EditorTabs({
+  paneId,
   activeFile,
   openFiles,
   onSelectFile,
@@ -281,6 +312,7 @@ function EditorTabs({
   onToggleRightPane,
   isRightPaneVisible,
 }: {
+  paneId: string
   activeFile: string
   openFiles: string[]
   onSelectFile: (file: string) => void
@@ -291,12 +323,20 @@ function EditorTabs({
   return (
     <Tabs value={activeFile} onValueChange={onSelectFile} className="h-full gap-0">
       <div className="flex min-h-10 items-end border-b bg-muted/30 px-2">
-        <TabsList variant="line" className="h-10 gap-1 overflow-x-auto">
+        <TabsList variant="line" className="h-10 gap-1 overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden">
           {openFiles.map((path) => {
             const file = getFile(path)
 
             return (
-              <div key={path} className="group/tab relative flex">
+              <div
+                key={path}
+                className="group/tab relative flex shrink-0"
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData("text/plain", path)
+                  e.dataTransfer.setData("application/x-tab-source", paneId)
+                }}
+              >
                 <TabsTrigger
                   value={path}
                   className="h-9 min-w-32 justify-start px-3 pe-8 text-xs"
