@@ -24,6 +24,7 @@ import { LogoIcon } from "@/components/logo"
 import { SiteHeader } from "@/components/site-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { HeroBackground } from "@/components/hero-background"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
@@ -628,17 +629,12 @@ export default function HeroSection() {
 
       <main className="overflow-hidden">
         <section className="relative overflow-hidden border-b">
-          {/* <div
+          <div
             aria-hidden="true"
-            className="absolute inset-x-0 -top-40 h-[900px] opacity-35"
+            className="absolute inset-0 z-0"
           >
-            <Threads
-              color={[0.32, 0.15, 1]}
-              amplitude={1.6}
-              distance={0}
-              enableMouseInteraction
-            />
-          </div> */}
+            <HeroBackground />
+          </div>
 
           <div className="relative mx-auto max-w-7xl px-6 pb-12 pt-24 md:pb-16 lg:pt-28">
             <motion.div
