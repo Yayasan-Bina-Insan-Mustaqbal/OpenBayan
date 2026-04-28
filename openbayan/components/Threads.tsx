@@ -136,10 +136,19 @@ const Threads: React.FC<ThreadsProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const animationFrameId = useRef<number>(0);
+  const isVisible = useRef<boolean>(true);
 
   useEffect(() => {
     if (!containerRef.current) return;
     const container = containerRef.current;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isVisible.current = entry.isIntersecting;
+      },
+      { threshold: 0 }
+    );
+    observer.observe(container);
 
     const renderer = new Renderer({ alpha: true });
     const gl = renderer.gl;
@@ -194,6 +203,11 @@ const Threads: React.FC<ThreadsProps> = ({
     }
 
     function update(t: number) {
+      if (!isVisible.current) {
+        animationFrameId.current = requestAnimationFrame(update);
+        return;
+      }
+
       if (enableMouseInteraction) {
         const smoothing = 0.05;
         currentMouse[0] += smoothing * (targetMouse[0] - currentMouse[0]);
@@ -212,6 +226,7 @@ const Threads: React.FC<ThreadsProps> = ({
     animationFrameId.current = requestAnimationFrame(update);
 
     return () => {
+      observer.disconnect();
       if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
       window.removeEventListener('resize', resize);
 

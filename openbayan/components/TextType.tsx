@@ -1,10 +1,36 @@
 'use client';
 
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
-import { gsap } from 'gsap';
+import { motion } from 'motion/react';
 import './TextType.css';
 
-const TextType = ({
+interface VariableSpeed {
+  min: number;
+  max: number;
+}
+
+interface TextTypeProps {
+  text: string | string[];
+  typingSpeed?: number;
+  initialDelay?: number;
+  pauseDuration?: number;
+  deletingSpeed?: number;
+  loop?: boolean;
+  className?: string;
+  showCursor?: boolean;
+  hideCursorWhileTyping?: boolean;
+  cursorCharacter?: string;
+  cursorClassName?: string;
+  cursorBlinkDuration?: number;
+  textColors?: string[];
+  variableSpeed?: VariableSpeed;
+  onSentenceComplete?: (text: string, index: number) => void;
+  startOnVisible?: boolean;
+  reverseMode?: boolean;
+  [key: string]: unknown;
+}
+
+const TextType: React.FC<TextTypeProps> = ({
   text,
   typingSpeed = 50,
   initialDelay = 0,
@@ -29,8 +55,7 @@ const TextType = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(!startOnVisible);
-  const cursorRef = useRef(null);
-  const containerRef = useRef(null);
+  const containerRef = useRef<HTMLSpanElement>(null);
 
   const textArray = useMemo(() => (Array.isArray(text) ? text : [text]), [text]);
 
@@ -64,22 +89,9 @@ const TextType = ({
   }, [startOnVisible]);
 
   useEffect(() => {
-    if (showCursor && cursorRef.current) {
-      gsap.set(cursorRef.current, { opacity: 1 });
-      gsap.to(cursorRef.current, {
-        opacity: 0,
-        duration: cursorBlinkDuration,
-        repeat: -1,
-        yoyo: true,
-        ease: 'power2.inOut'
-      });
-    }
-  }, [showCursor, cursorBlinkDuration]);
-
-  useEffect(() => {
     if (!isVisible) return;
 
-    let timeout;
+    let timeout: NodeJS.Timeout;
     const currentText = textArray[currentTextIndex];
     const processedText = reverseMode ? currentText.split('').reverse().join('') : currentText;
 
@@ -97,7 +109,6 @@ const TextType = ({
 
           setCurrentTextIndex(prev => (prev + 1) % textArray.length);
           setCurrentCharIndex(0);
-          timeout = setTimeout(() => {}, pauseDuration);
         } else {
           timeout = setTimeout(() => {
             setDisplayedText(prev => prev.slice(0, -1));
@@ -128,7 +139,6 @@ const TextType = ({
     }
 
     return () => clearTimeout(timeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     currentCharIndex,
     displayedText,
@@ -143,7 +153,8 @@ const TextType = ({
     isVisible,
     reverseMode,
     variableSpeed,
-    onSentenceComplete
+    onSentenceComplete,
+    getRandomSpeed
   ]);
 
   const shouldHideCursor =
@@ -159,12 +170,18 @@ const TextType = ({
         {displayedText}
       </span>
       {showCursor && (
-        <span
-          ref={cursorRef}
+        <motion.span
+          animate={{ opacity: [1, 0] }}
+          transition={{
+            duration: cursorBlinkDuration,
+            repeat: Infinity,
+            repeatType: "reverse",
+            ease: "easeInOut"
+          }}
           className={`text-type__cursor ${cursorClassName} ${shouldHideCursor ? 'text-type__cursor--hidden' : ''}`}
         >
           {cursorCharacter}
-        </span>
+        </motion.span>
       )}
     </span>
   );

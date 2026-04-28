@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useState, type ReactNode } from "react"
+import dynamic from "next/dynamic"
+import { useEffect, useState, type ReactNode } from "react"
 import Link from "next/link"
 import {
   IconArrowRight,
@@ -15,18 +16,58 @@ import {
   IconSearch,
   IconWifiOff,
 } from "@tabler/icons-react"
-import { renderMermaidSVG } from "beautiful-mermaid"
 import { AnimatePresence, motion } from "motion/react"
 
-import CardSwap, { Card as SwapCard } from "@/components/CardSwap"
-import Threads from "@/components/Threads"
-import TextType from "@/components/TextType"
 import { LogoIcon } from "@/components/logo"
 import { SiteHeader } from "@/components/site-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
+import { Card as SwapCard } from "@/components/CardSwap"
+
+const CardSwap = dynamic(() => import("@/components/CardSwap"), {
+  loading: () => <Skeleton className="h-[260px] w-[360px]" />,
+  ssr: false,
+})
+
+const Threads = dynamic(() => import("@/components/Threads"), {
+  loading: () => <div className="h-full w-full bg-muted/10" />,
+  ssr: false,
+})
+
+const TextType = dynamic(() => import("@/components/TextType"), {
+  ssr: false,
+})
+
+const MermaidPipelineDiagram = dynamic(
+  () => import("beautiful-mermaid").then((mod) => {
+    const Component = ({ chart }: { chart: string }) => {
+      const svg = mod.renderMermaidSVG(chart, {
+        bg: "var(--card)",
+        fg: "var(--card-foreground)",
+        accent: "var(--primary)",
+        line: "var(--primary)",
+        muted: "var(--muted-foreground)",
+        surface: "var(--background)",
+        border: "var(--border)",
+        transparent: true,
+      })
+      return (
+        <div
+          className="[&_svg]:h-auto [&_svg]:w-full"
+          dangerouslySetInnerHTML={{ __html: svg ?? "" }}
+        />
+      )
+    }
+    return Component
+  }),
+  {
+    loading: () => <Skeleton className="h-[300px] w-full" />,
+    ssr: false,
+  }
+)
 
 const searchTypingSpeed = 95
 const searchPauseDuration = 1800
@@ -227,45 +268,12 @@ function SectionLabel({
   )
 }
 
-function MermaidPipelineDiagram({ chart }: { chart: string }) {
-  const { svg, error } = useMemo(() => {
-    try {
-      return {
-        svg: renderMermaidSVG(chart, {
-          bg: "var(--card)",
-          fg: "var(--card-foreground)",
-          accent: "var(--primary)",
-          line: "var(--primary)",
-          muted: "var(--muted-foreground)",
-          surface: "var(--background)",
-          border: "var(--border)",
-          transparent: true,
-        }),
-        error: null,
-      }
-    } catch (err) {
-      return { svg: null, error: err instanceof Error ? err : new Error(String(err)) }
-    }
-  }, [chart])
-
-  if (error) {
-    return <pre className="text-sm text-muted-foreground">{error.message}</pre>
-  }
-
-  return (
-    <div
-      className="[&_svg]:h-auto [&_svg]:w-full"
-      dangerouslySetInnerHTML={{ __html: svg ?? "" }}
-    />
-  )
-}
-
 function SearchSourceSection() {
   const [typingScene, setTypingScene] = useState<keyof typeof typingSearchScenes>("arabic")
   const scene = typingSearchScenes[typingScene]
 
   return (
-    <AnimatedSection id="features" className="bg-background py-20 md:py-28">
+    <AnimatedSection id="features" className="bg-background py-20 md:py-28 [content-visibility:auto] [contain-intrinsic-size:1px_720px]">
       <div className="mx-auto grid max-w-6xl gap-10 px-6 lg:grid-cols-[0.88fr_1.12fr] lg:items-start">
         <div className="lg:pt-12">
           <SectionLabel icon={IconLanguage}>Search your way + multi-source knowledge</SectionLabel>
@@ -364,7 +372,7 @@ function SearchSourceSection() {
 
 function ConnectionsSection() {
   return (
-    <AnimatedSection id="connections" className="border-y bg-muted/25 py-16 md:py-24">
+    <AnimatedSection id="connections" className="border-y bg-muted/25 py-16 md:py-24 [content-visibility:auto] [contain-intrinsic-size:1px_600px]">
       <div className="mx-auto grid max-w-6xl gap-10 px-6 lg:grid-cols-[1.08fr_0.92fr] lg:items-center">
         <div className="rich-connection-stack relative min-h-[560px] overflow-hidden rounded-lg">
           <CardSwap
@@ -444,7 +452,7 @@ function PipelineSection() {
   }, [])
 
   return (
-    <AnimatedSection id="pipeline" className="bg-background py-16 md:py-24">
+    <AnimatedSection id="pipeline" className="bg-background py-16 md:py-24 [content-visibility:auto] [contain-intrinsic-size:1px_600px]">
       <div className="mx-auto grid max-w-6xl gap-10 px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
         <div>
           <SectionLabel icon={IconBrain}>Custom processing pipeline</SectionLabel>
@@ -505,7 +513,7 @@ function SahifahSection() {
   }
 
   return (
-    <AnimatedSection id="sahifah" className="border-y bg-muted/25 py-16 md:py-24">
+    <AnimatedSection id="sahifah" className="border-y bg-muted/25 py-16 md:py-24 [content-visibility:auto] [contain-intrinsic-size:1px_600px]">
       <div className="mx-auto grid max-w-6xl gap-10 px-6 lg:grid-cols-[1fr_1fr] lg:items-start">
         <div>
           <SectionLabel icon={IconBookmark}>Save notes + file-based documents</SectionLabel>
@@ -576,7 +584,7 @@ function SahifahSection() {
 
 function FutureSection() {
   return (
-    <AnimatedSection id="future" className="bg-background py-16 md:py-24">
+    <AnimatedSection id="future" className="bg-background py-16 md:py-24 [content-visibility:auto] [contain-intrinsic-size:1px_400px]">
       <div className="mx-auto max-w-6xl px-6">
         <div className="max-w-3xl">
           <SectionLabel icon={IconNotes}>Future direction</SectionLabel>
