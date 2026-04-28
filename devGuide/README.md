@@ -4,26 +4,37 @@ Welcome to the OpenBayan developer documentation. This directory contains detail
 
 ## Available Guides
 
-### Getting Started
-- [Local Development Setup](local_dev_setup.md) — Step-by-step guide to run the full stack locally using Docker. Covers environment variables, schema initialization, and common troubleshooting.
-- [Old Code vs New Code: Porting and Duplication Guide](old_new_code_comparison.md) — Compares the legacy Laravel implementation in `oldCode` with the new React/SurrealDB direction and identifies what should be duplicated or rewritten.
+### 🏗️ Architecture & Setup
+- [Local Development Setup](architecture/local_dev_setup.md) — Step-by-step guide to run the full stack locally using Docker.
+- [Next.js Installation & Configuration](architecture/frontend_nextjs_installation.md) — Bootstrapping Next.js, Dockerizing, and connecting to SurrealDB.
+- [Hybrid Web & Desktop IDE Architecture](architecture/frontend_hybrid_ide_architecture.md) — Deep dive into the Omni-Storage IDE strategy.
 
-### Database
-- [SurrealDB Schema & Knowledge Graph](database_surrealdb_schema.md) — Full SurrealQL table definitions, row-level permissions, and graph relation design for the Sahifah, Faidah, Majmu, and Alamah entities.
-- [Hybrid Vector Search](backend_surrealdb_hybrid_search.md) — Implementing BM25 + semantic vector search with Reciprocal Rank Fusion (RRF) for Arabic Islamic text discovery.
-- [SurrealDB Auth Guide](surrealDB/auth.md) — Record access signup/signin, NextAuth session integration, and server-side SurrealDB token usage.
+### 🖥️ Dashboard (IDE Workspace)
+- [Dashboard Redesign Vision](dashboard/dashboard_redesign.md) — Overview of the VS Code-inspired research environment.
+- [Detailed Workspace Plan](dashboard/dashboard_redesign_vscode_workspace.md) — Technical spec for split panes, tabs, and active pane logic.
+- [Dashboard Todo](dashboard/dashboard_todo.md) — Current implementation checklist and priorities.
 
-### Backend
-- [SurrealDB & NextAuth Integration](backend_surrealdb_nextauth_integration.md) — How Next.js/NextAuth uses SurrealDB record access without a separate API gateway.
-- [SurrealDB Deployment & Worker Boundaries](backend_surrealdb_deployment.md) — Runtime service boundaries for SurrealDB, Next.js, Prefect, and Python workers.
-- [Data Pipeline: Prefect Flows & Arabic NLP](data_pipeline_prefect_flows.md) — The AI Factory: orchestrating Arabic text ingestion, SpaCy segmentation, CamelBERT embedding generation, and SurrealDB graph creation with Prefect.
-- [Pydantic AI for Knowledge Graph](pydantic_ai_knowledge_graph.md) — How to use Pydantic AI, Pydantic Graph, Logfire, Prefect, and SurrealDB together for typed knowledge graph extraction.
-- [Jupyter Notebook Integration Best Practices](jupyter_notebook_integration_best_practices.md) — How notebooks should run inside the Docker-hosted Jupyter service and graduate into Prefect pipeline code.
-- [Jupyter Notebook Integration Best Practices](jupyter_notebook_integration_best_practices.md) — How to structure Docker-hosted Jupyter notebooks that integrate with Prefect, CAMeL Tools, Ollama, and OpenBayan backend services.
+### 💾 Database & Backend
+- [SurrealDB Schema & Knowledge Graph](database/database_surrealdb_schema.md) — Table definitions and graph relation design.
+- [SurrealDB Auth Guide](database/auth.md) — NextAuth integration and record access.
+- [SurrealDB Sign Logic](database/sign.md) — Detailed signing and token usage.
+- [Hybrid Vector Search](database/backend_surrealdb_hybrid_search.md) — BM25 + semantic vector search implementation.
+- [NextAuth Integration](database/backend_surrealdb_nextauth_integration.md) — Session management with SurrealDB.
+- [Deployment & Worker Boundaries](database/backend_surrealdb_deployment.md) — Service boundaries for the full stack.
 
-### Frontend
-- [Next.js Installation & Configuration](frontend_nextjs_installation.md) — Comprehensive guide to bootstrapping Next.js, Dockerizing with Standalone mode, and connecting to SurrealDB.
-- [Hybrid Web & Desktop IDE Architecture](frontend_hybrid_ide_architecture.md) — Deep dive into the Omni-Storage IDE strategy using React, SurrealDB, and Tauri.
+### 🧠 AI & Knowledge Graph
+- [Data Pipeline: Prefect Flows](ai-knowledge/data_pipeline_prefect_flows.md) — Orchestrating Arabic text ingestion and embedding generation.
+- [Pydantic AI for KG](ai-knowledge/pydantic_ai_knowledge_graph.md) — Typed knowledge graph extraction patterns.
+- [Ollama Quran Chunk Benchmark](ai-knowledge/ollama_quran_chunk_benchmark.md) — Benchmarking embedding strategies for Quranic text.
+- [Jupyter Integration Best Practices](ai-knowledge/jupyter_notebook_integration_best_practices.md) — Structuring notebooks for AI research.
+
+### ⚡ Performance & Testing
+- [Performance Optimization](performance-testing/performance_optimization.md) — Strategies for frontend and backend speed.
+- [Playwright & Lighthouse Setup](performance-testing/playwright_lighthouse_setup.md) — Automated testing and performance auditing.
+
+### 📁 Archive
+- [Old vs New Code Comparison](archive/old_new_code_comparison.md) — Guide for porting legacy Laravel features.
+- [Old Code](archive/oldCode/) — Legacy PHP implementation reference.
 
 ---
 

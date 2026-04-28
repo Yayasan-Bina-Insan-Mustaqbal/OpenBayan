@@ -1,7 +1,5 @@
 @contextScopeItemMention@contextScopeItemMention
 
-i want redesign the main dashboard, analyze my intent and make document in dev guide, on what feature to make and how it appear
-
 when user arrive in the dashboard, he is greeted with a vscode like with file explorer in the left side and a "file" is open in full width of the resizable pane
 
 the user can start working on that, the page is a search input
