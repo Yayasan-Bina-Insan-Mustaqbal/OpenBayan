@@ -5,8 +5,10 @@ import { useEffect, useState, type ReactNode } from "react"
 import Link from "next/link"
 import {
   IconArrowRight,
+  IconBook,
   IconBookmark,
   IconBrain,
+  IconChevronRight,
   IconDatabaseSearch,
   IconFileText,
   IconGitBranch,
@@ -32,10 +34,10 @@ const CardSwap = dynamic(() => import("@/components/CardSwap"), {
   ssr: false,
 })
 
-const Threads = dynamic(() => import("@/components/Threads"), {
+/* const Threads = dynamic(() => import("@/components/Threads"), {
   loading: () => <div className="h-full w-full bg-muted/10" />,
   ssr: false,
-})
+}) */
 
 const TextType = dynamic(() => import("@/components/TextType"), {
   ssr: false,
@@ -626,7 +628,7 @@ export default function HeroSection() {
 
       <main className="overflow-hidden">
         <section className="relative overflow-hidden border-b">
-          <div
+          {/* <div
             aria-hidden="true"
             className="absolute inset-x-0 -top-40 h-[900px] opacity-35"
           >
@@ -636,7 +638,7 @@ export default function HeroSection() {
               distance={0}
               enableMouseInteraction
             />
-          </div>
+          </div> */}
 
           <div className="relative mx-auto max-w-7xl px-6 pb-12 pt-24 md:pb-16 lg:pt-28">
             <motion.div
@@ -681,150 +683,140 @@ export default function HeroSection() {
               transition={{ delay: 0.12 }}
               className="relative mx-auto mt-14 max-w-7xl overflow-hidden rounded-lg border bg-card shadow-2xl shadow-muted"
             >
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b bg-muted/35 px-4 py-3">
+              <div className="flex items-center justify-between border-b bg-muted/35 px-4 py-2.5">
                 <div className="flex items-center gap-2">
-                  <LogoIcon />
-                  <span className="text-sm font-medium">OpenBayan Workspace</span>
+                  <div className="flex items-center gap-1.5">
+                    <div className="size-3 rounded-full bg-destructive/50" />
+                    <div className="size-3 rounded-full bg-yellow-500/50" />
+                    <div className="size-3 rounded-full bg-green-500/50" />
+                  </div>
+                  <div className="ms-4 flex items-center gap-2">
+                    <LogoIcon className="size-4" />
+                    <span className="text-xs font-medium text-muted-foreground">OpenBayan Workspace</span>
+                  </div>
                 </div>
-                <div className="hidden items-center gap-2 text-xs text-muted-foreground md:flex">
-                  <span>Search</span>
-                  <span className="h-4 w-px bg-border" />
-                  <span>Graph</span>
-                  <span className="h-4 w-px bg-border" />
-                  <span>Alamat</span>
-                  <span className="h-4 w-px bg-border" />
-                  <span>Sahifah</span>
+                <div className="flex items-center gap-4">
+                  <div className="h-6 w-64 rounded-md border bg-background/50 px-2 flex items-center gap-2">
+                    <IconSearch className="size-3 text-muted-foreground" />
+                    <span className="text-[10px] text-muted-foreground">Search workspace...</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid min-h-[590px] lg:grid-cols-[220px_1fr_300px]">
-                <aside className="hidden border-e bg-muted/20 p-4 lg:block">
-                  <div className="text-xs font-medium uppercase text-muted-foreground">Sources</div>
+              <div className="flex min-h-[620px]">
+                {/* Mock Sidebar */}
+                <aside className="hidden w-64 border-e bg-muted/10 p-4 lg:block">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">Explorer</div>
                   <div className="mt-4 flex flex-col gap-2 text-sm">
-                    {["Qur'an", "Hadith", "Tafsir", "Aqidah", "Fiqh", "Books"].map((source, index) => (
+                    {[
+                      { label: "sources", icon: IconDatabaseSearch },
+                      { label: "sahifah", icon: IconFileText },
+                      { label: "alamat", icon: IconBookmark },
+                      { label: "graph", icon: IconGitBranch },
+                    ].map((item, index) => (
                       <motion.div
-                        key={source}
+                        key={item.label}
                         initial={{ opacity: 0, x: -12 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.22 + index * 0.04 }}
-                        className={cn(
-                          "flex items-center justify-between rounded-md border px-3 py-2",
-                          index === 0 ? "bg-primary text-primary-foreground" : "bg-background"
-                        )}
+                        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
                       >
-                        <span>{source}</span>
-                        <span className={cn("text-xs", index === 0 ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                          on
-                        </span>
+                        <item.icon className="size-4" />
+                        <span className="capitalize">{item.label}</span>
                       </motion.div>
-                    ))}
-                  </div>
-
-                  <div className="mt-7 text-xs font-medium uppercase text-muted-foreground">Input modes</div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {["Arabic", "ID", "EN", "RU", "Translit"].map((mode) => (
-                      <span key={mode} className="rounded-md border bg-background px-2 py-1 text-xs text-muted-foreground">
-                        {mode}
-                      </span>
                     ))}
                   </div>
                 </aside>
 
-                <div className="p-4 md:p-6">
-                  <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.24 }}
-                    className="rounded-lg border bg-background p-3"
-                  >
-                    <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
-                      <IconDatabaseSearch className="size-4" />
-                      mercy in social obligation / رحمة في المعاملة
-                    </div>
-                  </motion.div>
+                <div className="flex flex-1 flex-col">
+                  {/* Mock Breadcrumbs */}
+                  <div className="flex h-10 items-center gap-2 border-b bg-muted/5 px-4 text-[11px] text-muted-foreground">
+                    <span>workspace</span>
+                    <IconChevronRight className="size-3" />
+                    <span>documents</span>
+                    <IconChevronRight className="size-3" />
+                    <span className="text-foreground">qolb-research.sahifah</span>
+                  </div>
 
-                  <div className="mt-5 grid gap-3">
-                    {[
-                      {
-                        title: "Qur'an result",
-                        tag: "source",
-                        body: "Ayat, official translation when available, AI warning when generated, related roots, and nearby semantic matches.",
-                        arabic: "وَرَحْمَتِي وَسِعَتْ كُلَّ شَيْءٍ",
-                      },
-                      {
-                        title: "Hadith and fiqh connection",
-                        tag: "graph",
-                        body: "Related narrations, legal categories, entities, and strong graph edges remain visible beside the source text.",
-                        arabic: "الراحمون يرحمهم الرحمن",
-                      },
-                      {
-                        title: "Alamat capture",
-                        tag: "note",
-                        body: "Save the query, passage, root, entity, or category into majmu' before writing a sahifah.",
-                        arabic: "حفظ الدليل ثم تحرير الفهم",
-                      },
-                    ].map((item, index) => (
-                      <motion.article
-                        key={item.title}
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        whileHover={{ y: -3 }}
-                        transition={{ delay: 0.3 + index * 0.08 }}
-                        className="rounded-lg border bg-card p-4"
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <h2 className="text-sm font-medium">{item.title}</h2>
-                          <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
-                            {item.tag}
-                          </span>
+                  {/* Mock Dual Pane */}
+                  <div className="flex flex-1 overflow-hidden">
+                    <div className="flex flex-1 flex-col border-e">
+                      <div className="flex h-10 items-end border-b bg-muted/20 px-2">
+                        <div className="flex h-9 items-center gap-2 rounded-t-md border border-b-0 bg-background px-3 text-xs">
+                          <IconFileText className="size-3.5 text-primary" />
+                          <span>qolb-research.sahifah</span>
                         </div>
-                        <p className="mt-3 text-sm leading-6 text-muted-foreground">{item.body}</p>
-                        <p dir="rtl" className="mt-4 text-lg leading-9">
-                          {item.arabic}
-                        </p>
-                      </motion.article>
-                    ))}
+                        <div className="flex h-9 items-center gap-2 px-3 text-xs text-muted-foreground">
+                          <IconDatabaseSearch className="size-3.5" />
+                          <span>Al-Baqarah 2:10</span>
+                        </div>
+                      </div>
+                      <div className="flex-1 overflow-auto p-6">
+                        <motion.div
+                          initial={{ opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.24 }}
+                          className="mx-auto max-w-2xl rounded-lg border bg-card p-6 shadow-sm"
+                        >
+                          <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                            <IconBook className="size-3" />
+                            Research Document
+                          </div>
+                          <h3 className="mt-2 text-xl font-semibold">The concept of Qolb</h3>
+                          <div className="mt-6 flex flex-col gap-4 font-mono text-sm leading-7 text-muted-foreground">
+                            <p>{"# Understanding Heart (Qolb)"}</p>
+                            <p>{"Qolb refers to the heart as an inner center of understanding, intention, turning, and faith."}</p>
+                            <div className="rounded-md border bg-muted/30 p-4 font-sans text-foreground">
+                              <p dir="rtl" className="text-right text-lg leading-loose">فِي قُلُوبِهِم مَّرَضٌ</p>
+                              <p className="mt-2 text-xs text-muted-foreground">Al-Baqarah 2:10 - "In their hearts is a disease..."</p>
+                            </div>
+                            <p>{"The connection between qolb and reflection is central to Islamic epistemology."}</p>
+                          </div>
+                        </motion.div>
+                      </div>
+                    </div>
+
+                    <aside className="hidden w-80 flex-col bg-muted/5 lg:flex">
+                      <div className="flex h-10 items-end border-b bg-muted/20 px-2">
+                        <div className="flex h-9 items-center gap-2 rounded-t-md border border-b-0 bg-background px-3 text-xs">
+                          <IconGitBranch className="size-3.5 text-primary" />
+                          <span>Connections</span>
+                        </div>
+                      </div>
+                      <div className="flex-1 p-4">
+                        <div className="grid gap-3">
+                          {[
+                            { label: "Semantic", value: "0.92 correlation" },
+                            { label: "Entity", value: "Qolb (Heart)" },
+                            { label: "Root", value: "q-l-b (ق ل ب)" },
+                          ].map((item, index) => (
+                            <motion.div
+                              key={item.label}
+                              initial={{ opacity: 0, x: 12 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 0.34 + index * 0.06 }}
+                              className="rounded-md border bg-background p-3"
+                            >
+                              <div className="text-[10px] font-medium uppercase text-muted-foreground">{item.label}</div>
+                              <div className="mt-1 text-xs font-semibold">{item.value}</div>
+                            </motion.div>
+                          ))}
+                        </div>
+                        
+                        <div className="mt-6 rounded-lg border bg-background p-4">
+                          <div className="flex items-center gap-2 text-xs font-semibold">
+                            <IconBookmark className="size-3.5 text-primary" />
+                            Saved Alamat
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-1.5">
+                            <span className="rounded bg-muted px-2 py-1 text-[10px]">Al-Hajj 22:46</span>
+                            <span className="rounded bg-muted px-2 py-1 text-[10px]">Qaf 50:37</span>
+                          </div>
+                        </div>
+                      </div>
+                    </aside>
                   </div>
                 </div>
-
-                <aside className="border-t bg-muted/20 p-4 lg:border-s lg:border-t-0">
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <IconGitBranch className="size-4" />
-                    Connection panel
-                  </div>
-
-                  <div className="mt-4 grid gap-2 text-sm">
-                    {[
-                      ["Semantic", "0.92"],
-                      ["Entity", "rahmah"],
-                      ["Root", "ر ح م"],
-                      ["Reference", "Wikipedia + web"],
-                    ].map(([label, value], index) => (
-                      <motion.div
-                        key={label}
-                        initial={{ opacity: 0, x: 12 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.34 + index * 0.06 }}
-                        className="rounded-md border bg-background p-3"
-                      >
-                        <div className="text-xs text-muted-foreground">{label}</div>
-                        <div className="mt-1 font-medium">{value}</div>
-                      </motion.div>
-                    ))}
-                  </div>
-
-                  <div className="mt-5 rounded-lg border bg-background p-4">
-                    <div className="flex items-center gap-2 text-sm font-medium">
-                      <IconFileText className="size-4" />
-                      Sahifah draft
-                    </div>
-                    <div className="mt-4 grid gap-2 text-xs text-muted-foreground">
-                      <div className="rounded-md bg-muted px-3 py-2">Narration block</div>
-                      <div className="rounded-md bg-muted px-3 py-2">Embedded ayat</div>
-                      <div className="rounded-md bg-muted px-3 py-2">Majmu&apos; alamat</div>
-                    </div>
-                  </div>
-                </aside>
               </div>
             </motion.div>
           </div>

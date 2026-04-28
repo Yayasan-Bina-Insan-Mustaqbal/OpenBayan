@@ -129,7 +129,7 @@ export function AppSidebar({
                       </SidebarMenuButton>
                       <button
                         onClick={(e) => { e.stopPropagation(); onOpenRightFile?.(item.file) }}
-                        className="absolute right-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 hover:bg-muted text-muted-foreground p-1 rounded-sm transition-opacity z-10"
+                        className="absolute right-8 top-1/2 -translate-y-1/2 opacity-100 md:opacity-0 group-hover:opacity-100 hover:bg-muted text-muted-foreground p-1 rounded-sm transition-opacity z-10"
                         title="Open to the Side"
                       >
                         <IconLayoutSidebarRight size={14} />
@@ -205,7 +205,7 @@ function Tree({
             </SidebarMenuButton>
             <button
               onClick={(e) => { e.stopPropagation(); onOpenRightFile?.(path) }}
-              className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 hover:bg-muted text-muted-foreground p-1 rounded-sm transition-opacity z-10"
+              className="absolute right-1 top-1/2 -translate-y-1/2 opacity-100 md:opacity-0 group-hover:opacity-100 hover:bg-muted text-muted-foreground p-1 rounded-sm transition-opacity z-10"
               title="Open to the Side"
             >
               <IconLayoutSidebarRight size={14} />
