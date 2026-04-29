@@ -681,12 +681,7 @@ export default function HeroSection() {
             >
               <div className="flex items-center justify-between border-b bg-muted/35 px-4 py-2.5">
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <div className="size-3 rounded-full bg-destructive/50" />
-                    <div className="size-3 rounded-full bg-yellow-500/50" />
-                    <div className="size-3 rounded-full bg-green-500/50" />
-                  </div>
-                  <div className="ms-4 flex items-center gap-2">
+                  <div className="flex items-center gap-2">
                     <LogoIcon className="size-4" />
                     <span className="text-xs font-medium text-muted-foreground">OpenBayan Workspace</span>
                   </div>
@@ -725,15 +720,6 @@ export default function HeroSection() {
                 </aside>
 
                 <div className="flex flex-1 flex-col">
-                  {/* Mock Breadcrumbs */}
-                  <div className="flex h-10 items-center gap-2 border-b bg-muted/5 px-4 text-[11px] text-muted-foreground">
-                    <span>workspace</span>
-                    <IconChevronRight className="size-3" />
-                    <span>documents</span>
-                    <IconChevronRight className="size-3" />
-                    <span className="text-foreground">qolb-research.sahifah</span>
-                  </div>
-
                   {/* Mock Dual Pane */}
                   <div className="flex flex-1 overflow-hidden">
                     <div className="flex flex-1 flex-col border-e">
@@ -752,14 +738,13 @@ export default function HeroSection() {
                           initial={{ opacity: 0, y: 12 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.24 }}
-                          className="mx-auto max-w-2xl rounded-lg border bg-card p-6 shadow-sm"
+                          className="mx-auto max-w-2xl"
                         >
-                          <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                            <IconBook className="size-3" />
-                            Research Document
+                          <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60 mb-6">
+                            <IconBook size={12} />
+                            documents/qolb-research.sahifah
                           </div>
-                          <h3 className="mt-2 text-xl font-semibold">The concept of Qolb</h3>
-                          <div className="mt-6 flex flex-col gap-4 font-mono text-sm leading-7 text-muted-foreground">
+                          <div className="flex flex-col gap-4 font-mono text-sm leading-7 text-muted-foreground">
                             <p>{"# Understanding Heart (Qolb)"}</p>
                             <p>{"Qolb refers to the heart as an inner center of understanding, intention, turning, and faith."}</p>
                             <div className="rounded-md border bg-muted/30 p-4 font-sans text-foreground">

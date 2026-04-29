@@ -11,7 +11,7 @@ export default function FAQs() {
                         <p>Accusantium quisquam. Illo, omnis?</p>
                     </div>
 
-                    <div className="divide-y divide-dashed sm:mx-auto sm:max-w-lg lg:mx-0">
+                    <div className="divide-y divide-solid sm:mx-auto sm:max-w-lg lg:mx-0">
                         <div className="pb-6">
                             <h3 className="font-medium">What is the refund policy?</h3>
                             <p className="text-muted-foreground mt-4">We offer a 30-day money back guarantee. If you are not satisfied with our product, you can request a refund within 30 days of your purchase.</p>

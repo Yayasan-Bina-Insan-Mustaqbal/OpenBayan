@@ -14,8 +14,8 @@ export default async function SearchResultsPage({
       
       <div className="grid gap-4">
         {/* Placeholder for Results */}
-        <div className="h-24 rounded-lg border border-dashed border-border bg-card/50 backdrop-blur p-4 flex items-center text-muted-foreground shadow-sm transition-all hover:bg-card/80">Result Placeholder</div>
-        <div className="h-24 rounded-lg border border-dashed border-border bg-card/50 backdrop-blur p-4 flex items-center text-muted-foreground shadow-sm transition-all hover:bg-card/80">Result Placeholder</div>
+        <div className="h-24 rounded-lg border border-solid border-border bg-card/50 backdrop-blur p-4 flex items-center text-muted-foreground shadow-sm transition-all hover:bg-card/80">Result Placeholder</div>
+        <div className="h-24 rounded-lg border border-solid border-border bg-card/50 backdrop-blur p-4 flex items-center text-muted-foreground shadow-sm transition-all hover:bg-card/80">Result Placeholder</div>
       </div>
     </div>
   )

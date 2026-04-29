@@ -8,13 +8,13 @@ services:
     command: sleep infinity
     working_dir: /workspaces/openbayan
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       - SURREAL_HTTP_URL=http://host.docker.internal:8000
       - SURREAL_NAMESPACE=main
       - SURREAL_DATABASE=main
       - SURREAL_ACCESS=account
-      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_URL=http://localhost:3001
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-openbayan-local-development-secret}
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -27,16 +27,16 @@ services:
     build:
       context: .
       dockerfile: .devcontainer/Dockerfile
-    command: sh -lc "npm ci && npm run dev -- --hostname 0.0.0.0"
+    command: sh -lc "npm install --legacy-peer-deps && npm run dev -- --hostname 0.0.0.0"
     working_dir: /workspaces/openbayan
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       - SURREAL_HTTP_URL=http://host.docker.internal:8000
       - SURREAL_NAMESPACE=main
       - SURREAL_DATABASE=main
       - SURREAL_ACCESS=account
-      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_URL=http://localhost:3001
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-openbayan-local-development-secret}
     extra_hosts:
       - "host.docker.internal:host-gateway"

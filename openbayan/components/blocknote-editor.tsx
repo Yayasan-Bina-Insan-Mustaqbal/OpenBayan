@@ -1,11 +1,9 @@
 "use client";
 
-import "@blocknote/core/fonts/inter.css";
-import "@blocknote/mantine/style.css";
-import { BlockNoteView } from "@blocknote/mantine";
+import { BlockNoteView, lightDefaultTheme, darkDefaultTheme, Theme } from "@blocknote/mantine";
 import { useCreateBlockNote } from "@blocknote/react";
 import { useTheme } from "@/components/theme-provider";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 interface BlockNoteEditorProps {
   initialContent?: string | string[];
@@ -16,10 +14,27 @@ export default function BlockNoteEditor({ initialContent, onChange }: BlockNoteE
   const { resolvedTheme } = useTheme();
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // Define custom theme that uses CSS variables to match the app
+  const customTheme = useMemo(() => {
+    const baseTheme = resolvedTheme === "dark" ? darkDefaultTheme : lightDefaultTheme;
+    return {
+      ...baseTheme,
+      colors: {
+        ...baseTheme.colors,
+        editor: {
+          background: "hsl(var(--background))",
+          text: "hsl(var(--foreground))",
+        },
+      },
+    } satisfies Theme;
+  }, [resolvedTheme]);
+
   // Normalize content to string
-  const contentString = Array.isArray(initialContent) 
-    ? initialContent.join("\n") 
-    : initialContent || "";
+  const contentString = useMemo(() => 
+    Array.isArray(initialContent) 
+      ? initialContent.join("\n") 
+      : initialContent || ""
+  , [initialContent]);
 
   const editor = useCreateBlockNote();
 
@@ -39,10 +54,10 @@ export default function BlockNoteEditor({ initialContent, onChange }: BlockNoteE
   }, [editor, contentString, isLoaded]);
 
   return (
-    <div className="h-full w-full bg-background/50 backdrop-blur-sm">
+    <div className="h-full w-full">
       <BlockNoteView 
         editor={editor} 
-        theme={resolvedTheme} 
+        theme={customTheme} 
         onChange={() => {
           if (onChange) {
             onChange(editor.document);

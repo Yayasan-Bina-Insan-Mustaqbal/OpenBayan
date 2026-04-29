@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Lora, Noto_Sans } from "next/font/google";
 import "./globals.css";
 import "@mantine/core/styles.css";
+import "@blocknote/core/fonts/inter.css";
+import "@blocknote/mantine/style.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
 
@@ -56,8 +58,10 @@ export default function RootLayout({
         loraHeading.variable
       )}
     >
-      <body className="min-h-full flex flex-col">
+      <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body className="min-h-full flex flex-col">
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

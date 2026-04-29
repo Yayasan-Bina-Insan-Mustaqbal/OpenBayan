@@ -103,11 +103,6 @@ export function AppSidebar({
 }: AppSidebarProps) {
   return (
     <Sidebar {...props}>
-      <div className="flex items-center gap-1.5 px-4 pt-4 pb-2">
-        <div className="size-3 rounded-full bg-destructive/50" />
-        <div className="size-3 rounded-full bg-yellow-500/50" />
-        <div className="size-3 rounded-full bg-green-500/50" />
-      </div>
       <SidebarContent>
         <SidebarGroup>
           <div className="px-2 py-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">Explorer</div>

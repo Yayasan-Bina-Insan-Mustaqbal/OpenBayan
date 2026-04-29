@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { DashboardTopNav } from "@/components/dashboard-topnav"
 import { HeroBackground } from "@/components/hero-background"
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
+import { AppSidebar } from "@/components/app-sidebar"
 
 export default async function DashboardLayout({
   children,
@@ -14,8 +16,8 @@ export default async function DashboardLayout({
 
   return (
     <SidebarProvider>
-      {/* TODO: Add AppSidebar */}
-      <div className="relative flex min-h-screen w-full flex-col bg-muted/15">
+      <AppSidebar />
+      <SidebarInset className="relative flex min-h-screen w-full flex-col bg-muted/15">
         <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
           <HeroBackground />
         </div>
@@ -25,7 +27,7 @@ export default async function DashboardLayout({
             {children}
           </main>
         </div>
-      </div>
+      </SidebarInset>
     </SidebarProvider>
   )
 }

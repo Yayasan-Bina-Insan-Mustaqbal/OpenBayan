@@ -31,7 +31,7 @@ export function LegalSection({
               <p className="max-w-sm text-muted-foreground">{subtitle}</p>
             </div>
 
-            <div className="divide-y divide-dashed sm:mx-auto sm:max-w-lg lg:mx-0">
+            <div className="divide-y divide-solid sm:mx-auto sm:max-w-lg lg:mx-0">
               {items.map((item, index) => (
                 <section key={item.title} className={index === 0 ? "pb-6" : "py-6"}>
                   <h2 className="font-medium">{item.title}</h2>

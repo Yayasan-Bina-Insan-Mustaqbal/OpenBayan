@@ -23,7 +23,7 @@ export function SiteHeader() {
     <header>
       <nav
         data-state={menuState ? "active" : "inactive"}
-        className="fixed z-20 w-full border-b border-dashed bg-background/95 backdrop-blur md:relative"
+        className="fixed z-20 w-full border-b border-solid bg-background/95 backdrop-blur md:relative"
       >
         <div className="mx-auto max-w-6xl px-6">
           <div className="flex flex-wrap items-center justify-between gap-6 py-3 lg:flex-nowrap lg:py-4">

@@ -226,40 +226,22 @@ export function DashboardWorkspace({ user }: DashboardWorkspaceProps) {
           <HeroBackground />
         </div>
         <header className="relative z-10 flex flex-col shrink-0 bg-background/80 backdrop-blur">
-          <div className="flex h-14 items-center gap-2 border-b border-dashed px-4">
+          <div className="flex h-14 items-center gap-2 border-b border-solid px-4">
             <SidebarTrigger className="-ms-1" />
             <Separator
               orientation="vertical"
-              className="me-2 border-dashed data-vertical:h-4 data-vertical:self-auto"
+              className="me-2 border-solid data-vertical:h-4 data-vertical:self-auto"
             />
             <div className="ms-auto">
               <AccountMenu user={user} />
             </div>
-          </div>
-          <div className="flex h-10 items-center gap-2 border-b border-dashed bg-muted/5 px-4 text-[11px] text-muted-foreground">
-            <Breadcrumb>
-              <BreadcrumbList className="gap-1.5">
-                {breadcrumbParts.map((part, index) => (
-                  <React.Fragment key={`${part}-${index}`}>
-                    {index > 0 ? (
-                      <BreadcrumbSeparator className="hidden md:block">
-                        <IconChevronRight className="size-3" />
-                      </BreadcrumbSeparator>
-                    ) : null}
-                    <BreadcrumbItem className={index === 0 ? "hidden md:block" : ""}>
-                      <BreadcrumbPage className={cn("text-[11px]", index === breadcrumbParts.length - 1 && "text-foreground")}>{part}</BreadcrumbPage>
-                    </BreadcrumbItem>
-                  </React.Fragment>
-                ))}
-              </BreadcrumbList>
-            </Breadcrumb>
           </div>
         </header>
 
         <section className="relative z-10 min-h-0 flex-1 p-3">
           <ResizablePanelGroup
             orientation={isMobile ? "vertical" : "horizontal"}
-            className="h-[calc(100svh-5.5rem)] min-h-[560px] rounded-lg border border-dashed bg-background/95 backdrop-blur shadow-sm"
+            className="h-[calc(100svh-4.25rem)] min-h-[560px] rounded-lg border border-solid bg-background/95 backdrop-blur shadow-sm"
           >
             <ResizablePanel
               defaultSize={showRightPane ? 50 : 100}
@@ -347,7 +329,7 @@ function EditorTabs({
 }) {
   return (
     <Tabs value={activeFile} onValueChange={onSelectFile} className="h-full gap-0">
-      <div className="flex min-h-10 items-end border-b border-dashed bg-muted/20 px-2">
+      <div className="flex min-h-10 items-end border-b border-solid bg-muted/20 px-2">
         <TabsList
           variant="line"
           className="h-10 gap-1 overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden"
@@ -425,15 +407,11 @@ function EditorTabs({
                 transition={{ duration: 0.18, ease: "easeOut" }}
                 className="flex h-full flex-col"
               >
-                <div className="border-b px-5 py-4">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <IconBook />
+                <div className="px-5 py-4">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground/60">
+                    <IconBook size={14} />
                     {file.path}
                   </div>
-                  <h1 className="mt-2 text-lg font-semibold">{file.title}</h1>
-                  <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                    {file.summary}
-                  </p>
                 </div>
                 <div className="min-h-0 flex-1 overflow-auto">
                   <BlockNoteEditor initialContent={file.content} />
