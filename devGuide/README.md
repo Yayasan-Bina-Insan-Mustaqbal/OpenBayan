@@ -33,6 +33,10 @@ Welcome to the OpenBayan developer documentation. This directory contains detail
 - [Performance Optimization](performance-testing/performance_optimization.md) — Strategies for frontend and backend speed.
 - [Playwright & Lighthouse Setup](performance-testing/playwright_lighthouse_setup.md) — Automated testing and performance auditing.
 
+### 🚀 Roadmap & Ideas
+- [Book Uploading & Public Sharing](ideas/book_uploading_public_sharing.md) — (Planned) Handling PDF/EPUB binaries using SurrealDB native file types.
+- [Book Verification & Text Integrity](ideas/book_verification_integrity.md) — (Planned) Ensuring text authenticity via algorithmic and community verification.
+
 ### 📁 Archive
 - [Old vs New Code Comparison](archive/old_new_code_comparison.md) — Guide for porting legacy Laravel features.
 - [Old Code](archive/oldCode/) — Legacy PHP implementation reference.

@@ -307,5 +307,13 @@ asyncio.run(ingest_text('Test text here.', 'researcher_001', 'Test Book'))
 "
 ```
 
-> [!TIP]
-> Use Prefect's **retry** mechanism (`retries=3, retry_delay_seconds=5`) on your SurrealDB write tasks. Docker service startup order can sometimes mean the database isn't fully ready when the worker first connects.
+---
+
+## 8. Binary Document Ingestion (PDF/EPUB)
+
+For processing binary files like PDFs and EPUBs, OpenBayan leverages SurrealDB's native file storage to bypass the need for external S3/MinIO containers.
+
+See the dedicated guide: **[[IDEA] Book Uploading & Public Sharing](../ideas/book_uploading_public_sharing.md)** for:
+- Database schema updates for native file types.
+- Frontend streaming logic via SurrealDB SDK.
+- Python worker tasks using `pdfplumber` for in-memory extraction.

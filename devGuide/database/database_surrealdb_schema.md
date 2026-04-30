@@ -53,6 +53,21 @@ DEFINE TABLE sahifah SCHEMAFULL
 
 DEFINE FIELD title      ON sahifah TYPE string;
 DEFINE FIELD content    ON sahifah TYPE option<string>; -- BlockNote JSON or raw text
+
+-- [ROADMAP] Native File Support (See ideas/book_uploading_public_sharing.md)
+DEFINE FIELD document   ON sahifah TYPE option<file>;
+DEFINE FIELD file_name  ON sahifah TYPE option<string>;
+DEFINE FIELD mime_type  ON sahifah TYPE option<string>; -- e.g., 'application/pdf'
+DEFINE FIELD ai_status  ON sahifah TYPE string DEFAULT "pending" 
+    ASSERT $value IN ["pending", "processing", "completed", "failed"];
+
+-- [ROADMAP] Verification & Integrity (See ideas/book_verification_integrity.md)
+DEFINE FIELD integrity_score      ON sahifah TYPE option<float>;
+DEFINE FIELD verification_status  ON sahifah TYPE string DEFAULT "quarantine" 
+    ASSERT $value IN ["quarantine", "ai_verified", "human_approved", "rejected"];
+DEFINE FIELD trust_origin         ON sahifah TYPE string DEFAULT "user_upload"
+    ASSERT $value IN ["user_upload", "verified_shamela", "verified_waqfeya"];
+
 DEFINE FIELD is_public  ON sahifah TYPE bool DEFAULT false;
 DEFINE FIELD owner      ON sahifah TYPE record<researcher>;
 DEFINE FIELD created    ON sahifah TYPE datetime DEFAULT time::now();
