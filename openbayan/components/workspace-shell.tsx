@@ -238,9 +238,6 @@ export function WorkspaceShell({ user }: WorkspaceShellProps) {
     <SidebarProvider>
       <AppSidebar activeFile={activeFile} onOpenFile={openFile} onOpenRightFile={openRightFile} />
       <SidebarInset className="relative min-h-svh bg-muted/15">
-        <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
-          <HeroBackground />
-        </div>
         <header className="relative z-10 flex flex-col shrink-0 bg-background/80 backdrop-blur">
           <div className="flex h-14 items-center gap-2 border-b border-solid px-4">
             <SidebarTrigger className="-ms-1" />

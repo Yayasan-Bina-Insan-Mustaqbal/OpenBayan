@@ -135,32 +135,37 @@ export function HeroBackground() {
         })}
 
         {/* Render nodes (data points) */}
-        {nodes.map((node) => (
-          <g key={node.id}>
-            {/* Animated aura — opacity only via Framer Motion, r via CSS animation */}
-            <motion.circle
-              cx={`${node.x}%`}
-              cy={`${node.y}%`}
-              r={node.size * 3}
-              fill="var(--sidebar-primary)"
-              initial={{ opacity: 0.6 }}
-              animate={{ opacity: [0.6, 0] }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                delay: node.delay,
-                ease: "easeOut",
-              }}
-            />
-            {/* Core solid node */}
-            <circle
-              cx={`${node.x}%`}
-              cy={`${node.y}%`}
-              r={node.size ?? 2}
-              fill="var(--sidebar-primary)"
-            />
-          </g>
-        ))}
+        {nodes.map((node) => {
+          if (!node) return null;
+          const safeSize = node.size || 2;
+          
+          return (
+            <g key={node.id}>
+              {/* Animated aura — opacity only via Framer Motion, r via CSS animation */}
+              <motion.circle
+                cx={`${node.x}%`}
+                cy={`${node.y}%`}
+                r={safeSize * 3}
+                fill="var(--sidebar-primary)"
+                initial={{ opacity: 0.6 }}
+                animate={{ opacity: [0.6, 0] }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  delay: node.delay || 0,
+                  ease: "easeOut",
+                }}
+              />
+              {/* Core solid node */}
+              <circle
+                cx={`${node.x}%`}
+                cy={`${node.y}%`}
+                r={safeSize}
+                fill="var(--sidebar-primary)"
+              />
+            </g>
+          );
+        })}
       </svg>
 
       {/* Fade out bottom edge to blend with page content */}
