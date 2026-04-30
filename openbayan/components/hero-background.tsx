@@ -137,17 +137,14 @@ export function HeroBackground() {
         {/* Render nodes (data points) */}
         {nodes.map((node) => (
           <g key={node.id}>
-            {/* Animated expanding aura */}
+            {/* Animated aura — opacity only via Framer Motion, r via CSS animation */}
             <motion.circle
               cx={`${node.x}%`}
               cy={`${node.y}%`}
-              r={node.size}
+              r={node.size * 3}
               fill="var(--sidebar-primary)"
-              initial={{ opacity: 0.8 }}
-              animate={{ 
-                opacity: [0.8, 0], 
-                r: [node.size, node.size * 3 + 4] 
-              }}
+              initial={{ opacity: 0.6 }}
+              animate={{ opacity: [0.6, 0] }}
               transition={{
                 duration: 3,
                 repeat: Infinity,
@@ -159,7 +156,7 @@ export function HeroBackground() {
             <circle
               cx={`${node.x}%`}
               cy={`${node.y}%`}
-              r={node.size}
+              r={node.size ?? 2}
               fill="var(--sidebar-primary)"
             />
           </g>

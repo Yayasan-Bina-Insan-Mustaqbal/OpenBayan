@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Lora, Noto_Sans } from "next/font/google";
+import { Geist, Geist_Mono, Lora, Noto_Sans, Amiri } from "next/font/google";
 import "./globals.css";
 import "@mantine/core/styles.css";
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
+
+const amiri = Amiri({
+  weight: ["400", "700"],
+  subsets: ["arabic"],
+  variable: "--font-arabic",
+});
 
 const loraHeading = Lora({ subsets: ["latin"], variable: "--font-heading" });
 
@@ -55,7 +61,8 @@ export default function RootLayout({
         geistSans.variable,
         geistMono.variable,
         notoSans.variable,
-        loraHeading.variable
+        loraHeading.variable,
+        amiri.variable
       )}
     >
       <head>

@@ -176,19 +176,28 @@ export function AppSidebar({
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <IconTrendingUp /> Trending Sahifah
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <IconHistory /> Recent Research
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <IconNews /> Updates & News
-                </SidebarMenuButton>
+                <div
+                  className="group flex items-center relative w-full"
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData("text/plain", "Explore")
+                  }}
+                >
+                  <SidebarMenuButton 
+                    isActive={activeFile === "Explore"} 
+                    onClick={() => onOpenFile?.("Explore")}
+                    className="pr-8"
+                  >
+                    <IconTrendingUp /> Explore Workspace
+                  </SidebarMenuButton>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onOpenRightFile?.("Explore") }}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 opacity-100 md:opacity-0 group-hover:opacity-100 hover:bg-muted text-muted-foreground p-1 rounded-sm transition-opacity z-10"
+                    title="Open to the Side"
+                  >
+                    <IconLayoutSidebarRight size={14} />
+                  </button>
+                </div>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>

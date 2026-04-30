@@ -37,6 +37,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import dynamic from "next/dynamic"
 import { SearchEditor } from "@/components/search-editor"
+import { ExploreEditor } from "@/components/explore-editor"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 const BlockNoteEditor = dynamic(() => import("@/components/blocknote-editor"), {
   ssr: false,
@@ -108,6 +110,13 @@ const editorFiles: Record<string, EditorFile> = {
       "Resizable panes give users control while keeping the first implementation simple.",
     ],
   },
+  "Explore": {
+    path: "Explore",
+    title: "Explore",
+    kind: "config",
+    summary: "Trending, recent, and news dashboard.",
+    content: [],
+  },
 }
 
 function getFile(path: string): EditorFile {
@@ -133,9 +142,9 @@ export function WorkspaceShell({ user }: WorkspaceShellProps) {
   const [activeFile, setActiveFile] = React.useState("Search Editor")
 
   const [rightOpenFiles, setRightOpenFiles] = React.useState<string[]>([
-    "README.md",
+    "Explore",
   ])
-  const [rightActiveFile, setRightActiveFile] = React.useState("README.md")
+  const [rightActiveFile, setRightActiveFile] = React.useState("Explore")
   const [showRightPane, setShowRightPane] = React.useState(true)
   const [savedRightFiles, setSavedRightFiles] = React.useState<{files: string[], active: string} | null>(null)
 
@@ -157,8 +166,8 @@ export function WorkspaceShell({ user }: WorkspaceShellProps) {
           })
         }
       } else {
-        setRightOpenFiles(["README.md"])
-        setRightActiveFile("README.md")
+        setRightOpenFiles(["Explore"])
+        setRightActiveFile("Explore")
       }
       setShowRightPane(true)
       setSavedRightFiles(null)
@@ -404,35 +413,36 @@ function EditorTabs({
         const file = getFile(path)
 
         return (
-          <TabsContent key={path} value={path} className="h-[calc(100%-2.5rem)]">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={path}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.18, ease: "easeOut" }}
-                className="flex h-full flex-col"
-              >
-                {file.path === "Search Editor" ? (
-                  <div className="flex-1 overflow-y-auto">
+          <TabsContent key={path} value={path} className="min-h-0 flex-1 overflow-hidden">
+            <ScrollArea className="size-full">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={path}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                >
+                  {file.path === "Search Editor" ? (
                     <SearchEditor />
-                  </div>
-                ) : (
-                  <>
-                    <div className="px-5 py-4 shrink-0">
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground/60">
-                        <IconBook size={14} />
-                        {file.path}
+                  ) : file.path === "Explore" ? (
+                    <ExploreEditor />
+                  ) : (
+                    <>
+                      <div className="px-5 py-4">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground/60">
+                          <IconBook size={14} />
+                          {file.path}
+                        </div>
                       </div>
-                    </div>
-                    <div className="min-h-0 flex-1 overflow-auto">
-                      <BlockNoteEditor initialContent={file.content} />
-                    </div>
-                  </>
-                )}
-              </motion.div>
-            </AnimatePresence>
+                      <div className="px-2">
+                        <BlockNoteEditor initialContent={file.content} />
+                      </div>
+                    </>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </ScrollArea>
           </TabsContent>
         )
       })}

@@ -1,0 +1,171 @@
+{
+  "success": true,
+  "data": {
+    "structuredContent": {
+      "query": "Umar Zakat",
+      "processing_time_ms": 58,
+      "category_clusters": {
+        "total_categories_found": 3,
+        "items": [
+          {
+            "category_name_ar": "الاقتصاد الإسلامي",
+            "category_name_en": "Islamic Economics",
+            "match_count": 12,
+            "relevance_score": 0.95,
+            "preview_sentence_ids": ["s1", "s2", "s3"],
+            "related_queries": [
+              {
+                "query": "Umar's policy on Zakat distribution",
+                "match_reason": "Directly related to administrative history of Zakat."
+              }
+            ]
+          },
+          {
+            "category_name_ar": "الفقه",
+            "category_name_en": "Fiqh",
+            "match_count": 8,
+            "relevance_score": 0.88,
+            "preview_sentence_ids": ["s4", "s5"],
+            "related_queries": [
+              {
+                "query": "Minimum threshold (Nisab) of Zakat",
+                "match_reason": "Common jurisprudential query path."
+              }
+            ]
+          }
+        ]
+      },
+      "sentence_results": {
+        "total_found": 20,
+        "items": [
+          {
+            "id": "s1",
+            "resource_type": "hadith",
+            "parent_category": "Islamic Economics",
+            "bab": "Collection of Zakat",
+            "subchapter": "Umar's Instructions to Collectors",
+            "category_path": ["Islamic Economics", "Zakat", "Administration"],
+            "content": [
+              {
+                "type": "arabic",
+                "text": "عن عمر بن الخطاب رضي الله عنه أنه قال: خذ الصدقة من حواشي أموالهم"
+              },
+              {
+                "type": "translation",
+                "language": "id",
+                "text": "Dari Umar bin Khattab radhiyallahu 'anhu, beliau berkata: Ambillah zakat dari bagian luar (yang bukan inti) harta mereka."
+              }
+            ],
+            "linguistics": null,
+            "citations": [],
+            "citation": {
+              "source_book": "Muwatta Malik",
+              "chapter": "Book of Zakat",
+              "reference_number": "1",
+              "authenticity_grade": "Sahih"
+            },
+            "hadith_anatomy": {
+              "isnad": "Malik from Nafi from Ibn Umar from Umar",
+              "matn": "Take the zakat from the fringes of their wealth."
+            },
+            "relevance_score": 0.98,
+            "mentioned_entities": [
+              {
+                "entity_id": "e1",
+                "canonical_name": "Umar ibn al-Khattab",
+                "entity_type": "Person"
+              },
+              {
+                "entity_id": "e2",
+                "canonical_name": "Zakat",
+                "entity_type": "Fard"
+              }
+            ],
+            "sniped_fragment": "خذ الصدقة من حواشي أموالهم"
+          },
+          {
+            "id": "s4",
+            "resource_type": "quran",
+            "parent_category": "Fiqh",
+            "bab": "Surah At-Tawbah",
+            "subchapter": "Ayah 60",
+            "category_path": ["Quran", "Laws", "Charity"],
+            "content": [
+              {
+                "type": "arabic",
+                "text": "إِنَّمَا الصَّدَقَاتُ لِلْفُقَرَاءِ وَالْمَسَاكِينِ وَالْعَامِلِينَ عَلَيْهَا"
+              },
+              {
+                "type": "translation",
+                "language": "id",
+                "text": "Sesungguhnya zakat itu hanyalah untuk orang-orang fakir, orang-orang miskin, dan para amil zakat..."
+              }
+            ],
+            "linguistics": {
+              "irab": [
+                {
+                  "word": "إِنَّمَا",
+                  "parsing": "Haraf Hasr"
+                }
+              ]
+            },
+            "citations": [],
+            "citation": {
+              "source_book": "Al-Quran",
+              "chapter": "9",
+              "reference_number": "60",
+              "authenticity_grade": "Mutawatir"
+            },
+            "hadith_anatomy": null,
+            "relevance_score": 0.92,
+            "mentioned_entities": [
+              {
+                "entity_id": "e2",
+                "canonical_name": "Zakat",
+                "entity_type": "Fard"
+              }
+            ],
+            "sniped_fragment": "لِلْفُقَرَاءِ وَالْمَسَاكِينِ وَالْعَامِلِينَ عَلَيْهَا"
+          }
+        ]
+      },
+      "entity_results": {
+        "total_found": 2,
+        "items": [
+          {
+            "entity_id": "e1",
+            "canonical_name": "Umar ibn al-Khattab",
+            "entity_type": "Person",
+            "description": "The second Caliph of Islam, known for his administrative reforms including the establishment of the Diwan for Zakat.",
+            "wikipedia_url": "https://en.wikipedia.org/wiki/Umar",
+            "match_reason": "Primary subject of the query.",
+            "relevance_score": 0.99,
+            "related_graph_entities": []
+          },
+          {
+            "entity_id": "e2",
+            "canonical_name": "Zakat",
+            "entity_type": "Fard",
+            "description": "Obligatory almsgiving in Islam, one of the Five Pillars.",
+            "wikipedia_url": "https://en.wikipedia.org/wiki/Zakat",
+            "match_reason": "Topic mentioned in query.",
+            "relevance_score": 0.99,
+            "related_graph_entities": []
+          }
+        ]
+      },
+      "root_word_results": {
+        "total_found": 1,
+        "items": [
+          {
+            "root_id": "r1",
+            "root_value_ar": "ز ك و",
+            "morphological_forms_found": ["زكاة", "يزكي", "الزكاة"],
+            "match_reason": "Semantic Root Match for 'Zakat'.",
+            "relevance_score": 0.99
+          }
+        ]
+      }
+    }
+  }
+}
