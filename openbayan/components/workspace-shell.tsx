@@ -135,11 +135,6 @@ function getFile(path: string): EditorFile {
 }
 
 export function WorkspaceShell({ user }: WorkspaceShellProps) {
-  React.useEffect(() => {
-    console.log("💎 WorkspaceShell: Mounted");
-  }, []);
-
-  console.log("💎 WorkspaceShell: Rendering", { user: user?.email });
   const isMobile = useIsMobile()
   const [openFiles, setOpenFiles] = React.useState<string[]>([
     "Search Editor",
