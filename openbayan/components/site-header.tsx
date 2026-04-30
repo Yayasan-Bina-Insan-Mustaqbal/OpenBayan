@@ -70,7 +70,7 @@ export function SiteHeader() {
                   <Link href="/login">Sign in</Link>
                 </Button>
                 <Button asChild size="sm">
-                  <Link href="/dashboard">
+                  <Link href="/workspace">
                     Open workspace
                     <IconArrowRight data-icon="inline-end" />
                   </Link>

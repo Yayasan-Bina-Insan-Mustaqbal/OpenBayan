@@ -22,7 +22,7 @@ import {
   SidebarMenuSub,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { IconFile, IconChevronRight, IconFolder, IconLayoutSidebarRight } from "@tabler/icons-react"
+import { IconFile, IconChevronRight, IconFolder, IconLayoutSidebarRight, IconSearch, IconTrendingUp, IconHistory, IconNews } from "@tabler/icons-react"
 
 type TreeItem = string | [string, ...TreeItem[]]
 
@@ -160,6 +160,37 @@ export function AppSidebar({
               ))}
             </SidebarMenu>
             </motion.div>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <div className="px-2 py-2 mt-4 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">Explore</div>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  isActive={activeFile === "Search Editor"} 
+                  onClick={() => onOpenFile?.("Search Editor")}
+                >
+                  <IconSearch /> Search Workspace
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton>
+                  <IconTrendingUp /> Trending Sahifah
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton>
+                  <IconHistory /> Recent Research
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton>
+                  <IconNews /> Updates & News
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

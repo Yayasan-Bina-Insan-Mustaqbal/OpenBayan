@@ -152,7 +152,7 @@ Available at: **http://localhost:3000**
 
 ---
 
-## 7. Service Dashboard & URLs
+## 7. Service Workspace & URLs
 
 Once everything is running, access these URLs:
 
@@ -160,7 +160,7 @@ Once everything is running, access these URLs:
 |:---|:---|:---|
 | **React Frontend** | http://localhost:3000 | The main application UI |
 | **SurrealDB** | http://localhost:8000 | Database API (WebSocket) |
-| **Prefect UI** | http://localhost:4200 | AI pipeline monitoring dashboard |
+| **Prefect UI** | http://localhost:4200 | AI pipeline monitoring workspace |
 | **Jupyter Lab** | http://localhost:8888 | Notebook workspace for AI research and pipeline tests |
 
 If you use a separate Ollama machine for embeddings or inference, set `OLLAMA_URL` in `OpenBayanBackend/.env` before starting the backend:

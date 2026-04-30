@@ -188,7 +188,7 @@ Signup flow:
 3. `signupWithSurreal` posts to `http://localhost:8000/signup`.
 4. SurrealDB creates a `user` record and returns a token.
 5. The UI immediately signs in with the credentials provider.
-6. User is redirected to `/dashboard`.
+6. User is redirected to `/workspace`.
 
 ## Session Data
 

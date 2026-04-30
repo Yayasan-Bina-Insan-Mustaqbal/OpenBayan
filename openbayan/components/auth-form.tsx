@@ -50,7 +50,7 @@ export function AuthForm({ className, initialMode = "login", ...props }: AuthFor
         return
       }
 
-      router.push("/dashboard")
+      router.push("/workspace")
       router.refresh()
     })
   }
@@ -97,7 +97,7 @@ export function AuthForm({ className, initialMode = "login", ...props }: AuthFor
         return
       }
 
-      router.push("/dashboard")
+      router.push("/workspace")
       router.refresh()
     })
   }

@@ -662,7 +662,7 @@ export default function HeroSection() {
 
               <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <Button size="lg" asChild>
-                  <Link href="/dashboard">
+                  <Link href="/workspace">
                     <IconSearch data-icon="inline-start" />
                     Explore workspace
                   </Link>

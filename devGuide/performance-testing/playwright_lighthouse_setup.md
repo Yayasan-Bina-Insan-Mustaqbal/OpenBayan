@@ -68,8 +68,8 @@ await page.fill('#email', 'pro@example.com');
 await page.fill('#password', 'password123');
 await page.click('button[type="submit"]');
 
-// Wait for the heavy dashboard to load, THEN run the audit
-await page.waitForSelector('.heavy-dashboard-element');
+// Wait for the heavy workspace to load, THEN run the audit
+await page.waitForSelector('.heavy-workspace-element');
 
 await playAudit({
   page: page,

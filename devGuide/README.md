@@ -9,10 +9,10 @@ Welcome to the OpenBayan developer documentation. This directory contains detail
 - [Next.js Installation & Configuration](architecture/frontend_nextjs_installation.md) — Bootstrapping Next.js, Dockerizing, and connecting to SurrealDB.
 - [Hybrid Web & Desktop IDE Architecture](architecture/frontend_hybrid_ide_architecture.md) — Deep dive into the Omni-Storage IDE strategy.
 
-### 🖥️ Dashboard (IDE Workspace)
-- [Dashboard Redesign Vision](dashboard/dashboard_redesign.md) — Overview of the VS Code-inspired research environment.
-- [Detailed Workspace Plan](dashboard/dashboard_redesign_vscode_workspace.md) — Technical spec for split panes, tabs, and active pane logic.
-- [Dashboard Todo](dashboard/dashboard_todo.md) — Current implementation checklist and priorities.
+### 🖥️ Workspace (IDE Workspace)
+- [Workspace Redesign Vision](workspace/workspace_redesign.md) — Overview of the VS Code-inspired research environment.
+- [Detailed Workspace Plan](workspace/workspace_redesign_vscode_workspace.md) — Technical spec for split panes, tabs, and active pane logic.
+- [Workspace Todo](workspace/workspace_todo.md) — Current implementation checklist and priorities.
 
 ### 💾 Database & Backend
 - [SurrealDB Schema & Knowledge Graph](database/database_surrealdb_schema.md) — Table definitions and graph relation design.
@@ -61,4 +61,4 @@ Welcome to the OpenBayan developer documentation. This directory contains detail
 |:---|:---|:---|
 | **3000** | Next.js Frontend | Scholar UI (Auth, BlockNote, Icons) |
 | **8000** | SurrealDB | Database (WebSocket + HTTP REST) |
-| **4200** | Prefect UI | AI pipeline monitoring dashboard |
+| **4200** | Prefect UI | AI pipeline monitoring workspace |

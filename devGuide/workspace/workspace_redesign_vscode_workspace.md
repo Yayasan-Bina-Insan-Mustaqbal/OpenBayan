@@ -1,8 +1,8 @@
-# Dashboard Redesign: VS Code-Like Workspace
+# Workspace Redesign: VS Code-Like Workspace
 
 ## Intent
 
-Redesign the main dashboard as an IDE-style research workspace. The dashboard should feel closer to VS Code than to a traditional web dashboard: the user arrives in a working environment with a file explorer on the left, one open work surface in the main area, and tabbed panes that can be split, resized, and targeted by file clicks.
+Redesign the main workspace as an IDE-style research workspace. The workspace should feel closer to VS Code than to a traditional web workspace: the user arrives in a working environment with a file explorer on the left, one open work surface in the main area, and tabbed panes that can be split, resized, and targeted by file clicks.
 
 The first experience should not be a marketing, overview, or statistics screen. It should be a usable workspace where the default open "file" is a search input page, ready for immediate research.
 
@@ -12,11 +12,11 @@ The first experience should not be a marketing, overview, or statistics screen. 
 - Support both beginner and expert workflows: visible plus buttons and dropdowns for beginners, `Ctrl+N` for fast creation.
 - Make pane focus predictable: file explorer clicks always open in the active pane.
 - Keep the MVP layout close to shadcn primitives already used in the project: `Sidebar`, `Tabs`, `Resizable`, `DropdownMenu`, `Tooltip`, `Button`, `ScrollArea`, and later `Command`.
-- Avoid dashboard card clutter. The main screen is a full workspace, not a grid of cards.
+- Avoid workspace card clutter. The main screen is a full workspace, not a grid of cards.
 
 ## First-Load Layout
 
-On dashboard arrival:
+On workspace arrival:
 
 1. Left sidebar is visible.
 2. Sidebar starts with utility links: `Home` and `Docs`.
@@ -305,7 +305,7 @@ Recommended visual treatment:
 
 Avoid:
 
-- Large dashboard cards in the workspace shell.
+- Large workspace cards in the workspace shell.
 - One-note blue/purple gradients.
 - Marketing-style hero sections.
 - Hover-only controls without focus-visible and mobile alternatives.
@@ -390,16 +390,16 @@ Use existing shadcn components where possible:
 
 Next.js boundary:
 
-- The dashboard shell and pane interactions are client components.
+- The workspace shell and pane interactions are client components.
 - Server data loading can happen above the client workspace and pass serializable workspace data into it.
-- Avoid server-only data clients inside interactive dashboard components.
+- Avoid server-only data clients inside interactive workspace components.
 
 ## MVP Feature Checklist
 
 - [ ] Add `Home` and `Docs` links above `Changes`.
 - [ ] Rename/redefine `Changes` to show currently open files.
 - [ ] Limit `Changes` visible height to 5 rows with internal scrolling.
-- [ ] Add default search tab on first dashboard load.
+- [ ] Add default search tab on first workspace load.
 - [ ] Add tab plus button that creates a new search tab.
 - [ ] Add plus dropdown with `New Search`, `New Text Editor`, and `New Slideshow Preview`.
 - [ ] Add `Ctrl+N` to create a new search tab in the active pane.

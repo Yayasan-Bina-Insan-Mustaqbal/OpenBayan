@@ -1,7 +1,7 @@
-# Dashboard Redesign: VS Code-Inspired Research Environment
+# Workspace Redesign: VS Code-Inspired Research Environment
 
 ## 1. Vision & Intent
-The goal is to transform the OpenBayan dashboard into a high-productivity research workspace that feels familiar to developers and power users. By adopting a "VS Code-like" interface, we provide a multi-pane, tabbed environment that allows researchers to search, analyze, and document Islamic knowledge across multiple contexts simultaneously.
+The goal is to transform the OpenBayan workspace into a high-productivity research workspace that feels familiar to developers and power users. By adopting a "VS Code-like" interface, we provide a multi-pane, tabbed environment that allows researchers to search, analyze, and document Islamic knowledge across multiple contexts simultaneously.
 
 ## 2. Core Layout Architecture
 The interface will be composed of three main sections:

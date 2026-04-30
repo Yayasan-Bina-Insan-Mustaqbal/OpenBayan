@@ -9,7 +9,7 @@ type AccountUser = {
   image?: string | null
 }
 
-export function DashboardTopNav({ user }: { user?: AccountUser | null }) {
+export function WorkspaceTopNav({ user }: { user?: AccountUser | null }) {
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-4 border-b border-solid bg-background/80 backdrop-blur px-4 sm:px-6">
       <SidebarTrigger className="-ml-1" />

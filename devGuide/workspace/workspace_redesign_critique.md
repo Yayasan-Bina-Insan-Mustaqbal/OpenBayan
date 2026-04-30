@@ -1,8 +1,8 @@
-# Dashboard Redesign Critique & Implementation Plan: VS Code-Like Workspace
+# Workspace Redesign Critique & Implementation Plan: VS Code-Like Workspace
 
 *Bismillahir Rahmanir Rahim.*
 
-This document provides an expanded, multi-disciplinary critique and technical implementation guide for the dashboard redesign outlined in `dashboard_redesign_vscode_workspace.md`. It incorporates best practices from UX, Visual Design, Frontend Architecture, Animation, and Design Systems.
+This document provides an expanded, multi-disciplinary critique and technical implementation guide for the workspace redesign outlined in `workspace_redesign_vscode_workspace.md`. It incorporates best practices from UX, Visual Design, Frontend Architecture, Animation, and Design Systems.
 
 ---
 
@@ -66,4 +66,4 @@ This document provides an expanded, multi-disciplinary critique and technical im
 - **CSS Variables & Theming:** Manage the IDE-specific colors using CSS variables scoped to the workspace (e.g., `--workspace-tab-active`, `--workspace-border`). This allows for specific "IDE themes" (like high contrast or custom editor themes) independent of the main marketing site's theme.
 
 ---
-*Wallahualam.* By integrating these specialized perspectives, the dashboard will not only be highly functional but also visually cohesive, accessible, performant, and deeply polished. InsyaAllah, this comprehensive approach will set a robust foundation for the OpenBayan workspace.
+*Wallahualam.* By integrating these specialized perspectives, the workspace will not only be highly functional but also visually cohesive, accessible, performant, and deeply polished. InsyaAllah, this comprehensive approach will set a robust foundation for the OpenBayan workspace.

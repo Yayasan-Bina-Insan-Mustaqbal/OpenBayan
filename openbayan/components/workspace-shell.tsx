@@ -36,6 +36,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import dynamic from "next/dynamic"
+import { SearchEditor } from "@/components/search-editor"
 
 const BlockNoteEditor = dynamic(() => import("@/components/blocknote-editor"), {
   ssr: false,
@@ -55,7 +56,7 @@ type AccountUser = {
   image?: string | null
 }
 
-type DashboardWorkspaceProps = {
+type WorkspaceShellProps = {
   user?: AccountUser | null
 }
 
@@ -68,11 +69,18 @@ type EditorFile = {
 }
 
 const editorFiles: Record<string, EditorFile> = {
+  "Search Editor": {
+    path: "Search Editor",
+    title: "Search Editor",
+    kind: "config",
+    summary: "Search Islamic knowledge through sources.",
+    content: [],
+  },
   "components/ui/button.tsx": {
     path: "components/ui/button.tsx",
     title: "button.tsx",
     kind: "config",
-    summary: "Reusable button primitive for dashboard actions.",
+    summary: "Reusable button primitive for workspace actions.",
     content: [
       "This tab stands in for source-backed editor content.",
       "Later, this area can host a Sahifah editor, source preview, or saved Alamat note.",
@@ -117,13 +125,12 @@ function getFile(path: string): EditorFile {
   )
 }
 
-export function DashboardWorkspace({ user }: DashboardWorkspaceProps) {
+export function WorkspaceShell({ user }: WorkspaceShellProps) {
   const isMobile = useIsMobile()
   const [openFiles, setOpenFiles] = React.useState<string[]>([
-    "components/ui/button.tsx",
-    "app/page.tsx",
+    "Search Editor",
   ])
-  const [activeFile, setActiveFile] = React.useState("components/ui/button.tsx")
+  const [activeFile, setActiveFile] = React.useState("Search Editor")
 
   const [rightOpenFiles, setRightOpenFiles] = React.useState<string[]>([
     "README.md",
@@ -407,15 +414,23 @@ function EditorTabs({
                 transition={{ duration: 0.18, ease: "easeOut" }}
                 className="flex h-full flex-col"
               >
-                <div className="px-5 py-4">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground/60">
-                    <IconBook size={14} />
-                    {file.path}
+                {file.path === "Search Editor" ? (
+                  <div className="flex-1 overflow-y-auto">
+                    <SearchEditor />
                   </div>
-                </div>
-                <div className="min-h-0 flex-1 overflow-auto">
-                  <BlockNoteEditor initialContent={file.content} />
-                </div>
+                ) : (
+                  <>
+                    <div className="px-5 py-4 shrink-0">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground/60">
+                        <IconBook size={14} />
+                        {file.path}
+                      </div>
+                    </div>
+                    <div className="min-h-0 flex-1 overflow-auto">
+                      <BlockNoteEditor initialContent={file.content} />
+                    </div>
+                  </>
+                )}
               </motion.div>
             </AnimatePresence>
           </TabsContent>

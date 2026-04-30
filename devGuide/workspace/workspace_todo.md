@@ -1,9 +1,9 @@
-# Dashboard Todo Selection
+# Workspace Todo Selection
 
 ## Priority 1: Functional Workspace Shell
 
 - [x] **Account Avatar**
-    - [x] Dashboard header uses a right-side account trigger instead of a standalone theme toggle.
+    - [x] Workspace header uses a right-side account trigger instead of a standalone theme toggle.
     - [x] Avatar shows the authenticated user image when available.
     - [x] Avatar falls back to initials from the user name or email.
     - [x] Avatar trigger has subtle hover, active press, and open-state scale animation.
@@ -77,7 +77,7 @@
 - [ ] **Open Items State**
 - [ ] **Selected Item State**
 - [ ] **Storage Service Boundary**
-- [ ] **Dashboard Authentication**
+- [ ] **Workspace Authentication**
 
 ## Priority 5: Research Features
 

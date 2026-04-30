@@ -23,7 +23,7 @@ export default function Features() {
         },
         'item-4': {
             image: '/payments.png',
-            alt: 'Analytics dashboard',
+            alt: 'Research workspace',
         },
     }
 
@@ -73,7 +73,7 @@ export default function Features() {
                             <AccordionTrigger>
                                 <div className="flex items-center gap-2 text-base">
                                     <IconChartBar className="size-4" />
-                                    Analytics Dashboard
+                                    Research Workspace
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent>Lyra is evolving to be more than just the models. It supports an entire to the APIs and platforms helping developers and businesses innovate.</AccordionContent>

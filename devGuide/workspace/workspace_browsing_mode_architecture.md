@@ -1,4 +1,4 @@
-# Dashboard Browsing Mode Architecture
+# Workspace Browsing Mode Architecture
 
 *Bismillahir Rahmanir Rahim.*
 
@@ -26,7 +26,7 @@ We should separate the routes to allow optimal code-splitting and rendering stra
 ```text
 app/
 ├── (authenticated)/
-│   ├── dashboard/                # BROWSING MODE (Server Components)
+│   ├── workspace/                # BROWSING MODE (Server Components)
 │   │   ├── layout.tsx            # Contains SidebarProvider, Sidebar, and TopNav
 │   │   ├── page.tsx              # Home: Trending, Shared, Recent Sahifah
 │   │   ├── search/page.tsx       # Search results
@@ -39,7 +39,7 @@ app/
 
 ### 2.2 Browsing Mode (Server-Side Rendered)
 
-The `app/dashboard/*` routes will be built primarily with **React Server Components (RSC)**.
+The `app/workspace/*` routes will be built primarily with **React Server Components (RSC)**.
 
 **Why?**
 - **Performance**: Fetching lists of Sahifah directly on the server reduces client-side JavaScript payload.
@@ -48,12 +48,12 @@ The `app/dashboard/*` routes will be built primarily with **React Server Compone
 
 **Implementation Pattern:**
 ```tsx
-// app/(authenticated)/dashboard/page.tsx
+// app/(authenticated)/workspace/page.tsx
 import { Suspense } from "react"
 import { SearchInput } from "@/components/search-input" // Client component for interaction
 import { SahifahGrid, SahifahGridSkeleton } from "@/components/sahifah-grid"
 
-export default async function DashboardBrowsingPage() {
+export default async function WorkspaceBrowsingPage() {
   return (
     <div className="flex flex-col gap-8 p-6 md:p-8">
       {/* Search acts as the entry point */}
@@ -129,10 +129,10 @@ How does a user move between Browsing and Workspace?
 1. **From Browse to Edit**: When a user clicks "Edit" on a Sahifah in the browsing mode, they are navigated to the workspace:
    `router.push('/workspace?open=sahifah-123')`
 2. **Workspace Bootstrapping**: The client-side `IdeWorkspace` component reads the URL parameter on mount, dispatches an action to its Zustand store to open that specific tab, and cleans the URL.
-3. **From Edit to Browse**: The Workspace Sidebar will contain a prominent "Back to Dashboard" or "Home" utility link that navigates back to `/dashboard`.
+3. **From Edit to Browse**: The Workspace Sidebar will contain a prominent "Back to Workspace" or "Home" utility link that navigates back to `/workspace`.
 
 ## Summary of Next.js Best Practices Applied
 1. **RSC Boundaries**: Pushing 'use client' down to the interactive leaves in Browsing mode, while isolating the massive CSR application to its own route segment (`/workspace`).
-2. **Data Patterns**: Using Server Components to eliminate waterfalls when fetching multiple categories of Sahifah on the dashboard.
+2. **Data Patterns**: Using Server Components to eliminate waterfalls when fetching multiple categories of Sahifah on the workspace.
 3. **Streaming**: Utilizing Suspense boundaries for independent data fetching blocks.
 4. **Hydration Safety**: Using `next/dynamic { ssr: false }` for the `window`-dependent Resizable panes and Zustand state in the Workspace mode.

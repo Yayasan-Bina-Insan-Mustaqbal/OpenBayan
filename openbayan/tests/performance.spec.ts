@@ -48,11 +48,8 @@ test.describe('Performance Audits', () => {
     await page.fill('#login-password', 'password123');
     await page.click('button[type="submit"]');
     
-    // Wait for navigation to dashboard
-    await page.waitForURL('**/dashboard**');
-    
-    // Navigate to workspace
-    await page.goto('http://localhost:3000/workspace');
+    // Wait for navigation to workspace
+    await page.waitForURL('**/workspace**');
     await page.waitForLoadState('networkidle');
 
     // 2. Hand the page over to Lighthouse

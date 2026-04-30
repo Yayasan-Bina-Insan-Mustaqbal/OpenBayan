@@ -1,6 +1,6 @@
 @contextScopeItemMention@contextScopeItemMention
 
-when user arrive in the dashboard, he is greeted with a vscode like with file explorer in the left side and a "file" is open in full width of the resizable pane
+when user arrive in the workspace, he is greeted with a vscode like with file explorer in the left side and a "file" is open in full width of the resizable pane
 
 the user can start working on that, the page is a search input
 

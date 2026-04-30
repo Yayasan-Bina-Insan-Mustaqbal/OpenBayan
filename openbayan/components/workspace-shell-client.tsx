@@ -4,8 +4,8 @@ import dynamic from "next/dynamic"
 
 // Use dynamic import for the workspace shell to avoid SSR hydration issues
 // Moving this to a Client Component allows ssr: false
-const DashboardWorkspace = dynamic(
-  () => import("@/components/dashboard-workspace").then(mod => mod.DashboardWorkspace),
+const WorkspaceShell = dynamic(
+  () => import("@/components/workspace-shell").then(mod => mod.WorkspaceShell),
   { 
     ssr: false,
     loading: () => (
@@ -20,5 +20,5 @@ const DashboardWorkspace = dynamic(
 )
 
 export function WorkspaceShellClient({ user }: { user: any }) {
-  return <DashboardWorkspace user={user} />
+  return <WorkspaceShell user={user} />
 }
