@@ -153,7 +153,7 @@ export function WorkspaceShell({ user }: WorkspaceShellProps) {
     <SidebarProvider>
       <AppSidebar activeFile={activeFile} onOpenFile={openFile} onOpenRightFile={openRightFile} />
       <SidebarInset className="relative min-h-svh bg-muted/15">
-        <header className="relative z-10 flex flex-col shrink-0 bg-background/80 backdrop-blur">
+        <header className="relative z-10 flex flex-col shrink-0 bg-background">
           <div className="flex h-14 items-center gap-2 border-b border-solid px-4">
             <SidebarTrigger className="-ms-1" />
             <Separator
@@ -169,7 +169,7 @@ export function WorkspaceShell({ user }: WorkspaceShellProps) {
         <section className="relative z-10 min-h-0 flex-1 p-3">
           <ResizablePanelGroup
             orientation={isMobile ? "vertical" : "horizontal"}
-            className="h-[calc(100svh-4.25rem)] min-h-[560px] rounded-lg border border-solid bg-background/95 backdrop-blur shadow-sm"
+            className="h-[calc(100svh-4.25rem)] min-h-[560px] bg-background"
           >
             <ResizablePanel
               defaultSize={showRightPane ? 50 : 100}

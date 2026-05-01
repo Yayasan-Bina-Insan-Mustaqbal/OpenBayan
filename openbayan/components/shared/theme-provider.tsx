@@ -2,92 +2,99 @@
 
 import * as React from "react"
 
-type Theme = "light" | "dark" | "system"
-type ResolvedTheme = "light" | "dark"
+export type Theme = "light" | "dark" | "system" | "midnight" | "hc-light" | "hc-dark"
+export type Color = "emerald" | "blue" | "rose" | "amber"
+
+type ResolvedTheme = "light" | "dark" | "midnight" | "hc-light" | "hc-dark"
 
 type ThemeContextValue = {
   theme: Theme
+  color: Color
   resolvedTheme: ResolvedTheme
   setTheme: (theme: Theme) => void
+  setColor: (color: Color) => void
 }
 
-const storageKey = "openbayan-theme"
+const themeStorageKey = "openbayan-theme"
+const colorStorageKey = "openbayan-color"
 const themeChangeEvent = "openbayan-theme-change"
 
 const ThemeContext = React.createContext<ThemeContextValue | null>(null)
 
 function isTheme(value: string | null): value is Theme {
-  return value === "light" || value === "dark" || value === "system"
+  return ["light", "dark", "system", "midnight", "hc-light", "hc-dark"].includes(value as string)
 }
 
-function getSystemTheme(): ResolvedTheme {
-  if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+function isColor(value: string | null): value is Color {
+  return ["emerald", "blue", "rose", "amber"].includes(value as string)
+}
+
+function getSystemTheme(): "light" | "dark" {
+  if (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) {
     return "dark"
   }
-
   return "light"
 }
 
-function getTheme(): Theme {
-  const savedTheme = localStorage.getItem(storageKey)
-
+function getStoredTheme(): Theme {
+  if (typeof window === "undefined") return "system"
+  const savedTheme = localStorage.getItem(themeStorageKey)
   return isTheme(savedTheme) ? savedTheme : "system"
 }
 
-function applyTheme(theme: Theme, systemTheme: ResolvedTheme) {
-  const resolvedTheme = theme === "system" ? systemTheme : theme
+function getStoredColor(): Color {
+  if (typeof window === "undefined") return "emerald"
+  const savedColor = localStorage.getItem(colorStorageKey)
+  return isColor(savedColor) ? savedColor : "emerald"
+}
 
-  document.documentElement.classList.toggle("dark", resolvedTheme === "dark")
-  document.documentElement.style.colorScheme = resolvedTheme
+function applyTheme(theme: Theme, color: Color, systemTheme: "light" | "dark") {
+  const root = document.documentElement
+  let resolvedTheme: ResolvedTheme = theme === "system" ? systemTheme : (theme as ResolvedTheme)
+
+  // Clear existing theme-related attributes/classes if needed
+  root.classList.remove("dark")
+  root.removeAttribute("data-theme")
+  root.removeAttribute("data-color")
+
+  // Apply resolved theme
+  if (resolvedTheme === "dark" || resolvedTheme === "midnight" || resolvedTheme === "hc-dark") {
+    root.classList.add("dark")
+  }
+
+  root.setAttribute("data-theme", resolvedTheme)
+  root.setAttribute("data-color", color)
+
+  // Set color scheme for browser elements
+  const colorScheme = (resolvedTheme === "dark" || resolvedTheme === "midnight" || resolvedTheme === "hc-dark") ? "dark" : "light"
+  root.style.colorScheme = colorScheme
 
   return resolvedTheme
 }
 
 function getThemeSnapshot() {
-  if (typeof window === "undefined") {
-    return "system:light"
-  }
-
-  return `${getTheme()}:${getSystemTheme()}`
-}
-
-function getServerThemeSnapshot() {
-  return "system:light"
+  if (typeof window === "undefined") return "system:emerald:light"
+  return `${getStoredTheme()}:${getStoredColor()}:${getSystemTheme()}`
 }
 
 function subscribeToThemeChange(onStoreChange: () => void) {
-  if (typeof window === "undefined") {
-    return () => {}
-  }
+  if (typeof window === "undefined") return () => {}
 
   const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
 
   function handleStoreChange() {
-    applyTheme(getTheme(), getSystemTheme())
+    applyTheme(getStoredTheme(), getStoredColor(), getSystemTheme())
     onStoreChange()
   }
 
   window.addEventListener(themeChangeEvent, handleStoreChange)
   window.addEventListener("storage", handleStoreChange)
-
-  if ("addEventListener" in mediaQuery) {
-    function handleChange(event: MediaQueryListEvent) {
-      applyTheme(getTheme(), event.matches ? "dark" : "light")
-      onStoreChange()
-    }
-
-    mediaQuery.addEventListener("change", handleChange)
-
-    return () => {
-      window.removeEventListener(themeChangeEvent, handleStoreChange)
-      window.removeEventListener("storage", handleStoreChange)
-      mediaQuery.removeEventListener("change", handleChange)
-    }
-  }
+  mediaQuery.addEventListener("change", handleStoreChange)
 
   return () => {
     window.removeEventListener(themeChangeEvent, handleStoreChange)
     window.removeEventListener("storage", handleStoreChange)
+    mediaQuery.removeEventListener("change", handleStoreChange)
   }
 }
 
@@ -95,27 +102,34 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const snapshot = React.useSyncExternalStore(
     subscribeToThemeChange,
     getThemeSnapshot,
-    getServerThemeSnapshot
+    getThemeSnapshot // Server snapshot
   )
-  const [theme, systemTheme] = snapshot.split(":") as [Theme, ResolvedTheme]
+
+  const [theme, color, systemTheme] = snapshot.split(":") as [Theme, Color, "light" | "dark"]
 
   React.useEffect(() => {
-    applyTheme(theme, systemTheme)
-  }, [theme, systemTheme])
+    applyTheme(theme, color, systemTheme)
+  }, [theme, color, systemTheme])
 
   const setTheme = React.useCallback((nextTheme: Theme) => {
-    localStorage.setItem(storageKey, nextTheme)
-    applyTheme(nextTheme, getSystemTheme())
+    localStorage.setItem(themeStorageKey, nextTheme)
+    window.dispatchEvent(new Event(themeChangeEvent))
+  }, [])
+
+  const setColor = React.useCallback((nextColor: Color) => {
+    localStorage.setItem(colorStorageKey, nextColor)
     window.dispatchEvent(new Event(themeChangeEvent))
   }, [])
 
   const value = React.useMemo(
     () => ({
       theme,
-      resolvedTheme: theme === "system" ? systemTheme : theme,
+      color,
+      resolvedTheme: theme === "system" ? systemTheme : (theme as ResolvedTheme),
       setTheme,
+      setColor,
     }),
-    [theme, systemTheme, setTheme]
+    [theme, color, systemTheme, setTheme, setColor]
   )
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
@@ -123,10 +137,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
 export function useTheme() {
   const context = React.useContext(ThemeContext)
-
-  if (!context) {
-    throw new Error("useTheme must be used within ThemeProvider")
-  }
-
+  if (!context) throw new Error("useTheme must be used within ThemeProvider")
   return context
 }

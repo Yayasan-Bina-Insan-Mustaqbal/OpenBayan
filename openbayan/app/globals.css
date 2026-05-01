@@ -117,6 +117,57 @@
   --sidebar-ring: oklch(0.56 0.021 213.5);
 }
 
+/* Color Themes */
+[data-color="blue"] {
+  --primary: oklch(0.588 0.158 241.966);
+  --sidebar-primary: oklch(0.588 0.158 241.966);
+}
+
+[data-color="rose"] {
+  --primary: oklch(0.645 0.246 16.439);
+  --sidebar-primary: oklch(0.645 0.246 16.439);
+}
+
+[data-color="amber"] {
+  --primary: oklch(0.769 0.188 70.08);
+  --sidebar-primary: oklch(0.769 0.188 70.08);
+}
+
+/* Midnight Theme (AMOLED) */
+[data-theme="midnight"] {
+  --background: oklch(0 0 0);
+  --foreground: oklch(0.987 0.002 197.1);
+  --card: oklch(0.1 0 0);
+  --popover: oklch(0.1 0 0);
+  --border: oklch(1 0 0 / 20%);
+  --sidebar: oklch(0.05 0 0);
+}
+
+/* High Contrast Themes */
+[data-theme="hc-light"] {
+  --background: white;
+  --foreground: black;
+  --primary: black;
+  --primary-foreground: white;
+  --border: black;
+  --input: black;
+  --ring: black;
+  --muted: #f0f0f0;
+  --muted-foreground: #444;
+}
+
+[data-theme="hc-dark"] {
+  --background: black;
+  --foreground: white;
+  --primary: white;
+  --primary-foreground: black;
+  --border: white;
+  --input: white;
+  --ring: white;
+  --muted: #111;
+  --muted-foreground: #ccc;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

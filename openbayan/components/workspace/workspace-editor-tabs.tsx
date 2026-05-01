@@ -139,10 +139,10 @@ export function EditorTabs({
 }) {
   return (
     <Tabs value={activeFile} onValueChange={onSelectFile} className="flex h-full flex-col gap-0">
-      <div className="flex min-h-10 items-end border-b border-solid bg-muted/20 px-2">
+      <div className="flex min-h-10 items-end bg-muted/15 px-2">
         <TabsList
           variant="line"
-          className="h-10 gap-1 overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden"
+          className="h-10 gap-0 justify-start rounded-none p-0 overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden"
           onWheel={(e) => {
             if (e.deltaY !== 0 && e.deltaX === 0) {
               e.currentTarget.scrollLeft += e.deltaY
@@ -164,7 +164,7 @@ export function EditorTabs({
               >
                 <TabsTrigger
                   value={path}
-                  className="h-9 min-w-32 justify-start px-3 pe-8 text-xs data-[state=active]:bg-background data-[state=active]:rounded-t-md data-[state=active]:border data-[state=active]:border-b-0"
+                  className="h-9 min-w-32 justify-start px-3 pe-8 text-xs bg-secondary rounded-none rounded-t border border-transparent data-[state=active]:border-border data-[state=active]:border-b-background data-[state=active]:-mb-[1px] data-[state=active]:shadow-none! dark:border-b-0 dark:data-[state=active]:-mb-[1px] z-10"
                 >
                   <IconFileText data-icon="inline-start" className={cn("size-3.5", activeFile === path && "text-primary")} />
                   <span className="truncate">{file.title}</span>
@@ -207,7 +207,7 @@ export function EditorTabs({
         const file = getFile(path)
 
         return (
-          <TabsContent key={path} value={path} className="min-h-0 flex-1 overflow-hidden">
+          <TabsContent key={path} value={path} className="min-h-0 flex-1 overflow-hidden border rounded-lg shadow-sm bg-background">
             <div className="h-[calc(100svh-7rem)]">
               <ScrollArea className="size-full shadcn-scroll-viewport">
                 <AnimatePresence mode="wait">
