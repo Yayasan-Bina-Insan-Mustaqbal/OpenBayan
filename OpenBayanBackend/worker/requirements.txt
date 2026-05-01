@@ -9,3 +9,4 @@ camel-tools==1.5.7
 jupyterlab
 prefect
 requests
+nltk
