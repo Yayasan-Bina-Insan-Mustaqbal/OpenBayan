@@ -139,10 +139,9 @@ export function EditorTabs({
 }) {
   return (
     <Tabs value={activeFile} onValueChange={onSelectFile} className="flex h-full flex-col gap-0">
-      <div className="flex min-h-10 items-end bg-muted/15 px-2">
+      <div className="flex h-[44px]! items-end bg-muted/15 px-2 z-10 -mb-px">
         <TabsList
-          variant="line"
-          className="h-10 gap-0 justify-start rounded-none p-0 overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden"
+          className="h-[38px]! gap-0 justify-start rounded-none p-0 overflow-x-auto overflow-y-hidden bg-muted/15"
           onWheel={(e) => {
             if (e.deltaY !== 0 && e.deltaX === 0) {
               e.currentTarget.scrollLeft += e.deltaY
@@ -164,7 +163,7 @@ export function EditorTabs({
               >
                 <TabsTrigger
                   value={path}
-                  className="h-9 min-w-32 justify-start px-3 pe-8 text-xs bg-secondary rounded-none rounded-t border border-transparent data-[state=active]:border-border data-[state=active]:border-b-background data-[state=active]:-mb-[1px] data-[state=active]:shadow-none! dark:border-b-0 dark:data-[state=active]:-mb-[1px] z-10"
+                  className="h-[38px]! min-w-32 justify-start px-5 pe-10 text-xs ms-1 bg-transparent text-muted-foreground hover:bg-muted/40 rounded-none rounded-t-lg border border-transparent data-[state=active]:bg-background! data-[state=active]:text-foreground data-[state=active]:border-border data-[state=active]:border-b-background data-[state=active]:-mb-px data-[state=active]:shadow-none! transition-colors"
                 >
                   <IconFileText data-icon="inline-start" className={cn("size-3.5", activeFile === path && "text-primary")} />
                   <span className="truncate">{file.title}</span>
@@ -173,7 +172,7 @@ export function EditorTabs({
                   type="button"
                   aria-label={`Close ${file.title}`}
                   className={cn(
-                    "absolute end-2 top-1/2 -translate-y-1/2 rounded-sm p-0.5 opacity-0 outline-none transition-[opacity,background-color] duration-150 hover:bg-muted-foreground/15 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5",
+                    "absolute end-2 top-1/2 -translate-y-1/2 z-20 rounded-sm p-0.5 opacity-0 outline-none transition-[opacity,background-color] duration-150 hover:bg-muted-foreground/15 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5",
                     "group-hover/tab:opacity-100",
                     activeFile === path && "opacity-100"
                   )}

@@ -202,7 +202,7 @@ export function WorkspaceShell({ user }: WorkspaceShellProps) {
               <>
                 <ResizableHandle
                   withHandle
-                  className="w-2 bg-border/70 transition-colors hover:bg-primary/40 after:w-3"
+                  className="w-2 bg-muted/15 transition-colors hover:bg-primary/40 after:w-3"
                 />
                 <ResizablePanel
                   defaultSize={50}
