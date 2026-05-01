@@ -361,7 +361,7 @@ function EditorTabs({
   isRightPaneVisible?: boolean
 }) {
   return (
-    <Tabs value={activeFile} onValueChange={onSelectFile} className="h-full gap-0">
+    <Tabs value={activeFile} onValueChange={onSelectFile} className="flex h-full flex-col gap-0">
       <div className="flex min-h-10 items-end border-b border-solid bg-muted/20 px-2">
         <TabsList
           variant="line"
@@ -431,7 +431,8 @@ function EditorTabs({
 
         return (
           <TabsContent key={path} value={path} className="min-h-0 flex-1 overflow-hidden">
-            <ScrollArea className="size-full shadcn-scroll-viewport">
+            <div className="h-[calc(100svh-7rem)]">
+              <ScrollArea className="size-full shadcn-scroll-viewport">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={path}
@@ -459,7 +460,8 @@ function EditorTabs({
                   )}
                 </motion.div>
               </AnimatePresence>
-            </ScrollArea>
+              </ScrollArea>
+            </div>
           </TabsContent>
         )
       })}

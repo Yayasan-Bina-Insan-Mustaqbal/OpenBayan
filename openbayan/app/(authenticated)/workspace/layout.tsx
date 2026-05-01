@@ -9,9 +9,6 @@ export default function WorkspaceLayout({
   // Full-screen shell, no standard top-nav or scrolling
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-background">
-      <div className="absolute inset-0 z-0 opacity-40">
-        <HeroBackground />
-      </div>
       <div className="relative z-10 h-full w-full">
         {children}
       </div>
