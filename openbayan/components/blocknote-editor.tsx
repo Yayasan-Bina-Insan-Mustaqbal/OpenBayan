@@ -54,7 +54,7 @@ export default function BlockNoteEditor({ initialContent, onChange }: BlockNoteE
   }, [editor, contentString, isLoaded]);
 
   return (
-    <div className="h-full w-full">
+    <div className="w-full">
       <BlockNoteView 
         editor={editor} 
         theme={customTheme} 
@@ -63,7 +63,6 @@ export default function BlockNoteEditor({ initialContent, onChange }: BlockNoteE
             onChange(editor.document);
           }
         }}
-        className="h-full"
       />
     </div>
   );

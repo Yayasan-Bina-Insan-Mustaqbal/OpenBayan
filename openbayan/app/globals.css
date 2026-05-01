@@ -132,4 +132,34 @@
   .font-arabic {
     font-family: var(--font-arabic), serif;
   }
+
+  .shadcn-scroll-viewport::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  .shadcn-scroll-viewport::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .shadcn-scroll-viewport::-webkit-scrollbar-thumb {
+    background-color: var(--color-border);
+    border-radius: 10px;
+  }
+  .shadcn-scroll-viewport::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-muted-foreground);
+  }
+
+  /* Target Radix UI ScrollArea components */
+  .shadcn-scroll-viewport [data-slot="scroll-area-scrollbar"][data-orientation="vertical"] {
+    width: 5px !important;
+  }
+  .shadcn-scroll-viewport [data-slot="scroll-area-scrollbar"][data-orientation="horizontal"] {
+    height: 5px !important;
+  }
+  .shadcn-scroll-viewport [data-slot="scroll-area-thumb"] {
+    background-color: var(--color-border) !important;
+    border-radius: 10px !important;
+  }
+  .shadcn-scroll-viewport [data-slot="scroll-area-thumb"]:hover {
+    background-color: var(--color-muted-foreground) !important;
+  }
 }

@@ -97,6 +97,26 @@ const editorFiles: Record<string, EditorFile> = {
     content: [
       "Use this first editor surface to model how OpenBayan documents feel.",
       "Tabs should stay lightweight, fast to switch, and tied to file explorer selection.",
+      "Line 1 of scroll test",
+      "Line 2 of scroll test",
+      "Line 3 of scroll test",
+      "Line 4 of scroll test",
+      "Line 5 of scroll test",
+      "Line 6 of scroll test",
+      "Line 7 of scroll test",
+      "Line 8 of scroll test",
+      "Line 9 of scroll test",
+      "Line 10 of scroll test",
+      "Line 11 of scroll test",
+      "Line 12 of scroll test",
+      "Line 13 of scroll test",
+      "Line 14 of scroll test",
+      "Line 15 of scroll test",
+      "Line 16 of scroll test",
+      "Line 17 of scroll test",
+      "Line 18 of scroll test",
+      "Line 19 of scroll test",
+      "Line 20 of scroll test",
     ],
   },
   "README.md": {
@@ -411,7 +431,7 @@ function EditorTabs({
 
         return (
           <TabsContent key={path} value={path} className="min-h-0 flex-1 overflow-hidden">
-            <ScrollArea className="size-full">
+            <ScrollArea className="size-full shadcn-scroll-viewport">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={path}
