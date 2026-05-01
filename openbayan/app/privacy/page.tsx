@@ -1,8 +1,8 @@
 import type { Metadata } from "next"
 
-import FooterSection from "@/components/footer"
-import { LegalSection } from "@/components/legal-section"
-import { SiteHeader } from "@/components/site-header"
+import FooterSection from "@/components/landing/footer"
+import { LegalSection } from "@/components/shared/legal-section"
+import { SiteHeader } from "@/components/landing/site-header"
 
 export const metadata: Metadata = {
   title: "Privacy Policy | OpenBayan",

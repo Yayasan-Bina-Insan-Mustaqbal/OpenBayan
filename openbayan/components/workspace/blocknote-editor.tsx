@@ -2,7 +2,7 @@
 
 import { BlockNoteView, lightDefaultTheme, darkDefaultTheme, Theme } from "@blocknote/mantine";
 import { useCreateBlockNote } from "@blocknote/react";
-import { useTheme } from "@/components/theme-provider";
+import { useTheme } from "@/components/shared/theme-provider";
 import { useEffect, useState, useMemo } from "react";
 
 interface BlockNoteEditorProps {

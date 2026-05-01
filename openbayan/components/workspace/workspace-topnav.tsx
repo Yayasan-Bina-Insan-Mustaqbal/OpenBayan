@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { IconPlus } from "@tabler/icons-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { AccountMenu } from "@/components/account-menu"
+import { AccountMenu } from "@/components/workspace/account-menu"
 
 type AccountUser = {
   name?: string | null

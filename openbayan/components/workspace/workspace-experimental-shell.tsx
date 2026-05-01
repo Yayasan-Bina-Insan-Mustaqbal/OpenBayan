@@ -1,9 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { AccountMenu } from "@/components/account-menu"
+import { AccountMenu } from "@/components/workspace/account-menu"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { AppSidebar } from "@/components/app-sidebar"
+import { AppSidebar } from "@/components/workspace/app-sidebar"
 import { Separator } from "@/components/ui/separator"
 import {
   SidebarInset,

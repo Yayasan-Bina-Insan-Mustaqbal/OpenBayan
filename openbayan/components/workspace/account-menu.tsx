@@ -3,7 +3,7 @@
 import * as React from "react"
 import { signOut } from "next-auth/react"
 
-import { ThemeToggle } from "@/components/theme-toggle"
+import { ThemeToggle } from "@/components/shared/theme-toggle"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {

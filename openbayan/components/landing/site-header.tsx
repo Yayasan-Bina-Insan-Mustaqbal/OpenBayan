@@ -4,8 +4,8 @@ import * as React from "react"
 import Link from "next/link"
 import { IconArrowRight, IconMenu2, IconX } from "@tabler/icons-react"
 
-import { Logo } from "@/components/logo"
-import { ThemeToggle } from "@/components/theme-toggle"
+import { Logo } from "@/components/landing/logo"
+import { ThemeToggle } from "@/components/shared/theme-toggle"
 import { Button } from "@/components/ui/button"
 
 const menuItems = [

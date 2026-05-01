@@ -5,7 +5,7 @@ import "@mantine/core/styles.css";
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
 import { cn } from "@/lib/utils";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/components/shared/theme-provider";
 
 const amiri = Amiri({
   weight: ["400", "700"],

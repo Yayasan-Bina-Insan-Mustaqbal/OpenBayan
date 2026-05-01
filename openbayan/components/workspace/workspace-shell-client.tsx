@@ -1,6 +1,6 @@
 "use client"
 
-import { WorkspaceShell } from "@/components/workspace-shell"
+import { WorkspaceShell } from "@/components/workspace/workspace-shell"
 import * as React from "react"
 
 export function WorkspaceShellClient({ user }: { user: any }) {

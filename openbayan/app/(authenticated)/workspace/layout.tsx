@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { HeroBackground } from "@/components/hero-background"
+import { HeroBackground } from "@/components/landing/hero-background"
 
 export default function WorkspaceLayout({
   children,

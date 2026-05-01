@@ -3,7 +3,7 @@
 import * as React from "react"
 import { IconDeviceDesktop, IconMoon, IconSun } from "@tabler/icons-react"
 
-import { useTheme } from "@/components/theme-provider"
+import { useTheme } from "@/components/shared/theme-provider"
 import { Button } from "@/components/ui/button"
 
 const themes = ["system", "light", "dark"] as const
