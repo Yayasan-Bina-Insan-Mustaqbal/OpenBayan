@@ -33,6 +33,9 @@ DEFINE FIELD OVERWRITE page ON TABLE sentence TYPE option<int>;
 DEFINE FIELD OVERWRITE version_type ON TABLE sentence TYPE option<string>;
 DEFINE FIELD OVERWRITE edition_identifier ON TABLE sentence TYPE option<string>;
 
+-- Vector Embedding (1024 dimensions for mxbai-embed-large)
+DEFINE FIELD OVERWRITE embedding ON TABLE sentence TYPE array<float, 1024>;
+
 -- General Metadata
 DEFINE FIELD OVERWRITE source_url ON TABLE sentence TYPE string;
 DEFINE FIELD OVERWRITE other_editions ON TABLE sentence TYPE array DEFAULT [];
@@ -41,6 +44,11 @@ DEFINE FIELD OVERWRITE other_editions ON TABLE sentence TYPE array DEFAULT [];
 DEFINE FIELD OVERWRITE created_at ON TABLE sentence TYPE datetime DEFAULT time::now();
 
 -- 3. DEFINE INDEXES
+-- BM25 Full-Text Index for Keyword Search
+DEFINE INDEX sentence_text_bm25 ON sentence FIELDS text SEARCH ANALYZER simple BM25;
+
+-- HNSW Vector Index for Semantic Search (1024 dimensions for mxbai-embed-large)
+DEFINE INDEX sentence_vector ON sentence FIELDS embedding MTREE 1024 DIST COSINE;
+
 -- For Quranic sentences, uniqueness is based on ayah and chunk index
--- For other types, we might need a different unique constraint
-DEFINE INDEX OVERWRITE quranSentenceIndex ON TABLE sentence FIELDS source_type, ayah_number, chunk_index;
+DEFINE INDEX quranSentenceIndex ON TABLE sentence FIELDS source_type, ayah_number, chunk_index;

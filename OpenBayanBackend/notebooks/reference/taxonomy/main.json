@@ -1,0 +1,93 @@
+{
+    "taxonomy": [
+        {
+            "id": 1,
+            "level": 1,
+            "name_ar": "علوم القرآن",
+            "name_en": "Quranic Sciences",
+            "name_transliteration": "Ulum al-Quran",
+            "chapters": [
+                {
+                    "id": "1.1",
+                    "level": 2,
+                    "name_ar": "التفسير",
+                    "name_en": "Tafsir (Exegesis)",
+                    "detailed_taxonomy": [
+                        {
+                            "id": "1.1.1",
+                            "name_ar": "أصول التفسير ومقدماته",
+                            "name_en": "Usul al-Tafsir & Muqaddimat (Principles and Prolegomena)",
+                            "sections": [
+                                {
+                                    "name_ar": "المُفَسِّر",
+                                    "name_en": "Al-Mufassir (The Exegete)",
+                                    "abwaab": [
+                                        {
+                                            "name_ar": "شروط المفسر",
+                                            "name_en": "Shurut al-Mufassir (Required Conditions & Qualifications)"
+                                        },
+                                        {
+                                            "name_ar": "آداب المفسر",
+                                            "name_en": "Adab al-Mufassir (Etiquette and Ethics)"
+                                        },
+                                        {
+                                            "name_ar": "مراتب المفسرين",
+                                            "name_en": "Maratib al-Mufassirin (Ranks/Levels)"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name_ar": "قواعد التفسير",
+                                    "name_en": "Qawa'id al-Tafsir (Rules of Interpretation)",
+                                    "abwaab": [
+                                        {
+                                            "name_ar": "المحكم والمتشابه",
+                                            "name_en": "Al-Muhkam wa al-Mutashabih (Clear vs. Ambiguous)"
+                                        },
+                                        {
+                                            "name_ar": "العام والخاص",
+                                            "name_en": "Al-Aam wa al-Khas (General vs. Specific)"
+                                        },
+                                        {
+                                            "name_ar": "المطلق والمقيد",
+                                            "name_en": "Al-Mutlaq wa al-Muqayyad (Absolute vs. Restricted)"
+                                        },
+                                        {
+                                            "name_ar": "الحقيقة والمجاز",
+                                            "name_en": "Al-Haqiqah wa al-Majaz (Literal vs. Metaphorical)"
+                                        },
+                                        {
+                                            "name_ar": "المنطوق والمفهوم",
+                                            "name_en": "Al-Mantuq wa al-Mafhum (Explicit vs. Implied)"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "4",
+                    "level": 1,
+                    "name_ar": "العقيدة",
+                    "name_en": "Creed & Theology",
+                    "chapters": [
+                        {
+                            "id": "4.1",
+                            "level": 2,
+                            "name_ar": "التوحيد",
+                            "name_en": "Tawhid",
+                            "detailed_taxonomy": [
+                                {
+                                    "id": "4.1.4",
+                                    "name_ar": "توحيد الأسماء والصفات",
+                                    "name_en": "Tawhid al-Asma' wa al-Sifat (Names/Attributes)"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

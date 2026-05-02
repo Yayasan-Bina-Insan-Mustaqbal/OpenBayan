@@ -1,0 +1,54 @@
+import json
+from surrealdb import Surreal
+
+SURREAL_URL = "ws://surrealdb:8000/rpc"
+
+def seed_taxonomy():
+    with open("/root/projects/OpenBayan-KG/OpenBayanBackend/reference/taxonomy/main.json", "r") as f:
+        data = json.load(f)
+
+    with Surreal(SURREAL_URL) as db:
+        db.signin({"user": "root", "pass": "root"})
+        db.use("main", "main")
+        
+        print("Clearing old taxonomy...")
+        db.query("DELETE alamah; DELETE sub_topic;")
+
+        def process_node(node, parent_id=None, level=1):
+            name = node.get("name_en") or node.get("name_ar")
+            safe_id = name.replace(" ", "_").replace("(", "").replace(")", "").replace("/", "_").lower()
+            # Clean up the ID to be safe for SurrealDB
+            safe_id = "".join([c for c in safe_id if c.isalnum() or c == "_"])
+            record_id = f"alamah:{safe_id}"
+            
+            print(f"Creating: {name} (Level {level})")
+            
+            # Create the record
+            db.query(
+                "UPSERT $id SET label = $label, label_ar = $ar, level = $level, parent = $parent",
+                {
+                    "id": record_id,
+                    "label": name,
+                    "ar": node.get("name_ar"),
+                    "level": level,
+                    "parent": parent_id
+                }
+            )
+            
+            # Create Graph Edge if parent exists
+            if parent_id:
+                db.query(f"RELATE {record_id}->sub_topic->{parent_id};")
+
+            # Recursive children
+            # The JSON uses different keys for children at different levels (chapters, detailed_taxonomy, sections, abwaab)
+            children = node.get("chapters") or node.get("detailed_taxonomy") or node.get("sections") or node.get("abwaab") or []
+            for child in children:
+                process_node(child, record_id, level + 1)
+
+        for top_level in data["taxonomy"]:
+            process_node(top_level)
+
+    print("✅ Taxonomy seeding complete.")
+
+if __name__ == "__main__":
+    seed_taxonomy()
