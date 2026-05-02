@@ -52,7 +52,11 @@ DEFINE FIELD hizb_quarter ON TABLE sentence TYPE option<int>;
 DEFINE FIELD page ON TABLE sentence TYPE option<int>;
 DEFINE FIELD version_type ON TABLE sentence TYPE option<string>;
 DEFINE FIELD edition_identifier ON TABLE sentence TYPE option<string>;
+DEFINE FIELD transliteration_en ON TABLE sentence TYPE option<string>;
+DEFINE FIELD transliteration_ru ON TABLE sentence TYPE option<string>;
+DEFINE FIELD transliteration_tr ON TABLE sentence TYPE option<string>;
 DEFINE FIELD embedding ON TABLE sentence TYPE array<float, 1024>;
+DEFINE FIELD embedding_transliteration ON TABLE sentence TYPE option<array<float, 1024>>;
 DEFINE FIELD embedding_clean ON TABLE sentence TYPE option<array<float, 1024>>;
 DEFINE FIELD source_url ON TABLE sentence TYPE option<string>;
 DEFINE FIELD other_editions ON TABLE sentence TYPE array DEFAULT [];
@@ -60,6 +64,7 @@ DEFINE FIELD created_at ON TABLE sentence TYPE datetime DEFAULT time::now();
 
 -- 5. INDEXES & RELATIONS
 DEFINE INDEX sentence_vector ON sentence FIELDS embedding HNSW DIMENSION 1024 DIST COSINE;
+DEFINE INDEX sentence_transliteration_vector ON sentence FIELDS embedding_transliteration HNSW DIMENSION 1024 DIST COSINE;
 DEFINE INDEX quranSentenceIndex ON TABLE sentence FIELDS source_type, ayah_number, chunk_index;
 
 -- Edge: entity -> tagged_with -> category
