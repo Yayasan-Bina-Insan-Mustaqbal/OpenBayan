@@ -14,17 +14,17 @@ DEFINE INDEX userEmailIndex ON TABLE user FIELDS email UNIQUE;
 
 DEFINE ACCESS account ON DATABASE TYPE RECORD SIGNUP ( CREATE user CONTENT { username: $username, name: $name, email: $email, password: crypto::argon2::generate($password) } ) SIGNIN ( SELECT * FROM user WHERE email = $email AND crypto::argon2::compare(password, $password) ) DURATION FOR SESSION 24h;
 
--- 2. ALAMAH (Tags / Categories)
-DEFINE TABLE alamah SCHEMAFULL;
-DEFINE FIELD label       ON alamah TYPE string;
-DEFINE FIELD label_ar    ON alamah TYPE option<string>;
-DEFINE FIELD description ON alamah TYPE option<string>;
-DEFINE FIELD color       ON alamah TYPE option<string>;
-DEFINE FIELD category    ON alamah TYPE option<string>; -- e.g., "subject", "entity", "attribute"
-DEFINE FIELD parent      ON alamah TYPE option<record<alamah>>;
-DEFINE FIELD level       ON alamah TYPE int DEFAULT 1;
-DEFINE FIELD created_at  ON alamah TYPE datetime DEFAULT time::now();
-DEFINE INDEX alamah_label ON alamah FIELDS label UNIQUE;
+-- 2. CATEGORY (Tags / Categories)
+DEFINE TABLE category SCHEMAFULL;
+DEFINE FIELD label       ON category TYPE string;
+DEFINE FIELD label_ar    ON category TYPE option<string>;
+DEFINE FIELD description ON category TYPE option<string>;
+DEFINE FIELD color       ON category TYPE option<string>;
+DEFINE FIELD classification ON category TYPE option<string>; -- e.g., "subject", "entity", "attribute"
+DEFINE FIELD parent      ON category TYPE option<record<category>>;
+DEFINE FIELD level       ON category TYPE int DEFAULT 1;
+DEFINE FIELD created_at  ON category TYPE datetime DEFAULT time::now();
+DEFINE INDEX category_label ON category FIELDS label UNIQUE;
 
 -- 3. SAHIFAH
 DEFINE TABLE sahifah SCHEMAFULL PERMISSIONS FOR select WHERE $auth.id != NONE, FOR create, update, delete WHERE author = $auth.id;
@@ -62,10 +62,11 @@ DEFINE FIELD created_at ON TABLE sentence TYPE datetime DEFAULT time::now();
 DEFINE INDEX sentence_vector ON sentence FIELDS embedding HNSW DIMENSION 1024 DIST COSINE;
 DEFINE INDEX quranSentenceIndex ON TABLE sentence FIELDS source_type, ayah_number, chunk_index;
 
--- Edge: entity -> tagged_with -> alamah
-DEFINE TABLE tagged_with SCHEMAFULL TYPE RELATION IN sentence|sahifah|user OUT alamah;
-DEFINE FIELD weight      ON tagged_with TYPE float DEFAULT 1.0; -- Confidence score
+-- Edge: entity -> tagged_with -> category
+DEFINE TABLE tagged_with SCHEMAFULL TYPE RELATION IN sentence|sahifah|user OUT category;
+DEFINE FIELD weight      ON tagged_with TYPE int DEFAULT 5; -- Importance (1-10)
+DEFINE FIELD reasoning   ON tagged_with TYPE option<string>; -- AI justification
 DEFINE FIELD created_at  ON tagged_with TYPE datetime DEFAULT time::now();
 
--- Edge: alamah -> sub_topic -> alamah (Hierarchical tags)
-DEFINE TABLE sub_topic SCHEMAFULL TYPE RELATION IN alamah OUT alamah;
+-- Edge: category -> sub_topic -> category (Hierarchical tags)
+DEFINE TABLE sub_topic SCHEMAFULL TYPE RELATION IN category OUT category;

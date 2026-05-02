@@ -129,16 +129,16 @@ DEFINE FIELD created     ON majmu TYPE datetime DEFAULT time::now();
 Reusable tags/labels that can be attached to any entity.
 
 ```surrealql
-DEFINE TABLE alamah SCHEMAFULL
+DEFINE TABLE category SCHEMAFULL
     PERMISSIONS
         FOR select FULL, -- Tags are globally visible
         FOR create, update, delete WHERE $auth.role = "admin";
 
-DEFINE FIELD label      ON alamah TYPE string  ASSERT string::len($value) > 0;
-DEFINE FIELD color      ON alamah TYPE option<string>;
-DEFINE FIELD category   ON alamah TYPE option<string>; -- e.g., "aqeedah", "fiqh", "hadith"
+DEFINE FIELD label      ON category TYPE string  ASSERT string::len($value) > 0;
+DEFINE FIELD color      ON category TYPE option<string>;
+DEFINE FIELD category   ON category TYPE option<string>; -- e.g., "aqeedah", "fiqh", "hadith"
 
-DEFINE INDEX alamah_label ON alamah FIELDS label UNIQUE;
+DEFINE INDEX category_label ON category FIELDS label UNIQUE;
 ```
 
 ---
@@ -153,7 +153,7 @@ DEFINE TABLE extracted_from SCHEMAFULL TYPE RELATION IN faidah OUT sahifah
     PERMISSIONS FOR select, create, delete WHERE in.owner = $auth.id;
 
 -- A Faidah or Sahifah IS TAGGED WITH an Alamah
-DEFINE TABLE tagged_with SCHEMAFULL TYPE RELATION IN faidah|sahifah OUT alamah
+DEFINE TABLE tagged_with SCHEMAFULL TYPE RELATION IN faidah|sahifah OUT category
     PERMISSIONS FOR select FULL, FOR create, delete WHERE in.owner = $auth.id;
 
 -- A Majmu CONTAINS many Fawaid
@@ -170,11 +170,11 @@ FROM faidah WHERE owner = researcher:user_id_here;
 
 -- Graph traversal: "Find all Fawaid in the 'aqeedah' topic area"
 SELECT * FROM faidah
-WHERE ->tagged_with->alamah[WHERE category = "aqeedah"];
+WHERE ->tagged_with->category[WHERE category = "aqeedah"];
 
 -- Find all items in a collection, with their tags
 SELECT *, ->contains->faidah.* AS fawaid
-FROM majmu:my_collection_id FETCH fawaid.->tagged_with->alamah.*;
+FROM majmu:my_collection_id FETCH fawaid.->tagged_with->category.*;
 ```
 
 ---

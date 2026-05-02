@@ -162,7 +162,7 @@ kg_extraction_agent = Agent(
 async def find_existing_tags(ctx: RunContext[KGDeps], labels: list[str]) -> list[dict]:
     """Find existing Alamah records so the agent can avoid duplicate tags."""
     result = await ctx.deps.db.query(
-        "SELECT id, label, category FROM alamah WHERE label IN $labels;",
+        "SELECT id, label, category FROM category WHERE label IN $labels;",
         {"labels": labels},
     )
     return result[0].get("result", [])
@@ -257,7 +257,7 @@ Use Pydantic AI to propose graph records. Use SurrealDB rules to enforce truth.
 Required safeguards:
 
 - Use parameterized SurrealQL for user-provided text.
-- Deduplicate `alamah` by unique label before creating new tags.
+- Deduplicate `category` by unique label before creating new tags.
 - Create `faidah` records first, then `RELATE` edges.
 - Never let the model produce raw SurrealQL.
 - Keep permission-sensitive writes inside worker-owned repository functions.
