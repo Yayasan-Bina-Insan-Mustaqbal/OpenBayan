@@ -1,10 +1,10 @@
 import requests
 import json
 import time
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 from surrealdb import Surreal
-import sys
+from prefect import flow, task, get_run_logger
 
 # Configuration
 SURREAL_URL = "ws://surrealdb:8000/rpc"
@@ -35,6 +35,7 @@ class ChunkResult(BaseModel):
 class AyahEnrichmentResult(BaseModel):
     chunks: List[ChunkResult]
 
+@task(retries=3, retry_delay_seconds=2)
 def get_taxonomy_labels():
     with Surreal(SURREAL_URL) as db:
         db.signin({"user": "root", "pass": "root"})
@@ -42,167 +43,136 @@ def get_taxonomy_labels():
         res = db.query("SELECT label FROM category WHERE level >= 2;")
         return [r["label"] for r in res]
 
-TAXONOMY_LABELS = get_taxonomy_labels()
+@task(retries=5, retry_delay_seconds=5)
+def get_embedding(text: str):
+    res = requests.post(f"{OLLAMA_URL}/api/embeddings", json={"model": MODEL_EMBED, "prompt": text}, timeout=60)
+    res.raise_for_status()
+    return res.json()["embedding"]
 
-def get_embedding(text):
-    for attempt in range(3):
-        try:
-            res = requests.post(f"{OLLAMA_URL}/api/embeddings", json={"model": MODEL_EMBED, "prompt": text}, timeout=30)
-            return res.json()["embedding"]
-        except Exception as e:
-            time.sleep(2)
-    return None
-
-def enrich_and_chunk_ayah(arabic_text, clean_text, trans_en, trans_ru, trans_tr, context):
-    labels_str = "\n".join(TAXONOMY_LABELS)
+@task(retries=3, retry_delay_seconds=10)
+def enrich_and_chunk_ayah(arabic_text, trans_en, trans_ru, trans_tr, context, labels):
+    logger = get_run_logger()
+    labels_str = ", ".join(labels)
     prompt = f"""
-Context: {context}
+### CONTEXT
+{context}
 
-Ayah (Uthmani): {arabic_text}
-Ayah (Clean): {clean_text}
-Transliteration (EN): {trans_en}
-Transliteration (RU): {trans_ru}
-Transliteration (TR): {trans_tr}
+### TASK
+Split this Ayah into semantic sentences based on Quranic waqf marks.
+Assign categories (1-10) and extract entities for EACH chunk.
+Categories to choose from: {labels_str}
 
-Task:
-1. Split the Ayah into logical semantic chunks (sentences) based on Quranic waqf marks if present.
-2. Align the English, Russian, and Turkish transliterations perfectly with each Arabic chunk.
-3. For each chunk, map to relevant categories from this list:
-{labels_str}
-4. Extract entities for each chunk.
+Arabic: {arabic_text}
+EN Trans: {trans_en}
+RU Trans: {trans_ru}
+TR Trans: {trans_tr}
 
-Return JSON in this format:
+Return ONLY this JSON schema:
 {{
   "chunks": [
     {{
-      "arabic_chunk": "...",
-      "transliteration": {{ "en": "...", "ru": "...", "tr": "..." }},
-      "categories": [{{ "label": "...", "importance": 10, "reasoning": "..." }}],
-      "entities": [{{ "name": "...", "type": "..." }}]
+      "arabic_chunk": "string",
+      "transliteration": {{ "en": "string", "ru": "string", "tr": "string" }},
+      "categories": [{{ "label": "string", "importance": 10, "reasoning": "string" }}],
+      "entities": [{{ "name": "string", "type": "string" }}]
     }}
   ]
 }}
 """
-    for attempt in range(3):
-        try:
-            res = requests.post(f"{OLLAMA_URL}/api/generate", json={"model": MODEL_ENRICH, "prompt": prompt, "stream": False, "format": "json"}, timeout=120)
-            return AyahEnrichmentResult.model_validate_json(res.json()["response"])
-        except Exception as e:
-            print(f"  (!) Enrichment/Chunking failed on attempt {attempt+1}. Error: {e}")
-            time.sleep(2)
-    return None
+    res = requests.post(f"{OLLAMA_URL}/api/generate", json={
+        "model": MODEL_ENRICH, 
+        "prompt": prompt, 
+        "stream": False, 
+        "format": "json",
+        "options": {"temperature": 0.1}
+    }, timeout=180)
+    res.raise_for_status()
+    return AyahEnrichmentResult.model_validate_json(res.json()["response"])
 
+@task
 def get_hizb_context(hizb_quarter):
-    try:
-        res = requests.get(f"https://api.alquran.cloud/v1/hizbQuarter/{hizb_quarter}/quran-simple-clean").json()
-        return " ".join([a["text"] for a in res["data"]["ayahs"]])
-    except:
-        return ""
+    res = requests.get(f"https://api.alquran.cloud/v1/hizbQuarter/{hizb_quarter}/quran-simple-clean").json()
+    return " ".join([a["text"] for a in res["data"]["ayahs"]])
 
-def ingest_surah(surah_number, db):
-    print(f"\n--- Starting ingestion for Surah {surah_number} ---")
-    
-    # Fetch Ayahs and Transliterations
-    print(f"Fetching Ayahs for Surah {surah_number} from API...")
-    try:
-        res_u = requests.get(f"https://api.alquran.cloud/v1/surah/{surah_number}/quran-uthmani").json()["data"]["ayahs"]
-        res_c = requests.get(f"https://api.alquran.cloud/v1/surah/{surah_number}/quran-simple-clean").json()["data"]["ayahs"]
-        res_en = requests.get(f"https://api.alquran.cloud/v1/surah/{surah_number}/en.transliteration").json()["data"]["ayahs"]
-        res_ru = requests.get(f"https://api.alquran.cloud/v1/surah/{surah_number}/ru.transliteration").json()["data"]["ayahs"]
-        res_tr = requests.get(f"https://api.alquran.cloud/v1/surah/{surah_number}/tr.transliteration").json()["data"]["ayahs"]
-    except Exception as e:
-        print(f"Failed to fetch data for Surah {surah_number}: {e}")
-        return
-
-    total = len(res_u)
-    print(f"Processing {total} Ayahs...")
-
-    hizb_cache = {}
-
-    for i in range(total):
-        ayah_u = res_u[i]
-        ref = ayah_u["numberInSurah"]
-        
-        ayah_c = res_c[i]
-        ayah_en = res_en[i]
-        ayah_ru = res_ru[i]
-        ayah_tr = res_tr[i]
-        hizb = ayah_u["hizbQuarter"]
-        
-        print(f"[{ref}/{total}] Processing Ayah {surah_number}:{ref} (Hizb {hizb})...")
-        
-        if hizb not in hizb_cache:
-            hizb_cache[hizb] = get_hizb_context(hizb)
-        context = hizb_cache[hizb]
-        
-        enrichment = enrich_and_chunk_ayah(
-            ayah_u["text"], ayah_c["text"], 
-            ayah_en["text"], ayah_ru["text"], ayah_tr["text"], 
-            context
-        )
-        
-        if not enrichment:
-            print(f"Skipping {surah_number}:{ref} due to LLM failure.")
-            continue
-
-        for idx, chunk in enumerate(enrichment.chunks):
-            sid = f"sentence:quran_{surah_number}_{ref}_chunk_{idx}"
-            
-            vec_text = get_embedding(chunk.arabic_chunk)
-            vec_sound = get_embedding(chunk.transliteration.en)
-            
-            if not vec_text or not vec_sound:
-                continue
-
-            db.query(f"DELETE {sid};")
-            db.query(
-                f"CREATE {sid} SET text = $text, transliteration_en = $en, transliteration_ru = $ru, transliteration_tr = $tr, chunk_index = $idx, source_type = 'quran', surah_number = $sn, ayah_number = $an, hizb_quarter = $hq, embedding = $vec, embedding_transliteration = $vec_s, llm_context = $ctx",
-                {
-                    "text": chunk.arabic_chunk,
-                    "en": chunk.transliteration.en,
-                    "ru": chunk.transliteration.ru,
-                    "tr": chunk.transliteration.tr,
-                    "idx": idx,
-                    "sn": surah_number,
-                    "an": ref,
-                    "hq": hizb,
-                    "vec": vec_text,
-                    "vec_s": vec_sound,
-                    "ctx": context
-                }
-            )
-            
-            for cat in chunk.categories:
-                tag_res = db.query("SELECT id FROM category WHERE label = $label LIMIT 1", {"label": cat.label})
-                if tag_res:
-                    tid = tag_res[0]["id"]
-                    final_weight = cat.importance
-                    if surah_number == 2 and ref == 255: 
-                        final_weight = min(10, final_weight + 2)
-                    elif surah_number == 1:
-                        final_weight = min(10, final_weight + 1)
-                    
-                    db.query(f"RELATE {sid}->tagged_with->{tid} SET weight = $w, reasoning = $r", {"w": final_weight, "r": cat.reasoning})
-            
-            for ent in chunk.entities:
-                safe_ent_name = ent.name.replace(" ", "_").replace("'", "").lower()
-                safe_ent_name = "".join([c for c in safe_ent_name if c.isalnum() or c == "_"])
-                if not safe_ent_name: continue
-                eid = f"entity:`{safe_ent_name}`"
-                db.query(f"UPSERT {eid} SET name = $n, type = $t", {"n": ent.name, "t": ent.type})
-                db.query(f"RELATE {sid}->mentions->{eid}")
-
-def main():
-    print("Starting Full Quran Ingestion Pipeline...")
+@task
+def save_to_surreal(sid, record, categories, entities, surah_number, ayah_number):
+    logger = get_run_logger()
     with Surreal(SURREAL_URL) as db:
         db.signin({"user": "root", "pass": "root"})
         db.use("main", "main")
         
-        # Start from Surah 1 to 114
-        for surah_number in range(1, 115):
-            ingest_surah(surah_number, db)
+        db.query(f"DELETE {sid};")
+        db.query(f"CREATE {sid} CONTENT $record", {"record": record})
+        
+        for cat in categories:
+            tag_res = db.query("SELECT id FROM category WHERE label = $label LIMIT 1", {"label": cat.label})
+            if tag_res:
+                tid = tag_res[0]["id"]
+                weight = cat.importance
+                if surah_number == 2 and ayah_number == 255: weight = min(10, weight + 2)
+                elif surah_number == 1: weight = min(10, weight + 1)
+                db.query(f"RELATE {sid}->tagged_with->{tid} SET weight = $w, reasoning = $r", {"w": weight, "r": cat.reasoning})
+        
+        for ent in entities:
+            safe_ent_name = "".join([c for c in ent.name.replace(" ", "_").replace("'", "").lower() if c.isalnum() or c == "_"])
+            if not safe_ent_name: continue
+            eid = f"entity:`{safe_ent_name}`"
+            db.query(f"UPSERT {eid} SET name = $n, type = $t", {"n": ent.name, "t": ent.type})
+            db.query(f"RELATE {sid}->mentions->{eid}")
 
-    print("✅ Entire Quran ingestion complete!")
+@flow(name="Quran Multi-Modal Ingestion")
+def quran_ingestion_flow(start_surah: int = 1, end_surah: int = 114):
+    logger = get_run_logger()
+    labels = get_taxonomy_labels()
+    
+    for surah_number in range(start_surah, end_surah + 1):
+        logger.info(f"--- Processing Surah {surah_number} ---")
+        
+        res_u = requests.get(f"https://api.alquran.cloud/v1/surah/{surah_number}/quran-uthmani").json()["data"]["ayahs"]
+        res_en = requests.get(f"https://api.alquran.cloud/v1/surah/{surah_number}/en.transliteration").json()["data"]["ayahs"]
+        res_ru = requests.get(f"https://api.alquran.cloud/v1/surah/{surah_number}/ru.transliteration").json()["data"]["ayahs"]
+        res_tr = requests.get(f"https://api.alquran.cloud/v1/surah/{surah_number}/tr.transliteration").json()["data"]["ayahs"]
+        
+        hizb_cache = {}
+
+        for i in range(len(res_u)):
+            ayah_u = res_u[i]
+            ref = ayah_u["numberInSurah"]
+            hizb = ayah_u["hizbQuarter"]
+            
+            if hizb not in hizb_cache:
+                hizb_cache[hizb] = get_hizb_context(hizb)
+            
+            try:
+                enrichment = enrich_and_chunk_ayah(
+                    ayah_u["text"], res_en[i]["text"], res_ru[i]["text"], res_tr[i]["text"],
+                    hizb_cache[hizb], labels
+                )
+                
+                for idx, chunk in enumerate(enrichment.chunks):
+                    sid = f"sentence:quran_{surah_number}_{ref}_chunk_{idx}"
+                    
+                    vec_text = get_embedding(chunk.arabic_chunk)
+                    vec_sound = get_embedding(chunk.transliteration.en)
+                    
+                    record = {
+                        "text": chunk.arabic_chunk,
+                        "transliteration_en": chunk.transliteration.en,
+                        "transliteration_ru": chunk.transliteration.ru,
+                        "transliteration_tr": chunk.transliteration.tr,
+                        "chunk_index": idx,
+                        "source_type": "quran",
+                        "surah_number": surah_number,
+                        "ayah_number": ref,
+                        "hizb_quarter": hizb,
+                        "embedding": vec_text,
+                        "embedding_transliteration": vec_sound,
+                        "llm_context": hizb_cache[hizb]
+                    }
+                    
+                    save_to_surreal(sid, record, chunk.categories, chunk.entities, surah_number, ref)
+            except Exception as e:
+                logger.error(f"Failed Ayah {surah_number}:{ref}: {e}")
 
 if __name__ == "__main__":
-    main()
+    quran_ingestion_flow()
