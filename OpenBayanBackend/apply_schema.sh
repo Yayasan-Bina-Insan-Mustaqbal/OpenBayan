@@ -1,7 +1,7 @@
 #!/bin/bash
 # Helper script to apply SurrealDB schema
 
-SCHEMA_FILE="schema/init.surql"
+SCHEMA_FILE="schema/combined_schema.surql"
 SEED_FILE="schema/seed.surql"
 
 if [ ! -f "$SCHEMA_FILE" ]; then

@@ -29,6 +29,8 @@ services:
     command: prefect server start --host 0.0.0.0 --port 4200
     ports:
       - "4200:4200"
+    environment:
+      - PREFECT_API_URL=http://100.64.8.38:4200/api
     volumes:
       # We persist the internal SQLite database so you don't need Postgres!
       - prefect_data:/home/prefect/.prefect

@@ -101,38 +101,24 @@ def save_to_surreal(sid, record, categories, entities, surah_number, ayah_number
         db.signin({"user": "root", "pass": "root"})
         db.use("main", "main")
         
-        try:
-            db.query(f"DELETE {sid};")
-            # Use the SDK's create method which is more robust than raw query for CONTENT
-            db.create(sid, record)
-            logger.info(f"  -> Saved {sid} to SurrealDB")
-        except Exception as e:
-            logger.error(f"  (!) Failed to create record {sid}: {e}")
-            raise e
+        db.query(f"DELETE {sid};")
+        db.query(f"CREATE {sid} CONTENT $record", {"record": record})
         
         for cat in categories:
-            try:
-                tag_res = db.query("SELECT id FROM category WHERE label = $label LIMIT 1", {"label": cat.label})
-                if tag_res and len(tag_res[0]["result"]) > 0:
-                    tid = tag_res[0]["result"][0]["id"]
-                    weight = cat.importance
-                    if surah_number == 2 and ayah_number == 255: weight = min(10, weight + 2)
-                    elif surah_number == 1: weight = min(10, weight + 1)
-                    
-                    db.query(f"RELATE {sid}->tagged_with->{tid} SET weight = $w, reasoning = $r", {"w": weight, "r": cat.reasoning})
-                    logger.info(f"    -> Linked category: {cat.label}")
-            except Exception as e:
-                logger.warn(f"    (!) Failed to link category {cat.label}: {e}")
+            tag_res = db.query("SELECT id FROM category WHERE label = $label LIMIT 1", {"label": cat.label})
+            if tag_res:
+                tid = tag_res[0]["id"]
+                weight = cat.importance
+                if surah_number == 2 and ayah_number == 255: weight = min(10, weight + 2)
+                elif surah_number == 1: weight = min(10, weight + 1)
+                db.query(f"RELATE {sid}->tagged_with->{tid} SET weight = $w, reasoning = $r", {"w": weight, "r": cat.reasoning})
         
         for ent in entities:
-            try:
-                safe_ent_name = "".join([c for c in ent.name.replace(" ", "_").replace("'", "").lower() if c.isalnum() or c == "_"])
-                if not safe_ent_name: continue
-                eid = f"entity:`{safe_ent_name}`"
-                db.query(f"UPSERT {eid} SET name = $n, type = $t", {"n": ent.name, "t": ent.type})
-                db.query(f"RELATE {sid}->mentions->{eid}")
-            except Exception as e:
-                logger.warn(f"    (!) Failed to link entity {ent.name}: {e}")
+            safe_ent_name = "".join([c for c in ent.name.replace(" ", "_").replace("'", "").lower() if c.isalnum() or c == "_"])
+            if not safe_ent_name: continue
+            eid = f"entity:`{safe_ent_name}`"
+            db.query(f"UPSERT {eid} SET name = $n, type = $t", {"n": ent.name, "t": ent.type})
+            db.query(f"RELATE {sid}->mentions->{eid}")
 
 @flow(name="Quran Multi-Modal Ingestion")
 def quran_ingestion_flow(start_surah: int = 1, end_surah: int = 114):
