@@ -7,10 +7,19 @@ from pydantic import BaseModel
 from surrealdb import Surreal
 from prefect import flow, task, get_run_logger
 
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
 # Configuration
-SURREAL_URL = "ws://192.168.100.33:8000/rpc"
-SURREAL_USER = "root"
-SURREAL_PASS = "RwAbXjBc2z36z"
+SURREAL_URL = os.getenv("SURREALDB_URL", "ws://192.168.100.33:8000")
+if not SURREAL_URL.endswith("/rpc"):
+    SURREAL_URL = f"{SURREAL_URL.replace('http', 'ws')}/rpc"
+
+SURREAL_USER = os.getenv("SURREALDB_USERNAME", "root")
+SURREAL_PASS = os.getenv("SURREALDB_PASSWORD", "RwAbXjBc2z36z")
 OLLAMA_URL = "http://100.121.116.17:11434"
 MODEL_ENRICH = "qwen2.5:7b"
 MODEL_EMBED = "mxbai-embed-large:latest"
@@ -104,7 +113,7 @@ def get_hizb_context(hizb_quarter):
     return " ".join([a["text"] for a in res["data"]["ayahs"]])
 
 @task
-def save_to_surreal(sid, record, categories, entities, surah_number, ayah_number):
+def save_to_surreal(sid, record, categories, entities, surah_number, ayah_number, juz, hizb, uthmani):
     logger = get_run_logger()
     with Surreal(SURREAL_URL) as db:
         db.signin({"user": SURREAL_USER, "pass": SURREAL_PASS})
@@ -112,28 +121,35 @@ def save_to_surreal(sid, record, categories, entities, surah_number, ayah_number
         
         try:
             params = {}
-            # Clean up the record for SCHEMAFULL sentence table
-            # These are temporary fields used to pass context to this function
+            
+            # 1. Define IDs first to avoid NameError
+            source_id = f"source:quran_uthmani"
+            ayah_id = f"ayah:quran_{surah_number}_{ayah_number}"
+
+            # 2. Clean up the record for SCHEMAFULL sentence table
             record["parent"] = ayah_id
             record["source"] = source_id
+            
             record.pop("hizb_quarter", None)
             record.pop("juz", None)
             record.pop("page", None)
+            record.pop("surah_number", None)
+            record.pop("ayah_number", None)
+            record.pop("surah_name", None)
+            record.pop("number_in_surah", None)
             record.pop("uthmani_text", None)
-            record.pop("source_type", None)
+            record.pop("hizb_quarter", None)
 
             # Wrap all node and edge creation in a TRANSACTION
             query = "BEGIN TRANSACTION;"
             
-            # 1. First ensure the Source (Edition) exists
-            source_id = f"source:quran_uthmani"
+            # 3. First ensure the Source (Edition) exists
             query += f" UPSERT {source_id} SET identifier = 'quran_uthmani', type = 'quran', language = 'ar', url = 'https://api.alquran.cloud';"
             
-            # 2. Ensure the Ayah (Parent) exists and has coordinates
-            ayah_id = f"ayah:quran_{surah_number}_{ayah_number}"
+            # 4. Ensure the Ayah (Parent) exists and has coordinates
             query += f" UPSERT {ayah_id} SET surah_number = $surah, ayah_number = $ayah, juz = $juz, hizb_quarter = $hizb, uthmani_text = $uthmani;"
             
-            # 3. Save the sentence chunk linking to parent and source
+            # 5. Save the sentence chunk linking to parent and source
             query += f" UPSERT {sid} CONTENT $record;"
             
             # 4. Process Categories (Edges)
@@ -167,9 +183,9 @@ def save_to_surreal(sid, record, categories, entities, surah_number, ayah_number
             params.update({
                 "surah": surah_number,
                 "ayah": ayah_number,
-                "juz": record.get("juz"),
-                "hizb": record.get("hizb_quarter"),
-                "uthmani": record.get("uthmani_text", ""),
+                "juz": juz,
+                "hizb": hizb,
+                "uthmani": uthmani,
                 "record": record
             })
             
@@ -224,19 +240,22 @@ def quran_ingestion_flow(start_surah: int = 1, end_surah: int = 114):
                     record = {
                         "text": chunk.arabic_chunk,
                         "simple_clean_text": clean_text,
-                        "transliterations": {
-                            "en": chunk.transliteration.en,
-                            "ru": chunk.transliteration.ru,
-                            "tr": chunk.transliteration.tr
+                        "metadata": {
+                            "transliterations": {
+                                "en": chunk.transliteration.en,
+                                "ru": chunk.transliteration.ru,
+                                "tr": chunk.transliteration.tr
+                            },
+                            "hizb_quarter": hizb,
                         },
                         "chunk_index": idx,
                         "embedding": vec_text,
                         "embedding_transliteration": vec_sound,
-                        "uthmani_text": ayah_u["text"], # Pass this so it can be saved to parent
-                        "hizb_quarter": hizb, # Needed for the save_to_surreal helper to pass to parent
+                        "uthmani_text": ayah_u["text"], # Passed to parent
+                        "hizb_quarter": hizb, # Passed to parent
                     }
                     
-                    save_to_surreal(sid, record, chunk.categories, chunk.entities, surah_number, ref)
+                    save_to_surreal(sid, record, chunk.categories, chunk.entities, surah_number, ref, ayah_u["juz"], hizb, ayah_u["text"])
             except Exception as e:
                 logger.error(f"Failed Ayah {surah_number}:{ref}: {e}")
 

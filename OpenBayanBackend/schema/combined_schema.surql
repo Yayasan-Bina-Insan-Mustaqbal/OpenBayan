@@ -106,26 +106,13 @@ DEFINE INDEX sahifahTitleIndex ON TABLE sahifah FIELDS title FULLTEXT ANALYZER a
 DEFINE TABLE sentence SCHEMAFULL;
 DEFINE FIELD text ON TABLE sentence TYPE string ASSERT !!$value OR THROW "Sentence text content is mandatory";
 DEFINE FIELD simple_clean_text ON TABLE sentence TYPE option<string>;
-DEFINE FIELD llm_context ON TABLE sentence TYPE string;
 DEFINE FIELD chunk_index ON TABLE sentence TYPE int;
-DEFINE FIELD source_type ON TABLE sentence TYPE string ASSERT !!$value;
-DEFINE FIELD ayah_number ON TABLE sentence TYPE option<int>;
-DEFINE FIELD surah_number ON TABLE sentence TYPE option<int>;
-DEFINE FIELD surah_name ON TABLE sentence TYPE option<string>;
-DEFINE FIELD number_in_surah ON TABLE sentence TYPE option<int>;
-DEFINE FIELD juz ON TABLE sentence TYPE option<int>;
-DEFINE FIELD hizb_quarter ON TABLE sentence TYPE option<int>;
-DEFINE FIELD page ON TABLE sentence TYPE option<int>;
-DEFINE FIELD version_type ON TABLE sentence TYPE option<string>;
-DEFINE FIELD edition_identifier ON TABLE sentence TYPE option<string>;
-DEFINE FIELD transliteration_en ON TABLE sentence TYPE option<string>;
-DEFINE FIELD transliteration_ru ON TABLE sentence TYPE option<string>;
-DEFINE FIELD transliteration_tr ON TABLE sentence TYPE option<string>;
 DEFINE FIELD embedding ON TABLE sentence TYPE array<float, 1024>;
 DEFINE FIELD embedding_transliteration ON TABLE sentence TYPE option<array<float, 1024>>;
 DEFINE FIELD embedding_clean ON TABLE sentence TYPE option<array<float, 1024>>;
-DEFINE FIELD source_url ON TABLE sentence TYPE option<string>;
-DEFINE FIELD other_editions ON TABLE sentence TYPE array DEFAULT [];
+DEFINE FIELD metadata ON sentence TYPE option<object>; -- For juz, page, transliteration, etc.
+DEFINE FIELD parent ON sentence TYPE record<ayah | hadith | book_section> ASSERT $value != NONE;
+DEFINE FIELD source ON sentence TYPE record<source> ASSERT $value != NONE;
 DEFINE FIELD created_at ON TABLE sentence TYPE datetime DEFAULT time::now();
 
 -- Computed Logic: Mention Count (Importance Score)
@@ -148,7 +135,7 @@ DEFINE INDEX sentence_text_bm25 ON sentence FIELDS text FULLTEXT ANALYZER ascii 
 -- HNSW Index for Vector Search
 DEFINE INDEX sentence_vector ON sentence FIELDS embedding HNSW DIMENSION 1024 DIST COSINE;
 DEFINE INDEX sentence_transliteration_vector ON sentence FIELDS embedding_transliteration HNSW DIMENSION 1024 DIST COSINE;
-DEFINE INDEX quranSentenceIndex ON TABLE sentence FIELDS source_type, ayah_number, chunk_index;
+DEFINE INDEX quranSentenceIndex ON TABLE sentence FIELDS parent, chunk_index;
 
 
 -- 6. GRAPH RELATIONS (Hardened with ENFORCED)
