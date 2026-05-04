@@ -63,6 +63,7 @@ Transliteration (TR): {trans_tr}
 Task:
 1. Split the Ayah into logical semantic chunks (sentences) based on Quranic waqf marks if present.
 2. Align the English, Russian, and Turkish transliterations perfectly with each Arabic chunk.
+   **CRITICAL RULE:** All chunks MUST be verbatim, exact subsets of the original text. Do NOT rephrase or omit words.
 3. For each chunk, map to relevant categories from this list:
 {labels_str}
 4. Extract entities for each chunk.

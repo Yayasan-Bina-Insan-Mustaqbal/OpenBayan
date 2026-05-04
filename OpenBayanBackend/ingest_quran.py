@@ -80,6 +80,11 @@ Split this Ayah into semantic sentences based on Quranic waqf marks.
 Assign categories (1-10) and extract entities for EACH chunk.
 Categories to choose from: {labels_str}
 
+**CRITICAL RULE:** 
+The `arabic_chunk` and all `transliteration` fields MUST be verbatim, exact subsets of the original text provided below. 
+Do NOT rephrase, do NOT add punctuation, and do NOT omit words within a chunk. 
+The concatenation of all chunks must perfectly match the original text.
+
 Arabic: {arabic_text}
 EN Trans: {trans_en}
 RU Trans: {trans_ru}

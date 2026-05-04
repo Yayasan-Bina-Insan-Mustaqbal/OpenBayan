@@ -1,21 +1,6 @@
 import os
-import re
 import psutil
 from prefect import get_run_logger
-
-def strip_tashkeel(text: str) -> str:
-    """
-    Strips all Arabic diacritics (tashkeel) from the given text.
-    Includes: Fatha, Damma, Kasra, Sukun, Shadda, and Tanween, 
-    as well as Quranic small signs and tatweel.
-    """
-    if not text:
-        return ""
-    # Range of Arabic diacritics and signs in Unicode
-    # Includes standard tashkeel (\u064B-\u0652), tatweel (\u0640), 
-    # and various Quranic marks (\u06D6-\u06ED)
-    tashkeel_pattern = re.compile(r'[\u064B-\u0652\u0640\u0617-\u061A\u06D6-\u06ED]')
-    return tashkeel_pattern.sub('', text)
 
 def get_memory_usage():
     """Returns the current RSS memory usage of the process in MB."""
