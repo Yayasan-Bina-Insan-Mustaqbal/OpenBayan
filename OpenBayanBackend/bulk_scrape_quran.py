@@ -4,6 +4,7 @@ import time
 from typing import List, Dict, Any
 from surrealdb import Surreal
 from prefect import flow, task, get_run_logger
+from utils import log_memory_status, check_memory_threshold, add_source_metadata
 
 # Configuration
 SURREAL_URL = "ws://surrealdb:8000/rpc"
@@ -48,14 +49,10 @@ def fetch_surah_data(surah_number: int) -> List[Dict[str, Any]]:
     res.raise_for_status()
     data = res.json()["data"]
     
-    # data is a list of editions, each having 'ayahs'
-    # We want to pivot this to a list of ayahs with all editions
-    
     num_ayahs = len(data[0]["ayahs"])
     ayahs_collection = []
     
     for i in range(num_ayahs):
-        # Base metadata from the first edition (uthmani)
         base_ayah = data[0]["ayahs"][i]
         merged_ayah = {
             "surah_number": surah_number,
@@ -68,7 +65,9 @@ def fetch_surah_data(surah_number: int) -> List[Dict[str, Any]]:
             "transliterations": {}
         }
         
-        # Merge all editions
+        # Add Source Metadata
+        merged_ayah = add_source_metadata(merged_ayah, "quran-cloud")
+        
         for edition_idx, edition_data in enumerate(data):
             identifier = EDITIONS[edition_idx]
             ayah_text = edition_data["ayahs"][i]["text"]
@@ -93,21 +92,23 @@ def save_ayahs_to_db(ayahs: List[Dict[str, Any]]):
         for ayah in ayahs:
             sid = f"ayah:quran_{ayah['surah_number']}_{ayah['ayah_number']}"
             try:
-                db.upsert(sid, ayah)
+                # Merge logic to avoid overwriting existing fields from other sources
+                db.query(f"UPDATE {sid} MERGE $data;", {"data": ayah})
             except Exception as e:
-                logger.error(f"Failed to save {sid}: {e}")
+                logger.error(f"Failed to update {sid}: {e}")
 
 @flow(name="Bulk Scrape Quran Raw Data")
-def bulk_scrape_quran_flow(start_surah: int = 1, end_surah: int = 114):
+def bulk_scrape_quran_flow(start_surah: int = 1, end_surah: int = 114, mem_threshold: int = 4000):
     logger = get_run_logger()
     logger.info(f"Starting bulk scrape from Surah {start_surah} to {end_surah}")
     
     for surah_num in range(start_surah, end_surah + 1):
+        check_memory_threshold(mem_threshold)
+        log_memory_status(f"Surah {surah_num}")
         try:
             ayahs = fetch_surah_data(surah_num)
             save_ayahs_to_db(ayahs)
             logger.info(f"Successfully scraped and saved Surah {surah_num} ({len(ayahs)} ayahs)")
-            # Respect the API's rate limits/load
             time.sleep(0.5)
         except Exception as e:
             logger.error(f"Failed Surah {surah_num}: {e}")

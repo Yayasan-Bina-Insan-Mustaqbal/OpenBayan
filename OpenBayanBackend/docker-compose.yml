@@ -41,8 +41,8 @@ services:
       - SURREAL_WS_URL=ws://192.168.100.33:8000/rpc
       - SURREAL_USER=root
       - SURREAL_PASS=RwAbXjBc2z36z
-      - SURREAL_NS=openbayan
-      - SURREAL_DB=openbayan
+      - SURREAL_NS=main
+      - SURREAL_DB=main
       # Optional: point to a separate Ollama host for embeddings/inference.
       - OLLAMA_URL=${OLLAMA_URL:-}
       - OLLAMA_HOST=${OLLAMA_HOST:-}
@@ -56,7 +56,6 @@ services:
       - ./notebooks:/app/notebooks
     depends_on:
       - prefect-server
-      - surrealdb
     networks:
       - bayan_network
 
@@ -88,8 +87,8 @@ services:
       - SURREAL_WS_URL=ws://192.168.100.33:8000/rpc
       - SURREAL_USER=root
       - SURREAL_PASS=RwAbXjBc2z36z
-      - SURREAL_NS=openbayan
-      - SURREAL_DB=openbayan
+      - SURREAL_NS=main
+      - SURREAL_DB=main
       # Optional: point notebooks to a separate Ollama host for embeddings/inference.
       - OLLAMA_URL=${OLLAMA_URL:-}
       - OLLAMA_HOST=${OLLAMA_HOST:-}
@@ -100,7 +99,6 @@ services:
       - OLLAMA_TRANSLITERATE_MODEL=${OLLAMA_TRANSLITERATE_MODEL:-aya:latest}
     depends_on:
       - prefect-server
-      - surrealdb
     networks:
       - bayan_network
 
