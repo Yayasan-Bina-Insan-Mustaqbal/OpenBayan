@@ -161,7 +161,11 @@ DEFINE TABLE sub_topic SCHEMAFULL TYPE RELATION IN category OUT category ENFORCE
 -- 7. ENTITIES & MENTIONS
 DEFINE TABLE entity SCHEMAFULL;
 DEFINE FIELD name ON entity TYPE string ASSERT !!$value;
-DEFINE FIELD type ON entity TYPE string ASSERT !!$value; -- e.g., "Person", "Place"
+DEFINE FIELD type ON entity TYPE string 
+  ASSERT $value IN [
+    'Divine', 'Celestial', 'Prophetic', 'Person', 'Group', 
+    'Place', 'Scripture', 'Afterlife', 'Object', 'Event', 'Concept'
+  ];
 DEFINE FIELD created_at ON entity TYPE datetime DEFAULT time::now();
 DEFINE INDEX entity_name ON entity FIELDS name UNIQUE;
 

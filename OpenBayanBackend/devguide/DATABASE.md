@@ -218,7 +218,7 @@ People, places, events, and concepts mentioned in the texts.
 | Field | Type | Description |
 |:---|:---|:---|
 | `name` | `string` | Entity name (unique) |
-| `type` | `string` | Type: `Person`, `Place`, `Event`, `Concept` |
+| `type` | `string` | Type: `Divine`, `Celestial`, `Prophetic`, `Person`, `Group`, `Place`, `Scripture`, `Afterlife`, `Object`, `Event`, `Concept` |
 | `created_at` | `datetime` | Timestamp |
 
 **Unique Index**: `entity_name` on `name`.

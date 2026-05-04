@@ -6,7 +6,11 @@
 -- Represents specific people, places, or objects mentioned in texts
 DEFINE TABLE entity SCHEMAFULL;
 DEFINE FIELD name ON entity TYPE string ASSERT !!$value;
-DEFINE FIELD type ON entity TYPE string ASSERT !!$value; -- e.g., "Person", "Place", "Group"
+DEFINE FIELD type ON entity TYPE string 
+  ASSERT $value IN [
+    'Divine', 'Celestial', 'Prophetic', 'Person', 'Group', 
+    'Place', 'Scripture', 'Afterlife', 'Object', 'Event', 'Concept'
+  ];
 DEFINE FIELD created_at ON entity TYPE datetime DEFAULT time::now();
 DEFINE INDEX entity_name ON entity FIELDS name UNIQUE;
 
