@@ -401,7 +401,8 @@ Persists the user's frontend layout across sessions.
 |:---|:---|:---|:---|
 | `alamah` | `user` | `sentence\|entity\|faidah\|sahifah\|bahs\|category\|topic` | User bookmark |
 | `contains` | `majmu` | `alamah\|faidah\|sahifah\|bahs\|majmu` | Folder membership |
-| `tagged_with` | `sentence\|hadith` | `topic\|category` | AI/system classification |
+| `tagged_with` | `sentence\|hadith` | `topic\|category` | AI/system classification of library texts |
+| `labeled_with` | `faidah\|sahifah` | `category` | User-generated tagging of research writing |
 | `mentions` | `record<sentence\|hadith>` | `record<entity>` | Named entity link |
 | `entity_relation` | `record<entity>` | `record<entity>` | Entity-to-entity relationship |
 | `entity_tagged_with` | `record<entity>` | `record<category>` | Entity taxonomy |
@@ -422,7 +423,7 @@ Persists the user's frontend layout across sessions.
 
 ---
 
-### `tagged_with` — Classification
+### `tagged_with` — AI/System Classification
 
 | Field | Type | Description |
 |:---|:---|:---|
@@ -431,6 +432,21 @@ Persists the user's frontend layout across sessions.
 | `weight` | `int` | Confidence score 1–10 (default: 5) |
 | `reasoning` | `string?` | AI reasoning for the tag |
 | `created_at` | `datetime` | When tagged |
+
+---
+
+### `labeled_with` — User-Generated Tags
+
+> **Distinct from `tagged_with`**: This relation is created by the **user** pressing a tag on their own writing (`faidah` or `sahifah`). It is not AI-generated.
+
+| Field | Type | Description |
+|:---|:---|:---|
+| `in` | `record<faidah\|sahifah>` | The research artifact being tagged |
+| `out` | `record<category>` | The tag — user-owned or global `category` record |
+| `tagged_by` | `record<user>` | Who applied the tag (default: `$auth.id`) |
+| `created_at` | `datetime` | When tagged |
+
+> **Flow**: User types a new tag → create `category` with `owner = $auth.id` → `RELATE faidah:x->labeled_with->category:y`. Clicking a tag runs: `SELECT <-labeled_with<-(faidah, sahifah) FROM category:tag_id`.
 
 ---
 
@@ -534,6 +550,8 @@ DEFINE ACCESS account ON DATABASE TYPE RECORD
 | `mentions` | `mentions_entity` | `out` | Standard | All sentences mentioning an entity |
 | `workspace` | `workspace_user` | `user` | Standard | Workspace for a user |
 | `tagged_with` | `tagged_with_out` | `out` | Standard | All items under a topic/category |
+| `labeled_with` | `labeled_with_tag` | `out` | Standard | All research writing under a user tag |
+| `labeled_with` | `labeled_with_item` | `in` | Standard | All tags on a specific faidah/sahifah |
 | `user_feedback` | `feedback_user` | `user` | Standard | All feedback by a user |
 | `composed_of` | `composed_of_order` | `in, position` | Standard | Reconstruct word order |
 | `word` | `word_text` | `text` | UNIQUE | Prevent duplicate words |
@@ -604,6 +622,23 @@ SELECT ->contains->(out.*) FROM majmu:my_folder_id;
 -- All entities found in sentences about 'Sabr'
 SELECT ->tagged_with<-sentence->mentions->entity.name
 FROM topic WHERE label = 'Patience';
+```
+
+### User Tag Navigation (labeled_with)
+```surql
+-- Clicking a tag: get all faidah and sahifah labeled with it
+SELECT <-labeled_with<-(faidah, sahifah) FROM category:tag_id;
+
+-- Get all tags applied to a specific faidah
+SELECT ->labeled_with->category.* FROM faidah:my_note_id;
+
+-- Create a new user tag and apply it in one flow
+LET $tag = CREATE category CONTENT {
+  label: "Tazkiyah",
+  owner: $auth.id,
+  color: "#4ade80"
+};
+RELATE faidah:my_note_id->labeled_with->$tag.id SET tagged_by = $auth.id;
 ```
 
 ---
