@@ -287,9 +287,13 @@ People, places, events, and concepts mentioned in the texts.
 | `out` | `record<sentence\|entity\|faidah\|sahifah\|bahs\|category\|topic>` | What was bookmarked |
 | `breadcrumb` | `object?` | Context: `{ query, filters, position, bahs_id }` |
 | `note` | `string?` | Quick inline label |
+| `is_deleted` | `bool` | Soft-delete flag. Default: `false`. Set to `true` instead of hard-deleting. |
+| `deleted_at` | `datetime?` | When soft-deleted. `null` if active. |
 | `created_at` | `datetime` | When bookmarked |
 
 > **Key Rule**: `alamah` is **read-only after creation** (to preserve research provenance). Users can **delete** bookmarks, but they cannot "edit" them. Notes and thoughts are stored in the associated `faidah` table.
+>
+> **Soft Delete Pattern**: The frontend should set `is_deleted = true` and `deleted_at = time::now()` rather than issuing a `DELETE` statement. This allows undo functionality and preserves the research audit trail. Filter active bookmarks with `WHERE is_deleted = false`.
 
 ---
 
@@ -506,26 +510,40 @@ DEFINE ACCESS account ON DATABASE TYPE RECORD
 
 ## 9. Index Reference
 
-| Table | Index Name | Fields | Type |
-|:---|:---|:---|:---|
-| `sentence` | `sentence_vector` | `embedding` | HNSW cosine 1024 |
-| `sentence` | `sentence_transliteration_vector` | `embedding_transliteration` | HNSW cosine 1024 |
-| `sentence` | `sentence_text_bm25` | `text` | FULLTEXT BM25 |
-| `sentence` | `quranSentenceIndex` | `parent, chunk_index` | Standard |
-| `sentence` | `sentence_parent_index` | `parent` | Standard |
-| `sentence` | `sentence_source_index` | `source` | Standard |
-| `faidah` | `faidah_body` | `body` | FULLTEXT BM25 |
-| `faidah` | `faidah_vector` | `embedding` | HNSW cosine 1024 |
-| `faidah` | `faidah_owner` | `owner` | Standard |
-| `ayah` | `ayah_coords` | `surah_number, ayah_number` | UNIQUE |
-| `user` | `userEmailIndex` | `email` | UNIQUE |
-| `category` | `category_label` | `label` | UNIQUE |
-| `entity` | `entity_name` | `name` | UNIQUE |
-| `topic` | `topic_label` | `label` | Standard |
-| `sahifah` | `sahifahTitleIndex` | `title` | FULLTEXT BM25 |
-| `majmu` | `majmu_owner` | `owner` | Standard |
-| `bahs` | `bahs_owner` | `owner` | Standard |
-| `composed_of` | `composed_of_order` | `in, position` | Standard |
+| Table | Index Name | Fields | Type | Purpose |
+|:---|:---|:---|:---|:---|
+| `sentence` | `sentence_vector` | `embedding` | HNSW cosine 1024 | Semantic (vector) search |
+| `sentence` | `sentence_transliteration_vector` | `embedding_transliteration` | HNSW cosine 1024 | Transliteration vector search |
+| `sentence` | `sentence_text_bm25` | `text` | FULLTEXT BM25 | Arabic keyword search |
+| `sentence` | `quranSentenceIndex` | `parent, chunk_index` | Standard | Unique chunk per parent |
+| `sentence` | `sentence_parent_index` | `parent` | Standard | All sentences in a source |
+| `sentence` | `sentence_source_index` | `source` | Standard | All sentences per edition |
+| `faidah` | `faidah_body` | `body` | FULLTEXT BM25 | Note keyword search |
+| `faidah` | `faidah_vector` | `embedding` | HNSW cosine 1024 | Note semantic search |
+| `faidah` | `faidah_owner` | `owner` | Standard | All notes by a user |
+| `ayah` | `ayah_coords` | `surah_number, ayah_number` | UNIQUE | Prevent duplicate verses |
+| `user` | `userEmailIndex` | `email` | UNIQUE | Login lookup |
+| `category` | `category_label` | `label` | UNIQUE | Prevent duplicate tags |
+| `entity` | `entity_name` | `name` | UNIQUE | Prevent duplicate entities |
+| `topic` | `topic_label` | `label` | Standard | Topic name search |
+| `topic` | `topic_parent` | `parent` | Standard | Hierarchy traversal |
+| `sahifah` | `sahifahTitleIndex` | `title` | FULLTEXT BM25 | Document title search |
+| `majmu` | `majmu_owner` | `owner` | Standard | All folders by a user |
+| `bahs` | `bahs_owner` | `owner` | Standard | All search logs by a user |
+| `alamah` | `alamah_user` | `in` | Standard | All bookmarks by a user |
+| `mentions` | `mentions_entity` | `out` | Standard | All sentences mentioning an entity |
+| `workspace` | `workspace_user` | `user` | Standard | Workspace for a user |
+| `tagged_with` | `tagged_with_out` | `out` | Standard | All items under a topic/category |
+| `user_feedback` | `feedback_user` | `user` | Standard | All feedback by a user |
+| `composed_of` | `composed_of_order` | `in, position` | Standard | Reconstruct word order |
+| `word` | `word_text` | `text` | UNIQUE | Prevent duplicate words |
+| `word` | `word_simple` | `simple_text` | Standard | Clean-text word lookup |
+| `root` | `root_arabic` | `arabic_root` | UNIQUE | Prevent duplicate roots |
+| `root` | `root_id` | `identifier` | Standard | Root identifier lookup |
+| `book` | `book_title` | `title` | Standard | Book title lookup |
+| `book_section` | `book_ref` | `book` | Standard | Sections per book |
+| `source` | `source_id` | `identifier` | Standard | Edition lookup |
+| `hadith` | `hadith_ref` | `hadith_number` | Standard | Hadith number lookup |
 
 ---
 
@@ -557,9 +575,13 @@ SELECT ->mentions->entity.name, ->mentions->entity.type
 FROM sentence WHERE parent.surah_number = 28;
 ```
 
-### Get a User's Bookmarks (Alamah)
+### Get a User's Active Bookmarks (Alamah)
 ```surql
-SELECT ->(alamah.*), ->(alamah.out.*) FROM user:$auth.id;
+-- Only active (not soft-deleted) bookmarks
+SELECT *, out.* FROM alamah WHERE in = $auth.id AND is_deleted = false;
+
+-- Soft-delete a bookmark (instead of DELETE)
+UPDATE alamah:my_bookmark_id SET is_deleted = true, deleted_at = time::now();
 ```
 
 ### Get All Fawa'id for a Bookmark

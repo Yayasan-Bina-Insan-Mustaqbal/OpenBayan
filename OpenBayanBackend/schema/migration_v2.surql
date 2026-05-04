@@ -60,6 +60,13 @@ DEFINE FIELD breadcrumb ON alamah TYPE option<object>; -- { query, filters, posi
 DEFINE FIELD note       ON alamah TYPE option<string>; -- quick inline label
 DEFINE FIELD created_at ON alamah TYPE datetime DEFAULT time::now();
 
+-- Soft delete: set is_deleted = true instead of hard-deleting
+-- This allows the user to undo accidental removes and preserves research history
+DEFINE FIELD is_deleted ON alamah TYPE bool DEFAULT false;
+DEFINE FIELD deleted_at ON alamah TYPE option<datetime>;
+
+DEFINE INDEX alamah_user ON alamah FIELDS in; -- fast lookup: all bookmarks for a user
+
 
 -- 5. FAIDAH (Research Note - always tied to an alamah)
 -- -------------------------------------------------------

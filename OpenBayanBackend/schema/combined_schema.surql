@@ -15,6 +15,7 @@ DEFINE FIELD role ON TABLE user TYPE string DEFAULT "researcher" ASSERT $value I
 
 DEFINE FIELD created_at ON TABLE user TYPE datetime DEFAULT time::now();
 DEFINE INDEX userEmailIndex ON TABLE user FIELDS email UNIQUE;
+-- Note: duplicate 'user_email' index removed
 
 DEFINE ACCESS account ON DATABASE TYPE RECORD 
     SIGNUP ( CREATE user CONTENT { username: $username, name: $name, email: $email, password: crypto::argon2::generate($password) } ) 
@@ -136,6 +137,19 @@ DEFINE INDEX sentence_text_bm25 ON sentence FIELDS text FULLTEXT ANALYZER ascii 
 DEFINE INDEX sentence_vector ON sentence FIELDS embedding HNSW DIMENSION 1024 DIST COSINE;
 DEFINE INDEX sentence_transliteration_vector ON sentence FIELDS embedding_transliteration HNSW DIMENSION 1024 DIST COSINE;
 DEFINE INDEX quranSentenceIndex ON TABLE sentence FIELDS parent, chunk_index;
+
+
+-- 5.1 ADDITIONAL PERFORMANCE INDEXES
+DEFINE INDEX sentence_parent_index  ON sentence    FIELDS parent;
+DEFINE INDEX sentence_source_index  ON sentence    FIELDS source;
+DEFINE INDEX faidah_owner           ON faidah      FIELDS owner;
+DEFINE INDEX majmu_owner            ON majmu       FIELDS owner;
+DEFINE INDEX bahs_owner             ON bahs        FIELDS owner;
+DEFINE INDEX alamah_user            ON alamah      FIELDS in;
+DEFINE INDEX mentions_entity        ON mentions    FIELDS out;
+DEFINE INDEX workspace_user         ON workspace   FIELDS user;
+DEFINE INDEX tagged_with_out        ON tagged_with FIELDS out;
+DEFINE INDEX feedback_user          ON user_feedback FIELDS user;
 
 
 -- 6. GRAPH RELATIONS (Hardened with ENFORCED)
