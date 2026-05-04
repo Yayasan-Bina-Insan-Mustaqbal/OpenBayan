@@ -284,7 +284,7 @@ People, places, events, and concepts mentioned in the texts.
 | `note` | `string?` | Quick inline label |
 | `created_at` | `datetime` | When bookmarked |
 
-> **Key Rule**: `alamah` is **immutable** once created. It is a record of *what you saw and where*. Notes written on it become `faidah`.
+> **Key Rule**: `alamah` is **read-only after creation** (to preserve research provenance). Users can **delete** bookmarks, but they cannot "edit" them. Notes and thoughts are stored in the associated `faidah` table.
 
 ---
 
