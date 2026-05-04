@@ -4,19 +4,6 @@ services:
   # Replaces Postgres, pgvector, and Meilisearch.
   # Handles Document JSON, Graph Relations, and Hybrid Vector Search.
   # ---------------------------------------------------------
-  surrealdb:
-    image: surrealdb/surrealdb:latest
-    container_name: bayan_surrealdb
-    user: root
-    restart: unless-stopped
-    ports:
-      - "8000:8000"
-    # Starts SurrealDB with file persistence and root credentials
-    command: start --log trace --user root --pass root surrealkv:/data/database.db
-    volumes:
-      - surreal_data:/data
-    networks:
-      - bayan_network
 
   # ---------------------------------------------------------
   # 2. PREFECT SERVER (The Orchestrator) - DISABLED
@@ -51,9 +38,11 @@ services:
     environment:
       - PREFECT_API_URL=http://prefect-server:4200/api
       # SurrealDB Connection Details for the Python SDK
-      - SURREAL_WS_URL=ws://surrealdb:8000/rpc
+      - SURREAL_WS_URL=ws://192.168.100.33:8000/rpc
       - SURREAL_USER=root
-      - SURREAL_PASS=root
+      - SURREAL_PASS=RwAbXjBc2z36z
+      - SURREAL_NS=openbayan
+      - SURREAL_DB=openbayan
       # Optional: point to a separate Ollama host for embeddings/inference.
       - OLLAMA_URL=${OLLAMA_URL:-}
       - OLLAMA_HOST=${OLLAMA_HOST:-}
@@ -96,9 +85,11 @@ services:
       - ./notebooks:/app/notebooks
     environment:
       - PREFECT_API_URL=http://prefect-server:4200/api
-      - SURREAL_WS_URL=ws://surrealdb:8000/rpc
+      - SURREAL_WS_URL=ws://192.168.100.33:8000/rpc
       - SURREAL_USER=root
-      - SURREAL_PASS=root
+      - SURREAL_PASS=RwAbXjBc2z36z
+      - SURREAL_NS=openbayan
+      - SURREAL_DB=openbayan
       # Optional: point notebooks to a separate Ollama host for embeddings/inference.
       - OLLAMA_URL=${OLLAMA_URL:-}
       - OLLAMA_HOST=${OLLAMA_HOST:-}
@@ -115,7 +106,6 @@ services:
 
 
 volumes:
-  surreal_data:
   prefect_data:
 
 networks:

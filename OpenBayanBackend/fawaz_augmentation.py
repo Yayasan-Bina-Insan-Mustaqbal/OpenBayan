@@ -6,7 +6,9 @@ from surrealdb import Surreal
 from prefect import flow, task, get_run_logger
 
 # Configuration
-SURREAL_URL = "ws://surrealdb:8000/rpc"
+SURREAL_URL = "ws://192.168.100.33:8000/rpc"
+SURREAL_USER = "root"
+SURREAL_PASS = "RwAbXjBc2z36z"
 GITHUB_RAW_BASE = "https://raw.githubusercontent.com/fawazahmed0/quran-api/1/editions/"
 
 @task(retries=3, retry_delay_seconds=30)
@@ -32,8 +34,8 @@ def scrape_and_merge_edition(edition_file: str):
     data = res.json()["quran"]
     
     with Surreal(SURREAL_URL) as db:
-        db.signin({"user": "root", "pass": "root"})
-        db.use("main", "main")
+        db.signin({"user": SURREAL_USER, "pass": SURREAL_PASS})
+        db.use("openbayan", "openbayan")
         
         logger.info(f"Merging {len(data)} ayahs for {edition_id} into SurrealDB")
         for item in data:

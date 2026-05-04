@@ -10,9 +10,9 @@ services:
     ports:
       - "3001:3000"
     environment:
-      - SURREAL_HTTP_URL=http://host.docker.internal:8000
-      - SURREAL_NAMESPACE=main
-      - SURREAL_DATABASE=main
+      - SURREAL_HTTP_URL=http://192.168.100.33:8000
+      - SURREAL_NAMESPACE=openbayan
+      - SURREAL_DATABASE=openbayan
       - SURREAL_ACCESS=account
       - NEXTAUTH_URL=http://localhost:3001
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-openbayan-local-development-secret}
@@ -32,9 +32,9 @@ services:
     ports:
       - "3002:3000"
     environment:
-      - SURREAL_HTTP_URL=http://host.docker.internal:8000
-      - SURREAL_NAMESPACE=main
-      - SURREAL_DATABASE=main
+      - SURREAL_HTTP_URL=http://192.168.100.33:8000
+      - SURREAL_NAMESPACE=openbayan
+      - SURREAL_DATABASE=openbayan
       - SURREAL_ACCESS=account
       - NEXTAUTH_URL=http://localhost:3001
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-openbayan-local-development-secret}

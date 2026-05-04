@@ -7,7 +7,9 @@ from surrealdb import Surreal
 from prefect import flow, task, get_run_logger
 
 # Configuration
-SURREAL_URL = "ws://surrealdb:8000/rpc"
+SURREAL_URL = "ws://192.168.100.33:8000/rpc"
+SURREAL_USER = "root"
+SURREAL_PASS = "RwAbXjBc2z36z"
 OLLAMA_URL = "http://100.121.116.17:11434"
 MODEL_ENRICH = "qwen2.5:7b"
 MODEL_EMBED = "mxbai-embed-large:latest"
@@ -38,8 +40,8 @@ class AyahEnrichmentResult(BaseModel):
 @task(retries=3, retry_delay_seconds=2)
 def get_taxonomy_labels():
     with Surreal(SURREAL_URL) as db:
-        db.signin({"user": "root", "pass": "root"})
-        db.use("main", "main")
+        db.signin({"user": SURREAL_USER, "pass": SURREAL_PASS})
+        db.use("openbayan", "openbayan")
         res = db.query("SELECT label FROM category WHERE level >= 2;")
         return [r["label"] for r in res]
 
@@ -98,8 +100,8 @@ def get_hizb_context(hizb_quarter):
 def save_to_surreal(sid, record, categories, entities, surah_number, ayah_number):
     logger = get_run_logger()
     with Surreal(SURREAL_URL) as db:
-        db.signin({"user": "root", "pass": "root"})
-        db.use("main", "main")
+        db.signin({"user": SURREAL_USER, "pass": SURREAL_PASS})
+        db.use("openbayan", "openbayan")
         
         try:
             db.query(f"DELETE {sid};")
@@ -171,17 +173,19 @@ def quran_ingestion_flow(start_surah: int = 1, end_surah: int = 114):
                     
                     record = {
                         "text": chunk.arabic_chunk,
-                        "transliteration_en": chunk.transliteration.en,
-                        "transliteration_ru": chunk.transliteration.ru,
-                        "transliteration_tr": chunk.transliteration.tr,
+                        "simple_clean_text": chunk.arabic_chunk, # In future, apply harakat stripping
+                        "transliterations": {
+                            "en": chunk.transliteration.en,
+                            "ru": chunk.transliteration.ru,
+                            "tr": chunk.transliteration.tr
+                        },
                         "chunk_index": idx,
                         "source_type": "quran",
                         "surah_number": surah_number,
                         "ayah_number": ref,
                         "hizb_quarter": hizb,
                         "embedding": vec_text,
-                        "embedding_transliteration": vec_sound,
-                        "llm_context": hizb_cache[hizb]
+                        "embedding_transliteration": vec_sound
                     }
                     
                     save_to_surreal(sid, record, chunk.categories, chunk.entities, surah_number, ref)
