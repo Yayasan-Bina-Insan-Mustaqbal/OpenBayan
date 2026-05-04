@@ -177,3 +177,49 @@ DEFINE FIELD created_at ON mentions TYPE datetime DEFAULT time::now();
 DEFINE TABLE entity_tagged_with SCHEMAFULL TYPE RELATION IN entity OUT category ENFORCED;
 DEFINE FIELD weight      ON entity_tagged_with TYPE int DEFAULT 5;
 DEFINE FIELD created_at  ON entity_tagged_with TYPE datetime DEFAULT time::now();
+
+
+-- 8. LINGUISTIC PLANE (Word & Root)
+
+-- Table: root (Triliteral Arabic Root)
+DEFINE TABLE root SCHEMAFULL;
+DEFINE FIELD arabic_root ON root TYPE string ASSERT !!$value;
+DEFINE FIELD identifier  ON root TYPE string ASSERT !!$value;
+DEFINE FIELD created_at  ON root TYPE datetime DEFAULT time::now();
+DEFINE INDEX root_arabic ON root FIELDS arabic_root UNIQUE;
+
+-- Table: word (The Linguistic Atom)
+-- No embeddings: sentence-level embeddings already capture semantic context.
+-- Semantic identity (e.g., موسى = Prophet Musa) is handled via refers_to -> entity.
+DEFINE TABLE word SCHEMAFULL;
+DEFINE FIELD text         ON word TYPE string ASSERT !!$value; -- Primary Arabic with Tashkeel
+DEFINE FIELD simple_text  ON word TYPE string ASSERT !!$value; -- Clean Arabic, no Tashkeel
+DEFINE FIELD root         ON word TYPE option<record<root>>;
+DEFINE FIELD refers_to    ON word TYPE option<record<entity>>; -- Named entity this word represents (if any)
+
+-- Translations: { en: [{ text, source, is_ai, timestamp }] }
+DEFINE FIELD translations               ON word TYPE object DEFAULT {};
+DEFINE FIELD translations.*             ON word TYPE array;
+DEFINE FIELD translations.*.*           ON word TYPE object;
+DEFINE FIELD translations.*.*.text      ON word TYPE string;
+DEFINE FIELD translations.*.*.source    ON word TYPE string;
+DEFINE FIELD translations.*.*.is_ai     ON word TYPE bool DEFAULT false;
+DEFINE FIELD translations.*.*.timestamp ON word TYPE datetime DEFAULT time::now();
+
+-- Transliterations: { en: [{ text, source, is_ai, timestamp }] }
+DEFINE FIELD transliterations               ON word TYPE object DEFAULT {};
+DEFINE FIELD transliterations.*             ON word TYPE array;
+DEFINE FIELD transliterations.*.*           ON word TYPE object;
+DEFINE FIELD transliterations.*.*.text      ON word TYPE string;
+DEFINE FIELD transliterations.*.*.source    ON word TYPE string;
+DEFINE FIELD transliterations.*.*.is_ai     ON word TYPE bool DEFAULT false;
+DEFINE FIELD transliterations.*.*.timestamp ON word TYPE datetime DEFAULT time::now();
+
+DEFINE FIELD created_at   ON word TYPE datetime DEFAULT time::now();
+DEFINE INDEX word_text    ON word FIELDS text UNIQUE;
+DEFINE INDEX word_simple  ON word FIELDS simple_text;
+
+-- Relation: [Sentence] -> composed_of -> [Word]
+DEFINE TABLE composed_of SCHEMAFULL TYPE RELATION IN sentence OUT word ENFORCED;
+DEFINE FIELD position    ON composed_of TYPE int;
+DEFINE INDEX composed_of_order ON composed_of FIELDS in, position;
