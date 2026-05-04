@@ -150,8 +150,9 @@ DEFINE INDEX mentions_entity        ON mentions    FIELDS out;
 DEFINE INDEX workspace_user         ON workspace   FIELDS user;
 DEFINE INDEX tagged_with_out        ON tagged_with FIELDS out;
 DEFINE INDEX feedback_user          ON user_feedback FIELDS user;
-DEFINE INDEX labeled_with_tag       ON labeled_with FIELDS out;  -- tag → all content
-DEFINE INDEX labeled_with_item      ON labeled_with FIELDS in;   -- content → all tags
+DEFINE INDEX classified_as_out      ON classified_as FIELDS out;
+DEFINE INDEX hashtagged_tag         ON hashtagged   FIELDS out;  -- tag -> all content
+DEFINE INDEX hashtagged_item        ON hashtagged   FIELDS in;   -- content -> all tags
 
 
 -- 6. GRAPH RELATIONS (Hardened with ENFORCED)
@@ -164,18 +165,11 @@ DEFINE FIELD created_at ON extracted_from TYPE datetime DEFAULT time::now();
 DEFINE TABLE contains SCHEMAFULL TYPE RELATION IN majmu OUT faidah|sahifah|sentence|ayah ENFORCED;
 DEFINE FIELD created_at ON contains TYPE datetime DEFAULT time::now();
 
--- Relation: [Sentence|Sahifah|User|Faidah] -> tagged_with -> [Category]  (AI/System only)
-DEFINE TABLE tagged_with SCHEMAFULL TYPE RELATION IN sentence|sahifah|user|faidah OUT category ENFORCED;
-DEFINE FIELD weight      ON tagged_with TYPE int DEFAULT 5 ASSERT $value >= 1 AND $value <= 10;
-DEFINE FIELD reasoning   ON tagged_with TYPE option<string>;
-DEFINE FIELD created_at  ON tagged_with TYPE datetime DEFAULT time::now();
-
--- Relation: [Faidah|Sahifah] -> labeled_with -> [Category]  (User-generated tags)
--- Distinct from tagged_with: this is the user pressing a tag on their own writing.
--- Clicking a category tag navigates to all faidah/sahifah labeled with it.
-DEFINE TABLE labeled_with SCHEMAFULL TYPE RELATION IN faidah | sahifah OUT category;
-DEFINE FIELD tagged_by  ON labeled_with TYPE record<user> DEFAULT $auth.id;
-DEFINE FIELD created_at ON labeled_with TYPE datetime DEFAULT time::now();
+-- Relation: [Sentence|Hadith] ->classified_as-> [Topic|Category]  (AI/System pipeline only)
+DEFINE TABLE classified_as SCHEMAFULL TYPE RELATION IN sentence | hadith OUT topic | category;
+DEFINE FIELD weight     ON classified_as TYPE int DEFAULT 5 ASSERT $value >= 1 AND $value <= 10;
+DEFINE FIELD reasoning  ON classified_as TYPE option<string>;
+DEFINE FIELD created_at ON classified_as TYPE datetime DEFAULT time::now();
 
 -- Edge: [Category] -> sub_topic -> [Category]
 DEFINE TABLE sub_topic SCHEMAFULL TYPE RELATION IN category OUT category ENFORCED;
@@ -200,6 +194,24 @@ DEFINE FIELD created_at ON mentions TYPE datetime DEFAULT time::now();
 DEFINE TABLE entity_tagged_with SCHEMAFULL TYPE RELATION IN entity OUT category ENFORCED;
 DEFINE FIELD weight      ON entity_tagged_with TYPE int DEFAULT 5;
 DEFINE FIELD created_at  ON entity_tagged_with TYPE datetime DEFAULT time::now();
+
+
+-- 8. HASHTAG (User-generated free-form labels)
+-- Separate from category/topic which are system/AI concepts.
+-- Users create these like social-media hashtags (#tazkiyah, #fiqh-note)
+DEFINE TABLE hashtag SCHEMAFULL;
+DEFINE FIELD label      ON hashtag TYPE string ASSERT string::len($value) > 0;
+DEFINE FIELD owner      ON hashtag TYPE option<record<user>>; -- null = global
+DEFINE FIELD color      ON hashtag TYPE option<string>;
+DEFINE FIELD created_at ON hashtag TYPE datetime DEFAULT time::now();
+DEFINE INDEX hashtag_label ON hashtag FIELDS label UNIQUE;
+
+-- Relation: [Faidah|Sahifah] -> hashtagged -> [Hashtag]
+DEFINE TABLE hashtagged SCHEMAFULL TYPE RELATION IN faidah | sahifah OUT hashtag;
+DEFINE FIELD tagged_by  ON hashtagged TYPE record<user> DEFAULT $auth.id;
+DEFINE FIELD created_at ON hashtagged TYPE datetime DEFAULT time::now();
+DEFINE INDEX hashtagged_tag  ON hashtagged FIELDS out; -- tag -> all content
+DEFINE INDEX hashtagged_item ON hashtagged FIELDS in;  -- content -> all its tags
 
 
 -- 8. LINGUISTIC PLANE (Word & Root)
