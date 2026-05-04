@@ -5,10 +5,19 @@ from typing import List, Dict, Any
 from surrealdb import Surreal
 from prefect import flow, task, get_run_logger
 
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
 # Configuration
-SURREAL_URL = "ws://192.168.100.33:8000/rpc"
-SURREAL_USER = "root"
-SURREAL_PASS = "RwAbXjBc2z36z"
+SURREAL_URL = os.getenv("SURREALDB_URL", "ws://192.168.100.33:8000")
+if not SURREAL_URL.endswith("/rpc"):
+    SURREAL_URL = f"{SURREAL_URL.replace('http', 'ws')}/rpc"
+
+SURREAL_USER = os.getenv("SURREALDB_USERNAME", "root")
+SURREAL_PASS = os.getenv("SURREALDB_PASSWORD", "RwAbXjBc2z36z")
 GITHUB_RAW_BASE = "https://raw.githubusercontent.com/fawazahmed0/quran-api/1/editions/"
 
 @task(retries=3, retry_delay_seconds=30)
