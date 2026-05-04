@@ -56,8 +56,9 @@ WHERE
     OR
     embedding <|15|> $query_embedding  -- Top 15 nearest vector neighbors
 ORDER BY
-    (search::score(1) + vector::similarity::cosine(embedding, $query_embedding)) DESC
+    search::rrf(search::score(1), vector::similarity::cosine(embedding, $query_embedding)) DESC
 LIMIT 10;
+
 ```
 
 ---
@@ -152,7 +153,7 @@ export async function GET(request: NextRequest) {
       (body @@ $query)
       OR
       embedding <|20|> $embedding
-    ORDER BY (search::score(1) + vector::similarity::cosine(embedding, $embedding)) DESC
+    ORDER BY search::rrf(search::score(1), vector::similarity::cosine(embedding, $embedding)) DESC
     LIMIT $limit;
     `,
   );

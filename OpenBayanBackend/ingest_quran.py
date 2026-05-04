@@ -1,6 +1,7 @@
 import requests
 import json
 import time
+import re
 from typing import List, Optional
 from pydantic import BaseModel
 from surrealdb import Surreal
@@ -44,6 +45,12 @@ def get_taxonomy_labels():
         db.use("openbayan", "openbayan")
         res = db.query("SELECT label FROM category WHERE level >= 2;")
         return [r["label"] for r in res]
+
+@task
+def strip_tashkeel(text: str) -> str:
+    # Standard Quranic/Arabic tashkeel characters
+    tashkeel_pattern = re.compile(r'[\u0617-\u061A\u064B-\u0652\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]')
+    return tashkeel_pattern.sub('', text)
 
 @task(retries=5, retry_delay_seconds=5)
 def get_embedding(text: str):
@@ -104,16 +111,33 @@ def save_to_surreal(sid, record, categories, entities, surah_number, ayah_number
         db.use("openbayan", "openbayan")
         
         try:
-            db.query(f"DELETE {sid};")
-            # Use the SDK's create method which is more robust than raw query for CONTENT
-            db.create(sid, record)
-            logger.info(f"  -> Saved {sid} to SurrealDB")
-        except Exception as e:
-            logger.error(f"  (!) Failed to create record {sid}: {e}")
-            raise e
-        
-        for cat in categories:
-            try:
+            params = {}
+            # Clean up the record for SCHEMAFULL sentence table
+            # These are temporary fields used to pass context to this function
+            record["parent"] = ayah_id
+            record["source"] = source_id
+            record.pop("hizb_quarter", None)
+            record.pop("juz", None)
+            record.pop("page", None)
+            record.pop("uthmani_text", None)
+            record.pop("source_type", None)
+
+            # Wrap all node and edge creation in a TRANSACTION
+            query = "BEGIN TRANSACTION;"
+            
+            # 1. First ensure the Source (Edition) exists
+            source_id = f"source:quran_uthmani"
+            query += f" UPSERT {source_id} SET identifier = 'quran_uthmani', type = 'quran', language = 'ar', url = 'https://api.alquran.cloud';"
+            
+            # 2. Ensure the Ayah (Parent) exists and has coordinates
+            ayah_id = f"ayah:quran_{surah_number}_{ayah_number}"
+            query += f" UPSERT {ayah_id} SET surah_number = $surah, ayah_number = $ayah, juz = $juz, hizb_quarter = $hizb, uthmani_text = $uthmani;"
+            
+            # 3. Save the sentence chunk linking to parent and source
+            query += f" UPSERT {sid} CONTENT $record;"
+            
+            # 4. Process Categories (Edges)
+            for cat in categories:
                 tag_res = db.query("SELECT id FROM category WHERE label = $label LIMIT 1", {"label": cat.label})
                 if tag_res and len(tag_res[0]["result"]) > 0:
                     tid = tag_res[0]["result"][0]["id"]
@@ -121,20 +145,43 @@ def save_to_surreal(sid, record, categories, entities, surah_number, ayah_number
                     if surah_number == 2 and ayah_number == 255: weight = min(10, weight + 2)
                     elif surah_number == 1: weight = min(10, weight + 1)
                     
-                    db.query(f"RELATE {sid}->tagged_with->{tid} SET weight = $w, reasoning = $r", {"w": weight, "r": cat.reasoning})
-                    logger.info(f"    -> Linked category: {cat.label}")
-            except Exception as e:
-                logger.warn(f"    (!) Failed to link category {cat.label}: {e}")
-        
-        for ent in entities:
-            try:
+                    # Ensure tid is safe for parameter names
+                    tid_safe = str(tid).replace(":", "_").replace("(", "").replace(")", "")
+                    query += f" RELATE {sid}->tagged_with->{tid} SET weight = $weight_{tid_safe}, reasoning = $reason_{tid_safe};"
+                    params[f"weight_{tid_safe}"] = weight
+                    params[f"reason_{tid_safe}"] = cat.reasoning
+
+            # 5. Process Entities (Edges)
+            for ent in entities:
                 safe_ent_name = "".join([c for c in ent.name.replace(" ", "_").replace("'", "").lower() if c.isalnum() or c == "_"])
-                if not safe_ent_name: continue
-                eid = f"entity:`{safe_ent_name}`"
-                db.query(f"UPSERT {eid} SET name = $n, type = $t", {"n": ent.name, "t": ent.type})
-                db.query(f"RELATE {sid}->mentions->{eid}")
-            except Exception as e:
-                logger.warn(f"    (!) Failed to link entity {ent.name}: {e}")
+                if safe_ent_name:
+                    eid = f"entity:`{safe_ent_name}`"
+                    query += f" UPSERT {eid} SET name = $name_{safe_ent_name}, type = $type_{safe_ent_name};"
+                    query += f" RELATE {sid}->mentions->{eid};"
+                    params[f"name_{safe_ent_name}"] = ent.name
+                    params[f"type_{safe_ent_name}"] = ent.type
+
+            query += " COMMIT TRANSACTION;"
+            
+            # Execute the batch
+            params.update({
+                "surah": surah_number,
+                "ayah": ayah_number,
+                "juz": record.get("juz"),
+                "hizb": record.get("hizb_quarter"),
+                "uthmani": record.get("uthmani_text", ""),
+                "record": record
+            })
+            
+            db.query(query, params)
+            logger.info(f"  -> [TX] Saved chunk {sid} with all graph relations.")
+            
+        except Exception as e:
+            logger.error(f"  (!) Transaction Failed for {sid}: {e}")
+            db.query("CANCEL TRANSACTION;")
+            raise e
+
+
 
 @flow(name="Quran Multi-Modal Ingestion")
 def quran_ingestion_flow(start_surah: int = 1, end_surah: int = 114):
@@ -168,24 +215,25 @@ def quran_ingestion_flow(start_surah: int = 1, end_surah: int = 114):
                 for idx, chunk in enumerate(enrichment.chunks):
                     sid = f"sentence:quran_{surah_number}_{ref}_chunk_{idx}"
                     
-                    vec_text = get_embedding(chunk.arabic_chunk)
+                    # Generate Clean Arabic for vector search stability
+                    clean_text = strip_tashkeel(chunk.arabic_chunk)
+                    
+                    vec_text = get_embedding(clean_text) # Vector from CLEAN Arabic
                     vec_sound = get_embedding(chunk.transliteration.en)
                     
                     record = {
                         "text": chunk.arabic_chunk,
-                        "simple_clean_text": chunk.arabic_chunk, # In future, apply harakat stripping
+                        "simple_clean_text": clean_text,
                         "transliterations": {
                             "en": chunk.transliteration.en,
                             "ru": chunk.transliteration.ru,
                             "tr": chunk.transliteration.tr
                         },
                         "chunk_index": idx,
-                        "source_type": "quran",
-                        "surah_number": surah_number,
-                        "ayah_number": ref,
-                        "hizb_quarter": hizb,
                         "embedding": vec_text,
-                        "embedding_transliteration": vec_sound
+                        "embedding_transliteration": vec_sound,
+                        "uthmani_text": ayah_u["text"], # Pass this so it can be saved to parent
+                        "hizb_quarter": hizb, # Needed for the save_to_surreal helper to pass to parent
                     }
                     
                     save_to_surreal(sid, record, chunk.categories, chunk.entities, surah_number, ref)

@@ -1,6 +1,10 @@
 # OpenBayan Backend Stack
 
-This folder contains the core infrastructure for the OpenBayan AI Factory and Knowledge Graph.
+This folder contains the core infrastructure for OpenBayan. It is a modular platform for Islamic research, powered by a Knowledge Graph (SurrealDB) and high-performance frontend (Next.js).
+
+### 📖 Documentation
+- **[Graph Architecture](./OpenBayanBackend/KNOWLEDGE_GRAPH.md)**: Deep dive into our SurrealDB Knowledge Graph design.
+- **[Backend Dev Guide](./OpenBayanBackend/DEVGUIDE.md)**: How to run ingestion and extend the corpus.
 
 ## 🚀 Quick Start
 

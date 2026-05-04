@@ -6,14 +6,19 @@
 DEFINE TABLE OVERWRITE sentence SCHEMAFULL;
 
 -- 2. DEFINE FIELDS
-DEFINE FIELD OVERWRITE text ON TABLE sentence TYPE string;
+DEFINE FIELD OVERWRITE text ON TABLE sentence TYPE string ASSERT !!$value;
 DEFINE FIELD OVERWRITE simple_clean_text ON TABLE sentence TYPE option<string>;
 DEFINE FIELD OVERWRITE llm_context ON TABLE sentence TYPE string;
 DEFINE FIELD OVERWRITE chunk_index ON TABLE sentence TYPE int;
 
 -- Source Classification
 -- e.g., "quran", "hadith", "book"
-DEFINE FIELD OVERWRITE source_type ON TABLE sentence TYPE string;
+DEFINE FIELD OVERWRITE source_type ON TABLE sentence TYPE string ASSERT !!$value;
+
+-- Computed Logic: Importance Score (based on mentions)
+-- This allows sorting by importance without app-side logic
+DEFINE FIELD mention_count ON sentence VALUE (SELECT count() FROM mentions WHERE in = $parent.id);
+
 
 -- Unified Metadata Placeholder
 -- We use specific fields for Quran for better indexing, 

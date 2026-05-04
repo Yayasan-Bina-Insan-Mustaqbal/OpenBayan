@@ -10,3 +10,5 @@ jupyterlab
 prefect
 requests
 nltk
+datasets
+duckdb

@@ -25,19 +25,25 @@ def search(query_text, limit=3):
         db.signin({"user": "root", "pass": "root"})
         db.use("main", "main")
 
-        # Vector search query - using similarity function
+        # Hybrid search query - using RRF for ranking
         results = db.query(
             """
             SELECT 
                 text, 
                 chunk_index,
-                vector::similarity::cosine(embedding, $embedding) AS sim
+                search::score(1) AS bm25_score,
+                vector::similarity::cosine(embedding, $embedding) AS vector_score
             FROM sentence 
-            ORDER BY sim DESC
+            WHERE 
+                (text @@ $query_text) 
+                OR 
+                (embedding <|10|> $embedding)
+            ORDER BY search::rrf(search::score(1), vector::similarity::cosine(embedding, $embedding)) DESC
             LIMIT $limit;
             """,
-            {"embedding": embedding, "limit": limit}
+            {"embedding": embedding, "query_text": query_text, "limit": limit}
         )
+
         # print(f"DEBUG: {results}")
         return results
 
