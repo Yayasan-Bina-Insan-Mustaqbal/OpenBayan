@@ -47,7 +47,7 @@ source                           topic (hierarchical)
             └─ sentence ─────────────────────────────────┐
                  │               entity ◄──── entity_relation
                  │                 ▲
-                 ├─[tagged_with]──▶ topic | category
+                 ├─[classified_as]─▶ topic | category
                  ├─[mentions]─────▶ entity
                  └─[composed_of]─▶ word ──▶ root
 ayah ◄─── sentence.parent
@@ -204,7 +204,7 @@ Flat/hierarchical taxonomy labels used to classify content (e.g., "Tafsir", "Fiq
 | `classification` | `string?` | Meta-type: `subject`, `entity`, `attribute` |
 | `parent` | `record<category>?` | Parent for subcategory hierarchy |
 | `owner` | `record<user>?` | If null = global/system tag |
-| `popularity` | `int` *(computed)* | Auto-count of `tagged_with` edges pointing here |
+| `popularity` | `int` *(computed)* | Auto-count of `classified_as` edges pointing here |
 | `created_at` | `datetime` | Timestamp |
 
 **Unique Index**: `category_label` on `label`.
@@ -256,6 +256,17 @@ People, places, events, and concepts mentioned in the texts.
 | `arabic_root` | `string` | The root letters |
 | `identifier` | `string` | Unique identifier |
 | `created_at` | `datetime` | Timestamp |
+
+### `hashtag` — User-Generated Labels
+
+> **Note**: Unlike `category` (which are scholarly/system concepts), `hashtags` are free-form labels created by users (e.g., `#tazkiyah`, `#my-reflection`).
+
+| Field | Type | Description |
+|:---|:---|:---|
+| `label` | `string` | The hashtag text (no spaces) |
+| `owner` | `record<user>?` | Null if global/trending, record if private |
+| `color` | `string?` | Custom UI color |
+| `created_at` | `datetime` | Creation timestamp |
 
 ---
 
@@ -334,7 +345,7 @@ A longer-form user-written article or research document.
 | `author` | `record<user>` | Author (default: `$auth.id`) |
 | `is_public` | `bool` | Default: `false` |
 | `tags` | `array<string>` | Freeform tag strings |
-| `importance_score` | `int` *(computed)* | Auto-count of `tagged_with` edges |
+| `importance_score` | `int` *(computed)* | Auto-count of `classified_as` edges |
 | `created_at` | `datetime` | Creation time |
 | `updated_at` | `datetime` | Auto-updated on save |
 
@@ -401,8 +412,8 @@ Persists the user's frontend layout across sessions.
 |:---|:---|:---|:---|
 | `alamah` | `user` | `sentence\|entity\|faidah\|sahifah\|bahs\|category\|topic` | User bookmark |
 | `contains` | `majmu` | `alamah\|faidah\|sahifah\|bahs\|majmu` | Folder membership |
-| `tagged_with` | `sentence\|hadith` | `topic\|category` | AI/system classification of library texts |
-| `labeled_with` | `faidah\|sahifah` | `category` | User-generated tagging of research writing |
+| `classified_as` | `sentence\|hadith` | `topic\|category` | AI/system classification of library texts |
+| `hashtagged` | `faidah\|sahifah` | `hashtag` | User-generated tagging of research writing |
 | `mentions` | `record<sentence\|hadith>` | `record<entity>` | Named entity link |
 | `entity_relation` | `record<entity>` | `record<entity>` | Entity-to-entity relationship |
 | `entity_tagged_with` | `record<entity>` | `record<category>` | Entity taxonomy |
@@ -423,7 +434,7 @@ Persists the user's frontend layout across sessions.
 
 ---
 
-### `tagged_with` — AI/System Classification
+### `classified_as` — AI/System Classification
 
 | Field | Type | Description |
 |:---|:---|:---|
@@ -431,22 +442,20 @@ Persists the user's frontend layout across sessions.
 | `out` | `record<topic\|category>` | The classification label |
 | `weight` | `int` | Confidence score 1–10 (default: 5) |
 | `reasoning` | `string?` | AI reasoning for the tag |
-| `created_at` | `datetime` | When tagged |
+| `created_at` | `datetime` | When classified |
 
 ---
 
-### `labeled_with` — User-Generated Tags
+### `hashtagged` — User Hashtags
 
-> **Distinct from `tagged_with`**: This relation is created by the **user** pressing a tag on their own writing (`faidah` or `sahifah`). It is not AI-generated.
+> **User-Generated Only**: This relation is created by the **user** applying a hashtag to their own writing (`faidah` or `sahifah`).
 
 | Field | Type | Description |
 |:---|:---|:---|
 | `in` | `record<faidah\|sahifah>` | The research artifact being tagged |
-| `out` | `record<category>` | The tag — user-owned or global `category` record |
+| `out` | `record<hashtag>` | The hashtag record |
 | `tagged_by` | `record<user>` | Who applied the tag (default: `$auth.id`) |
 | `created_at` | `datetime` | When tagged |
-
-> **Flow**: User types a new tag → create `category` with `owner = $auth.id` → `RELATE faidah:x->labeled_with->category:y`. Clicking a tag runs: `SELECT <-labeled_with<-(faidah, sahifah) FROM category:tag_id`.
 
 ---
 
@@ -549,9 +558,9 @@ DEFINE ACCESS account ON DATABASE TYPE RECORD
 | `alamah` | `alamah_user` | `in` | Standard | All bookmarks by a user |
 | `mentions` | `mentions_entity` | `out` | Standard | All sentences mentioning an entity |
 | `workspace` | `workspace_user` | `user` | Standard | Workspace for a user |
-| `tagged_with` | `tagged_with_out` | `out` | Standard | All items under a topic/category |
-| `labeled_with` | `labeled_with_tag` | `out` | Standard | All research writing under a user tag |
-| `labeled_with` | `labeled_with_item` | `in` | Standard | All tags on a specific faidah/sahifah |
+| `classified_as` | `classified_as_out` | `out` | Standard | All items under a topic/category |
+| `hashtagged` | `hashtagged_tag` | `out` | Standard | All research writing under a hashtag |
+| `hashtagged` | `hashtagged_item` | `in` | Standard | All tags on a specific faidah/sahifah |
 | `user_feedback` | `feedback_user` | `user` | Standard | All feedback by a user |
 | `composed_of` | `composed_of_order` | `in, position` | Standard | Reconstruct word order |
 | `word` | `word_text` | `text` | UNIQUE | Prevent duplicate words |
@@ -620,25 +629,25 @@ SELECT ->contains->(out.*) FROM majmu:my_folder_id;
 ### Multi-Hop: Topic → Sentences → Entities
 ```surql
 -- All entities found in sentences about 'Sabr'
-SELECT ->tagged_with<-sentence->mentions->entity.name
+SELECT ->classified_as<-sentence->mentions->entity.name
 FROM topic WHERE label = 'Patience';
 ```
 
-### User Tag Navigation (labeled_with)
+### User Hashtag Navigation (hashtagged)
 ```surql
--- Clicking a tag: get all faidah and sahifah labeled with it
-SELECT <-labeled_with<-(faidah, sahifah) FROM category:tag_id;
+-- Clicking a hashtag: get all faidah and sahifah marked with it
+SELECT <-hashtagged<-(faidah, sahifah) FROM hashtag:tag_id;
 
--- Get all tags applied to a specific faidah
-SELECT ->labeled_with->category.* FROM faidah:my_note_id;
+-- Get all hashtags applied to a specific faidah
+SELECT ->hashtagged->hashtag.* FROM faidah:my_note_id;
 
--- Create a new user tag and apply it in one flow
-LET $tag = CREATE category CONTENT {
+-- Create a new hashtag and apply it in one flow
+LET $tag = CREATE hashtag CONTENT {
   label: "Tazkiyah",
   owner: $auth.id,
   color: "#4ade80"
 };
-RELATE faidah:my_note_id->labeled_with->$tag.id SET tagged_by = $auth.id;
+RELATE faidah:my_note_id->hashtagged->$tag.id SET tagged_by = $auth.id;
 ```
 
 ---
