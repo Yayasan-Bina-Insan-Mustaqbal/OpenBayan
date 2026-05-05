@@ -29,6 +29,15 @@ Rigorously adhere to the logical planes defined in `DATABASE.md`:
 
 > **Rule**: If it comes from a library/book, it belongs in the Library Plane. If it's created by a user, it belongs in the Research Plane.
 
+## Architecture
+
+- **Database:** SurrealDB is the primary source of truth.
+    - **Namespace:** `openbayan` (Always use lowercase)
+    - **Database Name:** `openbayan` (Always use lowercase)
+- **Naming Convention:** All future developments, ingestions, and configurations must strictly use the `openbayan` namespace and database. Obsolete namespaces like `OpenBayan` or `main` have been removed.
+- **Backend Stack:** Prefect (Orchestration) + SurrealDB (Database) + Ollama (AI/Embeddings).
+- **Frontend:** Next.js (located in `/openbayan`).
+
 ## Directory Conventions
 
 - `OpenBayanBackend/notebooks/flows/`: Permanent Prefect flows.
