@@ -1,0 +1,14 @@
+# Logs
+*.log
+OpenBayanBackend/full_ingestion.log
+OpenBayanBackend/notebooks/fawaz_augmentation.log
+
+# Data & Cache
+OpenBayanBackend/data/
+OpenBayanBackend/__pycache__/
+.ipynb_checkpoints/
+OpenBayanBackend/notebooks/all_editions.txt
+
+# Environment
+.env
+OpenBayanBackend/.env

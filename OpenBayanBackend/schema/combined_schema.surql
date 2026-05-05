@@ -3,10 +3,10 @@
 -- ---------------------------------------------------------
 
 -- 0. ANALYZERS
-DEFINE ANALYZER ascii TOKENIZERS BLANK FILTERS LOWERCASE, ASCII;
+DEFINE ANALYZER IF NOT EXISTS ascii TOKENIZERS BLANK FILTERS LOWERCASE, ASCII;
 
 -- 1. AUTH & USERS
-DEFINE TABLE user SCHEMAFULL PERMISSIONS FOR select, update, delete WHERE id = $auth.id, FOR create NONE;
+DEFINE TABLE IF NOT EXISTS user SCHEMAFULL PERMISSIONS FOR select, update, delete WHERE id = $auth.id, FOR create NONE;
 DEFINE FIELD username ON TABLE user TYPE string ASSERT !!$value OR THROW "Username is mandatory";
 DEFINE FIELD name ON TABLE user TYPE option<string>;
 DEFINE FIELD email ON TABLE user TYPE string ASSERT (string::is_email($value) AND !!$value) OR THROW "A valid email address is required";
@@ -74,6 +74,7 @@ DEFINE TABLE category SCHEMAFULL;
 DEFINE FIELD label       ON category TYPE string ASSERT !!$value OR THROW "Category label is mandatory";
 DEFINE FIELD label_ar    ON category TYPE option<string>;
 DEFINE FIELD description ON category TYPE option<string>;
+DEFINE FIELD level       ON category TYPE int DEFAULT 1;
 DEFINE FIELD note        ON category TYPE option<string>; -- Scholarly Note for the Mark
 DEFINE FIELD color       ON category TYPE option<string>;
 DEFINE FIELD classification ON category TYPE option<string>; -- e.g., "subject", "entity", "attribute"
@@ -87,7 +88,25 @@ DEFINE FIELD popularity ON category VALUE (SELECT count() FROM tagged_with WHERE
 DEFINE INDEX category_label ON category FIELDS label UNIQUE;
 
 
--- 3. SAHIFAH
+-- 3. SOURCE (Catalog of Books/Editions)
+DEFINE TABLE source SCHEMAFULL;
+DEFINE FIELD identifier ON source TYPE string ASSERT !!$value; -- e.g. "quran_uthmani", "shamela_12345"
+DEFINE FIELD title      ON source TYPE string ASSERT !!$value;
+DEFINE FIELD author     ON source TYPE option<string>;
+DEFINE FIELD type       ON source TYPE string ASSERT $value IN ["quran", "hadith", "book", "lexicon"];
+DEFINE FIELD language   ON source TYPE string DEFAULT "ar";
+DEFINE FIELD metadata   ON source TYPE option<object>; -- For pages, volumes, category, etc.
+DEFINE FIELD metadata.category ON source TYPE option<string>;
+DEFINE FIELD metadata.pages ON source TYPE option<int>;
+DEFINE FIELD metadata.volumes ON source TYPE option<int>;
+DEFINE FIELD file_paths ON source TYPE option<object>; -- { pdf: [], txt: [], docx: [] }
+DEFINE FIELD file_paths.pdf ON source TYPE option<array>;
+DEFINE FIELD file_paths.txt ON source TYPE option<array>;
+DEFINE FIELD file_paths.docx ON source TYPE option<array>;
+DEFINE FIELD created_at ON source TYPE datetime DEFAULT time::now();
+DEFINE INDEX source_identifier ON source FIELDS identifier UNIQUE;
+
+-- 4. SAHIFAH (User Documents)
 DEFINE TABLE sahifah SCHEMAFULL PERMISSIONS FOR select WHERE author = $auth.id OR is_public = true, FOR create WHERE $auth.id != NONE, FOR update, delete WHERE author = $auth.id;
 DEFINE FIELD title ON TABLE sahifah TYPE string ASSERT !!$value OR THROW "Sahifah title is mandatory";
 DEFINE FIELD content ON TABLE sahifah TYPE option<string>;
@@ -96,14 +115,34 @@ DEFINE FIELD is_public ON sahifah TYPE bool DEFAULT false;
 DEFINE FIELD created_at ON TABLE sahifah TYPE datetime DEFAULT time::now();
 DEFINE FIELD updated_at ON TABLE sahifah TYPE datetime DEFAULT time::now() VALUE time::now();
 
--- Computed Logic: Document Importance (based on tags)
-DEFINE FIELD importance_score ON sahifah VALUE (SELECT count() FROM tagged_with WHERE in = $parent.id);
+-- 5. BOOKS & SECTIONS (Immutable Source Texts)
+DEFINE TABLE book SCHEMAFULL;
+DEFINE FIELD title      ON book TYPE string ASSERT !!$value;
+DEFINE FIELD author     ON book TYPE option<string>;
+DEFINE FIELD category   ON book TYPE option<string>;
+DEFINE FIELD source     ON book TYPE record<source> ASSERT $value != NONE;
+DEFINE FIELD extra_metadata ON book TYPE option<object>;
+DEFINE FIELD created_at ON book TYPE datetime DEFAULT time::now();
+DEFINE INDEX book_title ON book FIELDS title;
 
-DEFINE FIELD tags ON TABLE sahifah TYPE array<string>;
-DEFINE INDEX sahifahTitleIndex ON TABLE sahifah FIELDS title FULLTEXT ANALYZER ascii BM25;
+DEFINE TABLE book_section SCHEMAFULL;
+DEFINE FIELD book          ON book_section TYPE record<book> ASSERT $value != NONE;
+DEFINE FIELD chapter_title ON book_section TYPE option<string>;
+DEFINE FIELD volume        ON book_section TYPE option<int>;
+DEFINE FIELD page          ON book_section TYPE option<int>;
+DEFINE FIELD extra_metadata ON book_section TYPE option<object>;
+DEFINE FIELD created_at    ON book_section TYPE datetime DEFAULT time::now();
+DEFINE INDEX book_ref      ON book_section FIELDS book;
 
+-- 6. BOOK_PAGE (Digitized Raw Content)
+DEFINE TABLE book_page SCHEMAFULL;
+DEFINE FIELD source      ON book_page TYPE record<source> ASSERT $value != NONE;
+DEFINE FIELD page_number ON book_page TYPE int;
+DEFINE FIELD content     ON book_page TYPE string ASSERT !!$value;
+DEFINE FIELD created_at  ON book_page TYPE datetime DEFAULT time::now();
+DEFINE INDEX page_order  ON book_page FIELDS source, page_number UNIQUE;
 
--- 4. SENTENCES (Knowledge unit)
+-- 7. SENTENCES (Knowledge unit)
 DEFINE TABLE sentence SCHEMAFULL;
 DEFINE FIELD text ON TABLE sentence TYPE string ASSERT !!$value OR THROW "Sentence text content is mandatory";
 DEFINE FIELD simple_clean_text ON TABLE sentence TYPE option<string>;
@@ -112,7 +151,7 @@ DEFINE FIELD embedding ON TABLE sentence TYPE array<float, 1024>;
 DEFINE FIELD embedding_transliteration ON TABLE sentence TYPE option<array<float, 1024>>;
 DEFINE FIELD embedding_clean ON TABLE sentence TYPE option<array<float, 1024>>;
 DEFINE FIELD metadata ON sentence TYPE option<object>; -- For juz, page, transliteration, etc.
-DEFINE FIELD parent ON sentence TYPE record<ayah | hadith | book_section> ASSERT $value != NONE;
+DEFINE FIELD parent ON sentence TYPE record<ayah | hadith | book_section | book_page> ASSERT $value != NONE;
 DEFINE FIELD source ON sentence TYPE record<source> ASSERT $value != NONE;
 DEFINE FIELD created_at ON TABLE sentence TYPE datetime DEFAULT time::now();
 
@@ -124,6 +163,17 @@ DEFINE TABLE ayah SCHEMAFULL;
 DEFINE FIELD surah_number ON ayah TYPE int ASSERT !!$value;
 DEFINE FIELD ayah_number ON ayah TYPE int ASSERT !!$value;
 DEFINE FIELD uthmani_text ON ayah TYPE string;
+DEFINE FIELD simple_clean_text ON ayah TYPE option<string>;
+DEFINE FIELD transliterations ON ayah TYPE option<object>;
+DEFINE FIELD transliterations.en ON ayah TYPE option<string>;
+DEFINE FIELD transliterations.ru ON ayah TYPE option<string>;
+DEFINE FIELD transliterations.tr ON ayah TYPE option<string>;
+DEFINE FIELD translations ON ayah TYPE option<object>;
+DEFINE FIELD translations.en ON ayah TYPE option<string>;
+DEFINE FIELD translations.ru ON ayah TYPE option<string>;
+DEFINE FIELD translations.tr ON ayah TYPE option<string>;
+DEFINE FIELD juz ON ayah TYPE option<int>;
+DEFINE FIELD hizb_quarter ON ayah TYPE option<int>;
 DEFINE FIELD summary ON ayah TYPE option<string>; -- Enrichment Entry Point
 DEFINE FIELD embedding_summary ON ayah TYPE option<array<float, 1024>>; -- Vector for high-level search
 DEFINE FIELD created_at ON ayah TYPE datetime DEFAULT time::now();

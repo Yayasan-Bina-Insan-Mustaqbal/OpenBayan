@@ -8,11 +8,26 @@
     - Jupyter Notebooks used for development should be designed as modular components that can be easily converted or executed as Prefect tasks.
     - Use the established `bayan-ingestion-pool` for all data-related background workers.
 
-## Architecture
+## Database Table Intent
 
-- **Database:** SurrealDB is the primary source of truth for JSON documents, Graph relations, and Vector embeddings.
-- **Backend Stack:** Prefect (Orchestration) + SurrealDB (Database) + Ollama (AI/Embeddings).
-- **Frontend:** Next.js (located in `/openbayan`).
+Rigorously adhere to the logical planes defined in `DATABASE.md`:
+
+### Library Plane (Immutable Source Texts)
+- **`source`**: Edition/Corpus metadata (Catalog of Books/Editions).
+- **`ayah`**: Canonical Quranic Verses.
+- **`hadith`**: Hadith Text.
+- **`book`**: Metadata for classical books.
+- **`book_section` / `book_page`**: Digitized content chunks/pages.
+- **`sentence`**: The atomic knowledge unit. All searchable text should eventually be chunked into sentences.
+
+### Research Plane (User-Generated Content - USER ONLY)
+- **`user`**: Researcher accounts.
+- **`sahifah`**: **USER ONLY.** Long-form markdown research articles written by users. NEVER save book pages or system content here.
+- **`faidah`**: Research notes tied to a bookmark (`alamah`).
+- **`majmu`**: Folders for organizing research artifacts.
+- **`alamah`**: User bookmarks (graph edge).
+
+> **Rule**: If it comes from a library/book, it belongs in the Library Plane. If it's created by a user, it belongs in the Research Plane.
 
 ## Directory Conventions
 

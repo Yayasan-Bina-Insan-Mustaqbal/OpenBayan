@@ -1,16 +1,31 @@
 import json
+import os
 from surrealdb import Surreal
+from dotenv import load_dotenv
 
-SURREAL_URL = "ws://surrealdb:8000/rpc"
+# Load environment variables
+load_dotenv()
+
+SURREAL_URL = os.getenv("SURREALDB_URL", "ws://localhost:8000/rpc")
+SURREAL_USER = os.getenv("SURREALDB_USERNAME", "root")
+SURREAL_PASS = os.getenv("SURREALDB_PASSWORD", "root")
+SURREAL_NS = os.getenv("SURREALDB_NAMESPACE", "OpenBayan")
+SURREAL_DB = os.getenv("SURREALDB_DATABASE", "OpenBayan")
 
 def seed_taxonomy():
-    with open("/app/notebooks/reference/taxonomy/main.json", "r") as f:
+    taxonomy_file = "OpenBayanBackend/notebooks/reference/taxonomy/main.json"
+    if not os.path.exists(taxonomy_file):
+        # Try relative to script
+        taxonomy_file = "notebooks/reference/taxonomy/main.json"
+
+    with open(taxonomy_file, "r") as f:
         data = json.load(f)
 
     with Surreal(SURREAL_URL) as db:
-        db.signin({"user": "root", "pass": "root"})
-        db.use("main", "main")
+        db.signin({"user": SURREAL_USER, "pass": SURREAL_PASS})
+        db.use(SURREAL_NS, SURREAL_DB)
         
+        print(f"Connected to {SURREAL_URL} (NS: {SURREAL_NS}, DB: {SURREAL_DB})")
         print("Clearing old tables...")
         try:
             db.query("DELETE category; DELETE sub_topic;")
