@@ -1,6 +1,6 @@
 import json
 import os
-from surrealdb import Surreal
+from surrealdb import Surreal, RecordID
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -56,7 +56,7 @@ def seed_taxonomy():
             }
             
             if parent_id:
-                record["parent"] = parent_id
+                record["parent"] = RecordID(parent_id)
             
             # Upsert category
             db.query(f"UPSERT {record_id} CONTENT $record", {"record": record})
