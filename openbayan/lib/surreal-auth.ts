@@ -1,6 +1,6 @@
 const surrealUrl = process.env.SURREAL_HTTP_URL ?? "http://localhost:8000"
-const surrealNamespace = process.env.SURREAL_NAMESPACE ?? "main"
-const surrealDatabase = process.env.SURREAL_DATABASE ?? "main"
+const surrealNamespace = process.env.SURREAL_NAMESPACE ?? "openbayan"
+const surrealDatabase = process.env.SURREAL_DATABASE ?? "openbayan"
 const surrealAccess = process.env.SURREAL_ACCESS ?? "account"
 
 type AuthResponse = {

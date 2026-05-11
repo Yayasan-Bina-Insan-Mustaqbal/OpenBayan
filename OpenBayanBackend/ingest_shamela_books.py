@@ -37,11 +37,10 @@ def download_book_content(rel_path):
     return res.text
 
 @task
-def save_page_to_surreal(source_id, page_number, content):
+def save_page_to_surreal(db_config, source_id, page_number, content):
     logger = get_run_logger()
     
     # Clean source_id for use in ID generation
-    # e.g. source:shamela_abc -> shamela_abc
     if ":" in source_id:
         inner_id = source_id.split(":", 1)[1].replace("`", "")
     else:
@@ -49,45 +48,23 @@ def save_page_to_surreal(source_id, page_number, content):
         
     page_id = f"book_page:`{inner_id}_p{page_number}`"
     
-    with Surreal(SURREAL_URL) as db:
-        db.signin({"user": SURREAL_USER, "pass": SURREAL_PASS})
-        db.use(SURREAL_NS, SURREAL_DB)
-        
-        # Ensure source_id is a proper record string with backticks if it has underscores
-        if not source_id.startswith("source:"):
-             source_rec = f"source:`{source_id.replace('`','')}`"
-        else:
-             parts = source_id.split(":", 1)
-             source_rec = f"{parts[0]}:`{parts[1].replace('`','')}`"
-
-        query = """
-        UPSERT type::record($id) SET
-            source = type::record($source),
-            page_number = $page_num,
-            content = $content;
-        """
-        params = {
-            "id": page_id,
-            "source": source_rec,
-            "page_num": page_number,
-            "content": content
-        }
-        
-        try:
-            db.query(query, params)
-        except Exception as e:
-            logger.error(f"Failed to save book page {page_number} for {source_id}: {e}")
+    # Re-use connection details but we'll need to open one in the task if not using a global pool
+    # Actually, Prefect tasks are best when they are atomic. 
+    # But since we have thousands of pages, let's batch them in the flow instead.
+    
+    # (Leaving this task for now, but I will modify the flow to batch)
+    pass
 
 @flow(name="Shamela Book-Page Ingestion")
 def shamela_book_ingestion_flow(source_id: str):
     logger = get_run_logger()
     logger.info(f"Starting book-page ingestion for {source_id}")
     
-    # 1. Fetch metadata from SurrealDB
     with Surreal(SURREAL_URL) as db:
         db.signin({"user": SURREAL_USER, "pass": SURREAL_PASS})
         db.use(SURREAL_NS, SURREAL_DB)
         
+        # 1. Fetch metadata
         query = "SELECT title, file_paths.txt FROM type::record($id)"
         res = db.query(query, {"id": source_id})
         
@@ -107,25 +84,59 @@ def shamela_book_ingestion_flow(source_id: str):
         title = book_data["title"]
         txt_paths = book_data.get("file_paths", {}).get("txt", [])
     
-    if not txt_paths:
-        logger.error(f"No text paths found for {source_id}")
-        return
+        if not txt_paths:
+            logger.error(f"No text paths found for {source_id}")
+            return
     
-    # 2. Process each TXT file
-    global_page_count = 0
-    for txt_path in txt_paths:
-        full_text = download_book_content(txt_path)
-        pages = full_text.split("PAGE_SEPARATOR")
-        logger.info(f"Found {len(pages)} pages in {txt_path}")
-        
-        for i, page_content in enumerate(pages):
-            page_content = page_content.strip()
-            if not page_content:
-                continue
-                
-            global_page_count += 1
-            save_page_to_surreal(source_id, global_page_count, page_content)
+        # 2. Process each TXT file
+        global_page_count = 0
+        for txt_path in txt_paths:
+            full_text = download_book_content(txt_path)
+            pages = full_text.split("PAGE_SEPARATOR")
+            logger.info(f"Found {len(pages)} pages in {txt_path}")
             
+            # Clean source_id for use in ID generation
+            if ":" in source_id:
+                inner_id = source_id.split(":", 1)[1].replace("`", "")
+            else:
+                inner_id = source_id.replace("`", "")
+            
+            # Ensure source_id is a proper record string
+            if not source_id.startswith("source:"):
+                 source_rec = f"source:`{source_id.replace('`','')}`"
+            else:
+                 parts = source_id.split(":", 1)
+                 source_rec = f"{parts[0]}:`{parts[1].replace('`','')}`"
+
+            for i, page_content in enumerate(pages):
+                page_content = page_content.strip()
+                if not page_content:
+                    continue
+                    
+                global_page_count += 1
+                page_id = f"book_page:`{inner_id}_p{global_page_count}`"
+                
+                query = """
+                UPSERT type::record($id) SET
+                    source = type::record($source),
+                    page_number = $page_num,
+                    content = $content;
+                """
+                params = {
+                    "id": page_id,
+                    "source": source_rec,
+                    "page_num": global_page_count,
+                    "content": page_content
+                }
+                
+                try:
+                    db.query(query, params)
+                    if global_page_count % 100 == 0:
+                        logger.info(f"Ingested {global_page_count} pages...")
+                except Exception as e:
+                    logger.error(f"Failed to save book page {global_page_count}: {e}")
+            
+    logger.info(f"Completed ingestion of {global_page_count} pages for {title}")            
     logger.info(f"Completed ingestion of {global_page_count} pages for {title}")
 
 if __name__ == "__main__":

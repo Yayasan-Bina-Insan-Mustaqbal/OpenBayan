@@ -1,0 +1,452 @@
+[
+  {
+    "model": "llama3.1:latest",
+    "strategy": "native",
+    "sample_type": "dictionary",
+    "duration_seconds": 56.61926198005676,
+    "char_count": 207,
+    "entry_count": 5,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "llama3.1:latest",
+    "strategy": "recursive_buffer",
+    "sample_type": "dictionary",
+    "duration_seconds": 47.999107837677,
+    "char_count": 207,
+    "entry_count": 8,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "llama3.1:latest",
+    "strategy": "dot_newline_50",
+    "sample_type": "dictionary",
+    "duration_seconds": 22.877540111541748,
+    "char_count": 204,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "llama3.1:latest",
+    "strategy": "native",
+    "sample_type": "hadith_long",
+    "duration_seconds": 30.26723027229309,
+    "char_count": 349,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "llama3.1:latest",
+    "strategy": "recursive_buffer",
+    "sample_type": "hadith_long",
+    "duration_seconds": 60.16136646270752,
+    "char_count": 349,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "llama3.1:latest",
+    "strategy": "dot_newline_50",
+    "sample_type": "hadith_long",
+    "duration_seconds": 62.83812618255615,
+    "char_count": 347,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "llama3.1:latest",
+    "strategy": "native",
+    "sample_type": "quran_long",
+    "duration_seconds": 58.669328927993774,
+    "char_count": 647,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "llama3.1:latest",
+    "strategy": "recursive_buffer",
+    "sample_type": "quran_long",
+    "duration_seconds": 45.98101758956909,
+    "char_count": 647,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "llama3.1:latest",
+    "strategy": "dot_newline_50",
+    "sample_type": "quran_long",
+    "duration_seconds": 39.072327852249146,
+    "char_count": 644,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "llama3.2:3b",
+    "strategy": "native",
+    "sample_type": "dictionary",
+    "duration_seconds": 13.318087339401245,
+    "char_count": 207,
+    "entry_count": 7,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "llama3.2:3b",
+    "strategy": "recursive_buffer",
+    "sample_type": "dictionary",
+    "duration_seconds": 0.25179600715637207,
+    "char_count": 207,
+    "entry_count": 0,
+    "success": false,
+    "error": "Parsing failed: No entries found in JSON. Raw: {}"
+  },
+  {
+    "model": "llama3.2:3b",
+    "strategy": "dot_newline_50",
+    "sample_type": "dictionary",
+    "duration_seconds": 13.026954650878906,
+    "char_count": 204,
+    "entry_count": 6,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "llama3.2:3b",
+    "strategy": "native",
+    "sample_type": "hadith_long",
+    "duration_seconds": 13.058918476104736,
+    "char_count": 349,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "llama3.2:3b",
+    "strategy": "recursive_buffer",
+    "sample_type": "hadith_long",
+    "duration_seconds": 21.711877584457397,
+    "char_count": 349,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "llama3.2:3b",
+    "strategy": "dot_newline_50",
+    "sample_type": "hadith_long",
+    "duration_seconds": 28.627116203308105,
+    "char_count": 347,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "llama3.2:3b",
+    "strategy": "native",
+    "sample_type": "quran_long",
+    "duration_seconds": 46.39286828041077,
+    "char_count": 647,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "llama3.2:3b",
+    "strategy": "recursive_buffer",
+    "sample_type": "quran_long",
+    "duration_seconds": 44.75984001159668,
+    "char_count": 647,
+    "entry_count": 0,
+    "success": false,
+    "error": "Parsing failed: No entries found in JSON. Raw: {}"
+  },
+  {
+    "model": "llama3.2:3b",
+    "strategy": "dot_newline_50",
+    "sample_type": "quran_long",
+    "duration_seconds": 48.48808932304382,
+    "char_count": 644,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "qwen2.5:7b",
+    "strategy": "native",
+    "sample_type": "dictionary",
+    "duration_seconds": 27.460702419281006,
+    "char_count": 207,
+    "entry_count": 7,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "qwen2.5:7b",
+    "strategy": "recursive_buffer",
+    "sample_type": "dictionary",
+    "duration_seconds": 28.258743286132812,
+    "char_count": 207,
+    "entry_count": 4,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "qwen2.5:7b",
+    "strategy": "dot_newline_50",
+    "sample_type": "dictionary",
+    "duration_seconds": 24.151808738708496,
+    "char_count": 204,
+    "entry_count": 8,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "qwen2.5:7b",
+    "strategy": "native",
+    "sample_type": "hadith_long",
+    "duration_seconds": 29.603785753250122,
+    "char_count": 349,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "qwen2.5:7b",
+    "strategy": "recursive_buffer",
+    "sample_type": "hadith_long",
+    "duration_seconds": 37.57173228263855,
+    "char_count": 349,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "qwen2.5:7b",
+    "strategy": "dot_newline_50",
+    "sample_type": "hadith_long",
+    "duration_seconds": 41.42130208015442,
+    "char_count": 347,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "qwen2.5:7b",
+    "strategy": "native",
+    "sample_type": "quran_long",
+    "duration_seconds": 55.72570204734802,
+    "char_count": 647,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "qwen2.5:7b",
+    "strategy": "recursive_buffer",
+    "sample_type": "quran_long",
+    "duration_seconds": 43.181660175323486,
+    "char_count": 647,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "qwen2.5:7b",
+    "strategy": "dot_newline_50",
+    "sample_type": "quran_long",
+    "duration_seconds": 43.0658643245697,
+    "char_count": 644,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "phi3.5:latest",
+    "strategy": "native",
+    "sample_type": "dictionary",
+    "duration_seconds": 47.007155656814575,
+    "char_count": 207,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "phi3.5:latest",
+    "strategy": "recursive_buffer",
+    "sample_type": "dictionary",
+    "duration_seconds": 53.26079511642456,
+    "char_count": 207,
+    "entry_count": 5,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "phi3.5:latest",
+    "strategy": "dot_newline_50",
+    "sample_type": "dictionary",
+    "duration_seconds": 31.615435361862183,
+    "char_count": 204,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "phi3.5:latest",
+    "strategy": "native",
+    "sample_type": "hadith_long",
+    "duration_seconds": 48.38653564453125,
+    "char_count": 349,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "phi3.5:latest",
+    "strategy": "recursive_buffer",
+    "sample_type": "hadith_long",
+    "duration_seconds": 45.20084857940674,
+    "char_count": 349,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "phi3.5:latest",
+    "strategy": "dot_newline_50",
+    "sample_type": "hadith_long",
+    "duration_seconds": 35.75144863128662,
+    "char_count": 347,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "phi3.5:latest",
+    "strategy": "native",
+    "sample_type": "quran_long",
+    "duration_seconds": 48.43245458602905,
+    "char_count": 647,
+    "entry_count": 0,
+    "success": false,
+    "error": "Parsing failed: Expecting ',' delimiter: line 99 column 2 (char 2768). Raw: {\n  \"entries\": [\n    {\n      \"entity_1\": {\n        \"word\": \"\u064a\u064e\u0627\",\n        \"meaning\": \"O\"\n      }\n   "
+  },
+  {
+    "model": "phi3.5:latest",
+    "strategy": "recursive_buffer",
+    "sample_type": "quran_long",
+    "duration_seconds": 51.26829123497009,
+    "char_count": 647,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "phi3.5:latest",
+    "strategy": "dot_newline_50",
+    "sample_type": "quran_long",
+    "duration_seconds": 43.8102765083313,
+    "char_count": 644,
+    "entry_count": 0,
+    "success": false,
+    "error": "Parsing failed: 'str' object has no attribute 'get'. Raw: {\n  \"entries\": [\n    {\n      \"word\": \"\u0622\u0645\u0646\",\n      \"meaning\": \"safety or protected\"\n    },\n    {\n    "
+  },
+  {
+    "model": "aya:latest",
+    "strategy": "native",
+    "sample_type": "dictionary",
+    "duration_seconds": 60.76995491981506,
+    "char_count": 207,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "aya:latest",
+    "strategy": "recursive_buffer",
+    "sample_type": "dictionary",
+    "duration_seconds": 74.41383767127991,
+    "char_count": 207,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "aya:latest",
+    "strategy": "dot_newline_50",
+    "sample_type": "dictionary",
+    "duration_seconds": 105.34733176231384,
+    "char_count": 204,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "aya:latest",
+    "strategy": "native",
+    "sample_type": "hadith_long",
+    "duration_seconds": 120.1156370639801,
+    "char_count": 349,
+    "entry_count": 0,
+    "success": false,
+    "error": ""
+  },
+  {
+    "model": "aya:latest",
+    "strategy": "recursive_buffer",
+    "sample_type": "hadith_long",
+    "duration_seconds": 58.711812257766724,
+    "char_count": 349,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "aya:latest",
+    "strategy": "dot_newline_50",
+    "sample_type": "hadith_long",
+    "duration_seconds": 109.39335012435913,
+    "char_count": 347,
+    "entry_count": 0,
+    "success": true,
+    "error": null
+  },
+  {
+    "model": "aya:latest",
+    "strategy": "native",
+    "sample_type": "quran_long",
+    "duration_seconds": 101.19202041625977,
+    "char_count": 647,
+    "entry_count": 0,
+    "success": false,
+    "error": "Parsing failed: 'str' object has no attribute 'get'. Raw: {\n    \"entries\": [\n        \"\u0622\u0645\u064a\u0646\",\n        \"\u062f\u064a\u0646\",\n        \"\u0627\u062c\u0644\",\n        \"\u0643\u062a\u0627\u0628\u0629\",\n        \"\u0643\u0627\u062a\u0628\",\n  "
+  },
+  {
+    "model": "aya:latest",
+    "strategy": "recursive_buffer",
+    "sample_type": "quran_long",
+    "duration_seconds": 98.19029808044434,
+    "char_count": 647,
+    "entry_count": 0,
+    "success": false,
+    "error": "Parsing failed: No entries found in JSON. Raw: {\n    \"entities\": [\n        {\n            \"type\": \"entity\",\n            \"value\": \"\u0622\u064a\u0629\"\n        },\n  "
+  },
+  {
+    "model": "aya:latest",
+    "strategy": "dot_newline_50",
+    "sample_type": "quran_long",
+    "duration_seconds": 120.10974645614624,
+    "char_count": 644,
+    "entry_count": 0,
+    "success": false,
+    "error": ""
+  }
+]

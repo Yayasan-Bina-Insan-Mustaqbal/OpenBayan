@@ -18,7 +18,7 @@ SURREAL_NS = os.getenv("SURREALDB_NAMESPACE", "openbayan")
 SURREAL_DB = os.getenv("SURREALDB_DATABASE", "openbayan")
 
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://100.121.116.17:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_LLM_MODEL", "llama3.1:latest")
+OLLAMA_MODEL = os.getenv("OLLAMA_LLM_MODEL", "qwen2.5:7b")
 OLLAMA_EMBED_MODEL = os.getenv("OLLAMA_EMBED_MODEL", "mxbai-embed-large:latest")
 
 # Pydantic models for structured extraction
