@@ -14,7 +14,7 @@ Verified via SurrealDB queries on the dev server (`100.64.8.38`):
 | **`entity`** | **31,409** | 🔄 Knowledge Graph nodes (Narrators & Roots) |
 | **`source`** | **9,399** | ✅ Source text metadata |
 | **`root`** | **6,867** | 🔄 Dictionary root extraction |
-| **`category`** | **0** | ⚠️ **Action Required**: Seeding in progress |
+| **`category`** | **16** | ✅ **Seeding Complete** (Hierarchical Taxonomy) |
 
 ## 2. Completion Predictions
 Calculated based on observed throughput (May 11, 2026, 09:55 AM):
