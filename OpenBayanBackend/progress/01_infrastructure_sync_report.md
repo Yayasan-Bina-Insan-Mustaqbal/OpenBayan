@@ -14,9 +14,20 @@ Verified via SurrealDB queries on the dev server (`100.64.8.38`):
 | **`entity`** | **31,409** | 🔄 Knowledge Graph nodes (Narrators & Roots) |
 | **`source`** | **9,399** | ✅ Source text metadata |
 | **`root`** | **6,867** | 🔄 Dictionary root extraction |
-| **`category`** | **0** | ⚠️ **Action Required**: `seed_taxonomy.py` needs update |
+| **`category`** | **0** | ⚠️ **Action Required**: Seeding in progress |
 
-## 2. Infrastructure & Service Status
+## 2. Completion Predictions
+Calculated based on observed throughput (May 11, 2026, 09:55 AM):
+
+| Job | Rate | Remaining | Est. Completion | Priority |
+|:---|:---|:---|:---|:---|
+| **Dictionary Extraction** | ~1.9 roots/min | ~77,000 chunks | **~28 Days** | 🔴 HIGH (Bottleneck) |
+| **Ilm al-Rijal Extraction** | ~6.1 entities/min | ~2,100 pages | **~2.4 Days** | 🟡 MEDIUM |
+
+> [!NOTE]
+> Dictionary extraction is currently the primary bottleneck. A hybrid Regex/LLM approach is recommended to reduce the 28-day estimation.
+
+## 3. Infrastructure & Service Status
 - **Dev Server Disk**: ⚠️ **88% Usage** (4.7G free). Monitoring required during heavy ingestion.
 - **Prefect Server**: Up and running at `http://100.64.8.38:4200`.
 - **Prefect Worker**: Up and polling `bayan-ingestion-pool`.
