@@ -52,8 +52,7 @@ def seed_taxonomy():
             record = {
                 "label": name,
                 "label_ar": node.get("name_ar"),
-                "level": level,
-                "created_at": "time::now()"
+                "level": level
             }
             
             if parent_id:
