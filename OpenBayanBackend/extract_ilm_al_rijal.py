@@ -103,24 +103,47 @@ If no narrators are found in this chunk, return {"narrators": []}.
 Ensure all string fields are provided, even if empty.
 """
 
-def strategy_dot_newline_50(text: str, min_words: int = 50) -> List[str]:
-    raw_splits = re.split(r'[\n.]+', text)
-    sentences = [s.strip() for s in raw_splits if s.strip()]
+def recursive_arabic_chunker(text: str, max_words: int = 500, overlap_percent: float = 0.15) -> List[str]:
+    # 1. Normalize
+    text = text.replace('\u200F', '').replace('\u200E', '')
     
+    # 2. Split by structural anchors (numbered entries or line breaks)
+    # The entries in Mizan al-I'tidal are often numbered
+    blocks = [b.strip() for b in re.split(r'(\d+\s*-\s*)', text) if b.strip()]
+    
+    # Recombine markers with their content
+    refined_blocks = []
+    i = 0
+    while i < len(blocks):
+        if re.match(r'^\d+\s*-\s*$', blocks[i]):
+            if i + 1 < len(blocks):
+                refined_blocks.append(blocks[i] + blocks[i+1])
+                i += 2
+            else:
+                refined_blocks.append(blocks[i])
+                i += 1
+        else:
+            refined_blocks.append(blocks[i])
+            i += 1
+            
     chunks = []
-    current_buffer = []
-    current_word_count = 0
-    
-    for s in sentences:
-        words = s.split()
-        current_buffer.append(s)
-        current_word_count += len(words)
-        if current_word_count >= min_words:
-            chunks.append(" ".join(current_buffer))
-            current_buffer = []
-            current_word_count = 0
-    if current_buffer:
-        chunks.append(" ".join(current_buffer))
+    current_chunk = []
+    current_words = 0
+    overlap_size = int(max_words * overlap_percent)
+
+    for block in refined_blocks:
+        block_words = block.split()
+        if current_words + len(block_words) <= max_words:
+            current_chunk.append(block)
+            current_words += len(block_words)
+        else:
+            chunks.append("\n".join(current_chunk))
+            overlap_content = current_chunk[-1].split()[-overlap_size:] if current_chunk else []
+            current_chunk = [" ".join(overlap_content), block] if overlap_content else [block]
+            current_words = len(overlap_content) + len(block_words)
+            
+    if current_chunk:
+        chunks.append("\n".join(current_chunk))
     return chunks
 
 @task(name="process-rijal-task", retries=2, retry_delay_seconds=30)
@@ -128,6 +151,21 @@ def process_and_save_rijal_task(content: str, page_id: str, chunk_idx: int):
     logger = get_run_logger()
     if not content or len(content.strip()) < 10: return
     
+    # --- HYBRID FAST-PATH: Regex for narrator names ---
+    # Pattern: [ID] - [Name]
+    hybrid_narrators = []
+    matches = re.finditer(r'^(\d+)\s*-\s*([\u0621-\u064A\s]+)', content, re.MULTILINE)
+    for m in matches:
+        nar_id_num, name = m.groups()
+        if len(name.strip().split()) >= 2: # Likely a full name
+            hybrid_narrators.append({
+                "name": name.strip(),
+                "reliability": "",
+                "biography_summary": "",
+                "teachers": [],
+                "students": []
+            })
+
     # 1. Extraction (LLM)
     payload = {
         "model": OLLAMA_MODEL,
@@ -150,7 +188,10 @@ def process_and_save_rijal_task(content: str, page_id: str, chunk_idx: int):
         return
 
     if not extraction or not extraction.narrators:
-        return
+        if hybrid_narrators:
+            extraction = PageRijalExtraction(narrators=hybrid_narrators)
+        else:
+            return
 
     # 2. Saving to Graph
     try:
@@ -241,7 +282,8 @@ def rijal_extraction_flow(limit_pages: Optional[int] = None):
             futures = []
             for page in pages:
                 if not isinstance(page, dict): continue
-                chunks = strategy_dot_newline_50(page["content"], min_words=50)
+                # RECURSIVE CHUNKER
+                chunks = recursive_arabic_chunker(page["content"], max_words=400)
                 for idx, chunk in enumerate(chunks):
                     futures.append(process_and_save_rijal_task.submit(chunk, str(page["id"]), idx))
             

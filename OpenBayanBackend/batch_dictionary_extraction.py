@@ -113,63 +113,55 @@ Return ONLY valid JSON with this exact structure:
 If data is missing, use empty strings. Do not omit fields. If the text does not contain a dictionary definition, return {"entries": []}.
 """
 
-def strategy_dot_newline_50(text: str, min_words: int = 50) -> List[str]:
-    raw_splits = re.split(r'[\n.]+', text)
-    sentences = [s.strip() for s in raw_splits if s.strip()]
+def recursive_arabic_chunker(text: str, max_words: int = 400, overlap_percent: float = 0.15) -> List[str]:
+    # 1. Normalize (Strip BiDi markers)
+    text = text.replace('\u200F', '').replace('\u200E', '')
+    
+    # 2. Split by structural blocks (lines)
+    blocks = [b.strip() for b in re.split(r'\n+', text) if b.strip()]
     
     chunks = []
-    current_buffer = []
-    current_word_count = 0
-    
-    for s in sentences:
-        words = s.split()
-        current_buffer.append(s)
-        current_word_count += len(words)
-        if current_word_count >= min_words:
-            chunks.append(" ".join(current_buffer))
-            current_buffer = []
-            current_word_count = 0
-    if current_buffer:
-        chunks.append(" ".join(current_buffer))
+    current_chunk = []
+    current_words = 0
+    overlap_size = int(max_words * overlap_percent)
+
+    for block in blocks:
+        block_words = block.split()
+        if current_words + len(block_words) <= max_words:
+            current_chunk.append(block)
+            current_words += len(block_words)
+        else:
+            chunks.append("\n".join(current_chunk))
+            # Start new chunk with overlap
+            overlap_content = current_chunk[-1].split()[-overlap_size:] if current_chunk else []
+            current_chunk = [" ".join(overlap_content), block] if overlap_content else [block]
+            current_words = len(overlap_content) + len(block_words)
+            
+    if current_chunk:
+        chunks.append("\n".join(current_chunk))
     return chunks
-
-@task(name="fetch-wikipedia-info", retries=3, retry_delay_seconds=10)
-def get_wikipedia_info(entity_name: str) -> Dict:
-    if not entity_name or entity_name == "N/A": return {"url": "", "summary": ""}
-    if entity_name in WIKI_CACHE: return WIKI_CACHE[entity_name]
-    
-    url = "https://ar.wikipedia.org/api/rest_v1/page/summary/" + requests.utils.quote(entity_name)
-    try:
-        response = requests.get(url, timeout=15)
-        if response.status_code == 200:
-            data = response.json()
-            res = {
-                "url": data.get("content_urls", {}).get("desktop", {}).get("page", ""),
-                "summary": data.get("extract", "")
-            }
-            WIKI_CACHE[entity_name] = res
-            return res
-        return {"url": "", "summary": ""}
-    except Exception:
-        return {"url": "", "summary": ""}
-
-@task(name="generate-embedding", retries=3, retry_delay_seconds=15)
-def get_embedding(text: str) -> Optional[List[float]]:
-    if not text: return None
-    payload = {"model": OLLAMA_EMBED_MODEL, "prompt": text}
-    try:
-        response = requests.post(f"{OLLAMA_URL}/api/embeddings", json=payload, timeout=90)
-        response.raise_for_status()
-        return response.json()["embedding"]
-    except Exception as e:
-        get_run_logger().error(f"Embedding API Error: {e}")
-        return None
 
 @task(name="process-chunk-task", retries=2, retry_delay_seconds=30)
 def process_and_save_chunk_task(content: str, page_id: str, source_id: str, chunk_idx: int):
     logger = get_run_logger()
-    if not content or len(content.strip()) < 10: return
+    if not content or len(content.strip()) < 5: return
     
+    # --- HYBRID FAST-PATH: Regex Extraction for simple entries ---
+    hybrid_entries = []
+    lines = content.split('\n')
+    for line in lines:
+        # Match "Word : Definition" or "Word (Root) Definition"
+        match = re.match(r'^([\u0621-\u064A]+)\s*[:]\s*(.*)', line.strip())
+        if match:
+            word, definition = match.groups()
+            if len(definition) > 10:
+                hybrid_entries.append({
+                    "word": word,
+                    "definition": definition,
+                    "root": None,
+                    "entities": []
+                })
+
     # 1. Extraction (LLM)
     payload = {
         "model": OLLAMA_MODEL,
@@ -192,10 +184,12 @@ def process_and_save_chunk_task(content: str, page_id: str, source_id: str, chun
         return
 
     if not extraction or not extraction.entries:
-        return
+        if hybrid_entries:
+            extraction = PageExtraction(entries=hybrid_entries)
+        else:
+            return
 
     # 2. Embedding & Saving
-    # Connect to SurrealDB inside the task for thread safety
     try:
         with Surreal(SURREAL_URL) as db:
             db.signin({"user": SURREAL_USER, "pass": SURREAL_PASS})
@@ -221,7 +215,6 @@ def process_and_save_chunk_task(content: str, page_id: str, source_id: str, chun
                     root_rid = RecordID("root", root_txt)
                     word_rid = RecordID("word", entry.word)
                     
-                    # Idempotent upsert of root and word
                     db.query("UPSERT $id SET arabic_root = $r, identifier = $r", {"id": root_rid, "r": root_txt})
                     db.query("UPSERT $id SET text = $w, simple_text = $w, root = $rid", {"id": word_rid, "w": entry.word, "rid": root_rid})
                     
@@ -250,7 +243,6 @@ def process_and_save_chunk_task(content: str, page_id: str, source_id: str, chun
                     for ent in entry.entities:
                         if not ent.name or ent.name == "N/A": continue
                         
-                        # Wikipedia (Optional/Sync within task)
                         wiki = {"url": "", "summary": ""}
                         w_url = "https://ar.wikipedia.org/api/rest_v1/page/summary/" + requests.utils.quote(ent.name)
                         try:
@@ -315,7 +307,8 @@ def dictionary_batch_flow(limit_pages_per_book: Optional[int] = None):
                 
                 futures = []
                 for page in pages:
-                    chunks = strategy_dot_newline_50(page["content"], min_words=50)
+                    # RECURSIVE CHUNKER
+                    chunks = recursive_arabic_chunker(page["content"], max_words=350)
                     for idx, chunk in enumerate(chunks):
                         futures.append(process_and_save_chunk_task.submit(chunk, str(page["id"]), source_id, idx))
                 
