@@ -123,10 +123,12 @@ def strategy_dot_newline_50(text: str, min_words: int = 50) -> List[str]:
         chunks.append(" ".join(current_buffer))
     return chunks
 
-@task(name="extract-rijal-from-chunk", retries=2, retry_delay_seconds=30)
-def extract_rijal_from_chunk(content: str) -> Optional[PageRijalExtraction]:
-    if not content or len(content.strip()) < 10: return None
+@task(name="process-rijal-task", retries=2, retry_delay_seconds=30)
+def process_and_save_rijal_task(content: str, page_id: str, chunk_idx: int):
+    logger = get_run_logger()
+    if not content or len(content.strip()) < 10: return
     
+    # 1. Extraction (LLM)
     payload = {
         "model": OLLAMA_MODEL,
         "messages": [
@@ -136,83 +138,83 @@ def extract_rijal_from_chunk(content: str) -> Optional[PageRijalExtraction]:
         "format": "json",
         "stream": False
     }
+    
+    extraction = None
     try:
         response = requests.post(f"{OLLAMA_URL}/api/chat", json=payload, timeout=300)
         response.raise_for_status()
         data = response.json()
-        return PageRijalExtraction.parse_llm_response(data["message"]["content"])
+        extraction = PageRijalExtraction.parse_llm_response(data["message"]["content"])
     except Exception as e:
-        get_run_logger().error(f"Extraction Error for chunk ({len(content)} chars): {e}")
-        return None
+        logger.error(f"Extraction Error for chunk ({len(content)} chars): {e}")
+        return
 
-def save_rijal_to_graph_sync(db: Surreal, extraction: PageRijalExtraction, page_id: str, chunk_idx: int):
-    logger = get_run_logger()
-    
-    def clean_id(name: str):
-        clean = re.sub(r'[^\w\u0621-\u064A]', '_', name.strip())
-        return clean.replace("__", "_").strip("_").lower()
+    if not extraction or not extraction.narrators:
+        return
 
-    id_str = page_id.replace("book_page:", "").replace("`", "")
-    page_rid = RecordID("book_page", id_str)
+    # 2. Saving to Graph
+    try:
+        with Surreal(SURREAL_URL) as db:
+            db.signin({"user": SURREAL_USER, "pass": SURREAL_PASS})
+            db.use(SURREAL_NS, SURREAL_DB)
+            
+            def clean_id(name: str):
+                clean = re.sub(r'[^\w\u0621-\u064A]', '_', name.strip())
+                return clean.replace("__", "_").strip("_").lower()
 
-    for narrator in extraction.narrators:
-        if not narrator.name or not narrator.name.strip(): continue
-        
-        try:
-            # 1. Upsert Narrator
-            nar_id = clean_id(narrator.name)
-            if not nar_id: continue
-            nar_rid = RecordID("entity", nar_id)
-            
-            db.query("""
-                UPSERT $id SET 
-                    name = $name, 
-                    type = 'Person', 
-                    reliability = $rel, 
-                    summary = $sum,
-                    biographical_notes = $notes;
-            """, {
-                "id": nar_rid,
-                "name": narrator.name,
-                "rel": narrator.reliability or "",
-                "sum": narrator.biography_summary or "",
-                "notes": narrator.biography_summary or ""
-            })
-            
-            # 2. Link Page to Narrator (mentions)
-            db.query("""
-                RELATE $pid->mentions->$nid SET grade_given = $grade, chunk_index = $idx;
-            """, {
-                "pid": page_rid,
-                "nid": nar_rid,
-                "grade": narrator.reliability or "",
-                "idx": chunk_idx
-            })
-            
-            # 3. Handle Teachers
-            for teacher in narrator.teachers:
-                if not teacher or not teacher.strip(): continue
-                t_id = clean_id(teacher)
-                if not t_id: continue
-                t_rid = RecordID("entity", t_id)
+            id_str = page_id.replace("book_page:", "").replace("`", "")
+            page_rid = RecordID("book_page", id_str)
+
+            for narrator in extraction.narrators:
+                if not narrator.name or not narrator.name.strip(): continue
                 
-                db.query("UPSERT $id SET name = $n, type = 'Person'", {"id": t_rid, "n": teacher})
-                db.query("RELATE $tid->narrated_to->$nid", {"tid": t_rid, "nid": nar_rid})
-            
-            # 4. Handle Students
-            for student in narrator.students:
-                if not student or not student.strip(): continue
-                s_id = clean_id(student)
-                if not s_id: continue
-                s_rid = RecordID("entity", s_id)
-                
-                db.query("UPSERT $id SET name = $n, type = 'Person'", {"id": s_rid, "n": student})
-                db.query("RELATE $nid->narrated_to->$sid", {"nid": nar_rid, "sid": s_rid})
-                
-        except Exception as e:
-            logger.error(f"Failed to save narrator {narrator.name}: {e}")
+                try:
+                    nar_id = clean_id(narrator.name)
+                    if not nar_id: continue
+                    nar_rid = RecordID("entity", nar_id)
+                    
+                    db.query("""
+                        UPSERT $id SET 
+                            name = $name, 
+                            type = 'Person', 
+                            reliability = $rel, 
+                            summary = $sum,
+                            biographical_notes = $notes;
+                    """, {
+                        "id": nar_rid, "name": narrator.name,
+                        "rel": narrator.reliability or "",
+                        "sum": narrator.biography_summary or "",
+                        "notes": narrator.biography_summary or ""
+                    })
+                    
+                    db.query("""
+                        RELATE $pid->mentions->$nid SET grade_given = $grade, chunk_index = $idx;
+                    """, {
+                        "pid": page_rid, "nid": nar_rid,
+                        "grade": narrator.reliability or "", "idx": chunk_idx
+                    })
+                    
+                    for teacher in narrator.teachers:
+                        if not teacher or not teacher.strip(): continue
+                        t_id = clean_id(teacher)
+                        if not t_id: continue
+                        t_rid = RecordID("entity", t_id)
+                        db.query("UPSERT $id SET name = $n, type = 'Person'", {"id": t_rid, "n": teacher})
+                        db.query("RELATE $tid->narrated_to->$nid", {"tid": t_rid, "nid": nar_rid})
+                    
+                    for student in narrator.students:
+                        if not student or not student.strip(): continue
+                        s_id = clean_id(student)
+                        if not s_id: continue
+                        s_rid = RecordID("entity", s_id)
+                        db.query("UPSERT $id SET name = $n, type = 'Person'", {"id": s_rid, "n": student})
+                        db.query("RELATE $nid->narrated_to->$sid", {"nid": nar_rid, "sid": s_rid})
+                except Exception as e:
+                    logger.error(f"Failed to save narrator {narrator.name}: {e}")
+    except Exception as e:
+        logger.error(f"Task DB Connection Error: {e}")
 
-@flow(name="Ilm al-Rijal Extraction Flow", task_runner=ThreadPoolTaskRunner(max_workers=6))
+@flow(name="Ilm al-Rijal Extraction Flow", task_runner=ThreadPoolTaskRunner(max_workers=14))
 def rijal_extraction_flow(limit_pages: Optional[int] = None):
     logger = get_run_logger()
     source_rid = RecordID("source", "shamela_ميزان_الإعتدال_فى_نقد_الرجال__الذهبي__ت_البجاوي__ط_الذهبي")
@@ -223,12 +225,11 @@ def rijal_extraction_flow(limit_pages: Optional[int] = None):
         logger.info(f"Connected to SurrealDB for Rijal Extraction using {OLLAMA_MODEL}")
         
         total_processed = 0
-        batch_size = 10 
+        batch_size = 30 
         
         while True:
             q = "SELECT id, content FROM book_page WHERE source = $src AND processed_for_rijal = false LIMIT $limit"
             res = db.query(q, {"src": source_rid, "limit": batch_size})
-            
             pages = res if isinstance(res, list) and (not res or isinstance(res[0], dict)) else (res[0] if res and isinstance(res[0], list) else [])
             
             if not pages:
@@ -237,21 +238,16 @@ def rijal_extraction_flow(limit_pages: Optional[int] = None):
                 
             logger.info(f"  Batch Processing {len(pages)} pending pages.")
             
-            page_chunks_map = {}
             futures = []
-            
             for page in pages:
                 if not isinstance(page, dict): continue
                 chunks = strategy_dot_newline_50(page["content"], min_words=50)
-                page_chunks_map[str(page["id"])] = chunks
                 for idx, chunk in enumerate(chunks):
-                    futures.append((str(page["id"]), idx, extract_rijal_from_chunk.submit(chunk)))
+                    futures.append(process_and_save_rijal_task.submit(chunk, str(page["id"]), idx))
             
-            # Wait and save
-            for page_id, idx, future in futures:
-                extraction = future.result()
-                if extraction:
-                    save_rijal_to_graph_sync(db, extraction, page_id, idx)
+            # Wait for batch completion
+            for future in futures:
+                future.result()
             
             # Mark processed
             for page in pages:

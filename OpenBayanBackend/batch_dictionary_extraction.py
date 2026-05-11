@@ -165,10 +165,12 @@ def get_embedding(text: str) -> Optional[List[float]]:
         get_run_logger().error(f"Embedding API Error: {e}")
         return None
 
-@task(name="extract-from-chunk", retries=2, retry_delay_seconds=30)
-def extract_from_chunk(content: str) -> Optional[PageExtraction]:
-    if not content or len(content.strip()) < 10: return None
+@task(name="process-chunk-task", retries=2, retry_delay_seconds=30)
+def process_and_save_chunk_task(content: str, page_id: str, source_id: str, chunk_idx: int):
+    logger = get_run_logger()
+    if not content or len(content.strip()) < 10: return
     
+    # 1. Extraction (LLM)
     payload = {
         "model": OLLAMA_MODEL,
         "messages": [
@@ -178,79 +180,106 @@ def extract_from_chunk(content: str) -> Optional[PageExtraction]:
         "format": "json",
         "stream": False
     }
+    
+    extraction = None
     try:
         response = requests.post(f"{OLLAMA_URL}/api/chat", json=payload, timeout=300)
         response.raise_for_status()
         data = response.json()
-        return PageExtraction.parse_llm_response(data["message"]["content"])
+        extraction = PageExtraction.parse_llm_response(data["message"]["content"])
     except Exception as e:
-        get_run_logger().error(f"Extraction Error for chunk ({len(content)} chars): {e}")
-        return None
+        logger.error(f"Extraction Error for chunk ({len(content)} chars): {e}")
+        return
 
-def save_extraction_sync(db: Surreal, extraction: PageExtraction, page_id: str, source_id: str, chunk_idx: int):
-    logger = get_run_logger()
-    
-    def to_rid(rec_str):
-        if isinstance(rec_str, RecordID): return rec_str
-        s = str(rec_str).replace("`", "")
-        if ":" in s:
-            parts = s.split(":", 1)
-            return RecordID(parts[0], parts[1])
-        return rec_str
+    if not extraction or not extraction.entries:
+        return
 
-    page_rid = to_rid(page_id)
-    source_rid = to_rid(source_id)
-    ALLOWED_TYPES = ['Divine', 'Celestial', 'Prophetic', 'Person', 'Group', 'Place', 'Scripture', 'Afterlife', 'Object', 'Event', 'Concept']
+    # 2. Embedding & Saving
+    # Connect to SurrealDB inside the task for thread safety
+    try:
+        with Surreal(SURREAL_URL) as db:
+            db.signin({"user": SURREAL_USER, "pass": SURREAL_PASS})
+            db.use(SURREAL_NS, SURREAL_DB)
+            
+            def to_rid(rec_str):
+                if isinstance(rec_str, RecordID): return rec_str
+                s = str(rec_str).replace("`", "")
+                if ":" in s:
+                    parts = s.split(":", 1)
+                    return RecordID(parts[0], parts[1])
+                return rec_str
 
-    for entry in extraction.entries:
-        if not entry.word or not entry.definition: continue
-        
-        try:
-            root_txt = entry.root or entry.word[:3]
-            root_rid = RecordID("root", root_txt)
-            word_rid = RecordID("word", entry.word)
-            
-            if entry.word not in WORD_EXISTENCE_CACHE:
-                db.query("UPSERT $id SET arabic_root = $r, identifier = $r", {"id": root_rid, "r": root_txt})
-                db.query("UPSERT $id SET text = $w, simple_text = $w, root = $rid", {"id": word_rid, "w": entry.word, "rid": root_rid})
-                WORD_EXISTENCE_CACHE.add(entry.word)
-            
-            embedding = get_embedding.fn(entry.definition)
-            if not embedding: continue
-            
-            sent_uid = re.sub(r'[^\w]', '', entry.word)[:15] + "_" + str(hash(entry.definition) % 100000)
-            sent_rid = RecordID("sentence", f"dict_{sent_uid}")
-            
-            db.query("""
-                UPSERT $id SET 
-                    text = $txt, parent = $pr, source = $src, chunk_index = $idx, 
-                    embedding = $emb,
-                    transliterations = {en: "", ru: "", tr: ""};
-                RELATE $id->defines->$wid;
-            """, {
-                "id": sent_rid, "txt": entry.definition, "pr": page_rid, 
-                "src": source_rid, "idx": chunk_idx, "emb": embedding, "wid": word_rid
-            })
-            
-            for ent in entry.entities:
-                if not ent.name or ent.name == "N/A": continue
-                wiki = get_wikipedia_info.fn(ent.name)
+            page_rid = to_rid(page_id)
+            source_rid = to_rid(source_id)
+            ALLOWED_TYPES = ['Divine', 'Celestial', 'Prophetic', 'Person', 'Group', 'Place', 'Scripture', 'Afterlife', 'Object', 'Event', 'Concept']
+
+            for entry in extraction.entries:
+                if not entry.word or not entry.definition: continue
                 
-                e_type = ent.type if ent.type in ALLOWED_TYPES else "Concept"
-                e_id = re.sub(r'[^\w]', '_', ent.name)
-                ent_rid = RecordID("entity", e_id)
-                
-                db.query("""
-                    UPSERT $id SET name = $n, type = $t, wikipedia_url = $url, summary = $s;
-                    RELATE $sid->mentions->$id;
-                """, {
-                    "id": ent_rid, "n": ent.name, "t": e_type, 
-                    "url": wiki["url"], "s": wiki["summary"], "sid": sent_rid
-                })
-        except Exception as e:
-            logger.error(f"Save Error [{entry.word}]: {e}")
+                try:
+                    root_txt = entry.root or entry.word[:3]
+                    root_rid = RecordID("root", root_txt)
+                    word_rid = RecordID("word", entry.word)
+                    
+                    # Idempotent upsert of root and word
+                    db.query("UPSERT $id SET arabic_root = $r, identifier = $r", {"id": root_rid, "r": root_txt})
+                    db.query("UPSERT $id SET text = $w, simple_text = $w, root = $rid", {"id": word_rid, "w": entry.word, "rid": root_rid})
+                    
+                    # Embedding call
+                    emb_payload = {"model": OLLAMA_EMBED_MODEL, "prompt": entry.definition}
+                    emb_res = requests.post(f"{OLLAMA_URL}/api/embeddings", json=emb_payload, timeout=90)
+                    emb_res.raise_for_status()
+                    embedding = emb_res.json()["embedding"]
+                    
+                    if not embedding: continue
+                    
+                    sent_uid = re.sub(r'[^\w]', '', entry.word)[:15] + "_" + str(hash(entry.definition) % 100000)
+                    sent_rid = RecordID("sentence", f"dict_{sent_uid}")
+                    
+                    db.query("""
+                        UPSERT $id SET 
+                            text = $txt, parent = $pr, source = $src, chunk_index = $idx, 
+                            embedding = $emb,
+                            transliterations = {en: "", ru: "", tr: ""};
+                        RELATE $id->defines->$wid;
+                    """, {
+                        "id": sent_rid, "txt": entry.definition, "pr": page_rid, 
+                        "src": source_rid, "idx": chunk_idx, "emb": embedding, "wid": word_rid
+                    })
+                    
+                    for ent in entry.entities:
+                        if not ent.name or ent.name == "N/A": continue
+                        
+                        # Wikipedia (Optional/Sync within task)
+                        wiki = {"url": "", "summary": ""}
+                        w_url = "https://ar.wikipedia.org/api/rest_v1/page/summary/" + requests.utils.quote(ent.name)
+                        try:
+                            w_res = requests.get(w_url, timeout=10)
+                            if w_res.status_code == 200:
+                                w_data = w_res.json()
+                                wiki = {
+                                    "url": w_data.get("content_urls", {}).get("desktop", {}).get("page", ""),
+                                    "summary": w_data.get("extract", "")
+                                }
+                        except: pass
 
-@flow(name="Batch Dictionary Extraction", task_runner=ThreadPoolTaskRunner(max_workers=14))
+                        e_type = ent.type if ent.type in ALLOWED_TYPES else "Concept"
+                        e_id = re.sub(r'[^\w]', '_', ent.name)
+                        ent_rid = RecordID("entity", e_id)
+                        
+                        db.query("""
+                            UPSERT $id SET name = $n, type = $t, wikipedia_url = $url, summary = $s;
+                            RELATE $sid->mentions->$id;
+                        """, {
+                            "id": ent_rid, "n": ent.name, "t": e_type, 
+                            "url": wiki["url"], "s": wiki["summary"], "sid": sent_rid
+                        })
+                except Exception as e:
+                    logger.error(f"Save Error [{entry.word}]: {e}")
+    except Exception as e:
+        logger.error(f"Task DB Connection Error: {e}")
+
+@flow(name="Batch Dictionary Extraction", task_runner=ThreadPoolTaskRunner(max_workers=20))
 def dictionary_batch_flow(limit_pages_per_book: Optional[int] = None):
     logger = get_run_logger()
 
@@ -271,8 +300,7 @@ def dictionary_batch_flow(limit_pages_per_book: Optional[int] = None):
         for source_id in target_sources:
             logger.info(f">>> Processing: {source_id}")
             start = 0
-            # We fetch more pages at once because chunks process fast
-            batch_size = 20
+            batch_size = 50
             processed_count = 0            
             while True:
                 q = f"SELECT id, content FROM book_page WHERE source = {source_id} AND processed_for_kg = false LIMIT {batch_size}"
@@ -283,23 +311,17 @@ def dictionary_batch_flow(limit_pages_per_book: Optional[int] = None):
                     logger.info(f"Done with {source_id}")
                     break
                     
-                logger.info(f"  Batch {start}: processing {len(pages)} pending pages.")
+                logger.info(f"  Batch {start}: submitting {len(pages)} pending pages.")
                 
-                # Prepare all chunks for this batch of pages
-                page_chunks_map = {}
                 futures = []
-                
                 for page in pages:
                     chunks = strategy_dot_newline_50(page["content"], min_words=50)
-                    page_chunks_map[str(page["id"])] = chunks
                     for idx, chunk in enumerate(chunks):
-                        futures.append((str(page["id"]), idx, extract_from_chunk.submit(chunk)))
+                        futures.append(process_and_save_chunk_task.submit(chunk, str(page["id"]), source_id, idx))
                 
-                # Wait for all extractions and save
-                for page_id, idx, future in futures:
-                    extraction = future.result()
-                    if extraction:
-                        save_extraction_sync(db, extraction, page_id, source_id, idx)
+                # Wait for batch completion
+                for future in futures:
+                    future.result()
                 
                 # Mark pages as processed
                 for page in pages:
