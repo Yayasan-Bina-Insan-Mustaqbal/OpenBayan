@@ -158,7 +158,7 @@ def process_and_save_chunk_task(content: str, page_id: str, source_id: str, chun
                 hybrid_entries.append({
                     "word": word,
                     "definition": definition,
-                    "root": None,
+                    "root": "",
                     "entities": []
                 })
 
