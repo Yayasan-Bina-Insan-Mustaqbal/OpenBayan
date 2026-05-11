@@ -56,9 +56,11 @@ def seed_taxonomy():
             }
             
             if parent_id:
-                record["parent"] = RecordID(parent_id)
+                tb, uid = parent_id.split(":")
+                record["parent"] = RecordID(tb, uid)
             
             # Upsert category
+            tb, uid = record_id.split(":")
             db.query(f"UPSERT {record_id} CONTENT $record", {"record": record})
 
             # Create hierarchical relation
