@@ -161,7 +161,7 @@ def dictionary_enrichment_flow():
             FROM defines 
             WHERE in.source = source:murad_dataset_2026 
             AND in.simple_clean_text = NONE 
-            LIMIT 20
+            LIMIT 100
         """
         logger.info("Executing query...")
         results = db.query(query)
