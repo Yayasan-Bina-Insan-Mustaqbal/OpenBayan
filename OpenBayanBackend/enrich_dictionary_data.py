@@ -160,12 +160,14 @@ def dictionary_enrichment_flow():
             logger.info("No entries pending enrichment.")
             return
 
+        logger.info(f"DEBUG: First entry sample: {entries[0]}")
         logger.info(f"Enriching {len(entries)} dictionary entries...")
         
         futures = []
         for row in entries:
-            # Extract the ID strings from RecordIDs
-            s_id = row["sent_id"].id
+            # Handle RecordID as string or object
+            s_id_raw = str(row["sent_id"])
+            s_id = s_id_raw.split(":")[1] if ":" in s_id_raw else s_id_raw
             w_txt = row["word_text"]
             text = row["text"]
             futures.append(enrich_single_entry.submit(s_id, text, w_txt))
