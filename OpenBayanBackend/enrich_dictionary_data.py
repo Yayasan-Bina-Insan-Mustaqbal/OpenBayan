@@ -23,7 +23,9 @@ OLLAMA_MODEL = "qwen2.5:7b"
 
 class EnrichmentData(BaseModel):
     root: str = Field(description="The triliteral/quadriliteral Arabic root")
-    entities: List[str] = Field(default_factory=list, description="Named entities found in the text")
+    entities: List[str] = Field(default_factory=list, description="Named entities found in the definition text")
+    is_entity: bool = Field(default=False, description="Whether the word itself is a named entity")
+    entity_type: Optional[str] = Field(None, description="The type of entity if is_entity is true")
     pos: str = Field(description="Part of speech (Noun, Verb, etc.)")
     simple_text: str = Field(description="Text without Tashkeel/vowels")
 
@@ -45,12 +47,15 @@ def enrich_single_entry(sentence_id: str, text: str, word: str):
     Extract:
     1. The Arabic Root (triliteral/quadriliteral).
     2. Any Named Entities (People, Places, Concepts) mentioned in the definition.
-    3. Part of Speech (Noun, Verb, Particle).
+    3. Is the Word itself ({word}) a Named Entity? (e.g. is it a specific Prophet, Place, or Sect?)
+    4. Part of Speech (Noun, Verb, Particle).
     
     Return ONLY JSON:
     {{
         "root": "...",
         "entities": ["...", "..."],
+        "is_entity": true/false,
+        "entity_type": "Person/Place/Concept/etc",
         "pos": "...",
         "simple_text": "..."
     }}
@@ -76,10 +81,39 @@ def enrich_single_entry(sentence_id: str, text: str, word: str):
             db.signin({"user": SURREAL_USER, "pass": SURREAL_PASS})
             db.use(SURREAL_NS, SURREAL_DB)
             
-            # Update Word Root
+            # 3. Update Word Root and Entity Mapping
             root_rid = RecordID("root", data.root)
             db.query("UPSERT $id SET arabic_root = $r, identifier = $r", {"id": root_rid, "r": data.root})
-            db.query("UPDATE $wid SET root = $rid, pos = $pos", {"wid": RecordID("word", word), "rid": root_rid, "pos": data.pos})
+            
+            # Entity Analysis for the Word itself
+            word_entity_rid = None
+            if data.is_entity:
+                ent_slug = re.sub(r'[^\w]', '_', word)
+                word_entity_rid = RecordID("entity", ent_slug)
+                
+                # Fetch Wikipedia metadata
+                wiki = {"url": "", "summary": ""}
+                w_url = "https://ar.wikipedia.org/api/rest_v1/page/summary/" + requests.utils.quote(word)
+                try:
+                    w_res = requests.get(w_url, timeout=10)
+                    if w_res.status_code == 200:
+                        w_data = w_res.json()
+                        wiki = {
+                            "url": w_data.get("content_urls", {}).get("desktop", {}).get("page", ""),
+                            "summary": w_data.get("extract", "")
+                        }
+                except: pass
+                
+                db.query("""
+                    UPSERT $id SET name = $n, type = $t, wikipedia_url = $url, summary = $s;
+                """, {"id": word_entity_rid, "n": word, "t": data.entity_type or "Concept", "url": wiki["url"], "s": wiki["summary"]})
+
+            db.query("UPDATE $wid SET root = $rid, pos = $pos, refers_to = $ref", {
+                "wid": RecordID("word", word), 
+                "rid": root_rid, 
+                "pos": data.pos,
+                "ref": word_entity_rid
+            })
             
             # Update Sentence Enrichment
             db.query("""
