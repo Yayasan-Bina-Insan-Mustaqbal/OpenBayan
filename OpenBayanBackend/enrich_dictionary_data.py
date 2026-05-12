@@ -47,7 +47,7 @@ def enrich_single_entry(sentence_id: str, text: str, word: str):
     Extract:
     1. The Arabic Root (triliteral/quadriliteral).
     2. Any Named Entities (People, Places, Concepts) mentioned in the definition.
-    3. Is the Word itself ({word}) a Named Entity? (e.g. is it a specific Prophet, Place, or Sect?)
+    3. Is the Word itself ({word}) a Named Entity or a significant Islamic Concept? (e.g. Prophet, Place, Sect, or terms like 'Khilafah', 'Salah', 'Zakat')
     4. Part of Speech (Noun, Verb, Particle).
     
     Return ONLY JSON:
@@ -55,23 +55,35 @@ def enrich_single_entry(sentence_id: str, text: str, word: str):
         "root": "...",
         "entities": ["...", "..."],
         "is_entity": true/false,
-        "entity_type": "Person/Place/Concept/etc",
+        "entity_type": "Person/Place/Concept/Group",
         "pos": "...",
         "simple_text": "..."
     }}
     """
     
+    payload = {
+        "model": OLLAMA_MODEL,
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": f"Word: {word}\nDefinition: {content}"}
+        ],
+        "stream": False,
+        "format": "json"
+    }
+    
+    data = None
     try:
-        # 1. LLM Analysis
-        res = requests.post(f"{OLLAMA_URL}/api/generate", json={
-            "model": OLLAMA_MODEL,
-            "prompt": prompt,
-            "stream": False,
-            "format": "json"
-        }, timeout=60)
-        res.raise_for_status()
-        data = EnrichmentData.model_validate_json(res.json()["response"])
-        
+        response = requests.post(f"{OLLAMA_URL}/api/chat", json=payload, timeout=120)
+        response.raise_for_status()
+        res_json = response.json()
+        data = EnrichmentData.model_validate_json(res_json["message"]["content"])
+        logger.info(f"DEBUG: {word} -> Root: {data.root}, Entity: {data.is_entity} ({data.entity_type}), POS: {data.pos}")
+    except Exception as e:
+        logger.error(f"LLM/Parsing Failed for {word}: {e}")
+        # Create a dummy object to proceed with DB fallback if possible, or raise
+        data = EnrichmentData(root="unknown", pos="unknown", simple_text=clean_arabic(text))
+
+    try:
         # 2. Simple Cleaning fallback
         if not data.simple_text:
             data.simple_text = clean_arabic(text)
