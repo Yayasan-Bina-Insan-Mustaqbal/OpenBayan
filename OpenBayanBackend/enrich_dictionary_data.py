@@ -160,8 +160,8 @@ def dictionary_enrichment_flow():
             SELECT out as word_id, in as sent_id, in.text as text, out.text as word_text 
             FROM defines 
             WHERE in.source = source:murad_dataset_2026 
-            AND in.simple_clean_text = NONE 
-            LIMIT 100
+            AND out.text CONTAINS 'الخلافة'
+            LIMIT 5
         """
         logger.info("Executing query...")
         results = db.query(query)
