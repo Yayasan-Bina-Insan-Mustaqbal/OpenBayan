@@ -2,6 +2,7 @@ import os
 import json
 import re
 import requests
+import hashlib
 from typing import List, Optional, Dict
 from pydantic import BaseModel, Field, field_validator, AliasChoices
 from surrealdb import Surreal, RecordID
@@ -226,7 +227,9 @@ def process_and_save_chunk_task(content: str, page_id: str, source_id: str, chun
                     
                     if not embedding: continue
                     
-                    sent_uid = re.sub(r'[^\w]', '', entry.word)[:15] + "_" + str(hash(entry.definition) % 100000)
+                    # Deterministic ID using MD5
+                    def_hash = hashlib.md5(entry.definition.encode()).hexdigest()[:10]
+                    sent_uid = re.sub(r'[^\w]', '', entry.word)[:15] + "_" + def_hash
                     sent_rid = RecordID("sentence", f"dict_{sent_uid}")
                     
                     db.query("""
