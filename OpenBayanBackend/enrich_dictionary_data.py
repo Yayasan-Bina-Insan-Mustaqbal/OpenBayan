@@ -91,9 +91,9 @@ def enrich_single_entry(sentence_id: str, text: str, word: str):
                 ent_slug = re.sub(r'[^\w]', '_', word)
                 word_entity_rid = RecordID("entity", ent_slug)
                 
-                # Fetch Wikipedia metadata
+                # Fetch Wikipedia metadata using simple text
                 wiki = {"url": "", "summary": ""}
-                w_url = "https://ar.wikipedia.org/api/rest_v1/page/summary/" + requests.utils.quote(word)
+                w_url = "https://ar.wikipedia.org/api/rest_v1/page/summary/" + requests.utils.quote(data.simple_text)
                 try:
                     w_res = requests.get(w_url, timeout=10)
                     if w_res.status_code == 200:
