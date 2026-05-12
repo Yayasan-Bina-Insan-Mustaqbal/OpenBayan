@@ -154,7 +154,7 @@ def dictionary_enrichment_flow():
             LIMIT 20
         """
         results = db.query(query)
-        entries = results[0]["result"] if results else []
+        entries = results[0] if results else []
         
         if not entries:
             logger.info("No entries pending enrichment.")
