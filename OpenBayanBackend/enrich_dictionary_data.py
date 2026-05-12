@@ -3,7 +3,6 @@ import re
 import requests
 import hashlib
 from typing import List, Optional, Dict
-from pydantic import BaseModel, Field
 from surrealdb import Surreal, RecordID
 from prefect import flow, task, get_run_logger
 from prefect.task_runners import ThreadPoolTaskRunner
@@ -23,21 +22,35 @@ OLLAMA_MODEL = "qwen2.5:7b"
 
 SYSTEM_PROMPT = """
 You are an expert in Arabic Linguistics and Islamic Sciences. Your task is to analyze Arabic dictionary entries and extract structured scholarly metadata.
-For each entry:
-1. Identify the Arabic Root (triliteral or quadriliteral).
-2. Detect Named Entities mentioned in the definition (People, Places, Sects).
-3. Determine if the word itself is a significant Islamic Concept or Entity.
-4. Identify the Part of Speech (POS).
-5. Clean the text by removing Tashkeel.
+For each entry, you MUST return a valid JSON object with EXACTLY these keys:
+- "root": A single string representing the Arabic root (e.g., "خ-ل-ف" or "خلف"). Do NOT return a list.
+- "entities": A list of strings for entities mentioned in the definition.
+- "is_entity": A boolean (true/false) indicating if the word itself is a significant entity/concept.
+- "entity_type": A string (Person, Place, Concept, or Group) if is_entity is true.
+- "pos": A string for Part of Speech (Noun, Verb, or Particle).
+- "simple_text": A string of the word without Tashkeel.
+
+Return ONLY the JSON object. No preamble or explanation.
 """
 
+from pydantic import BaseModel, Field, AliasChoices, ConfigDict, field_validator
+
 class EnrichmentData(BaseModel):
-    root: str = Field(description="The triliteral/quadriliteral Arabic root")
-    entities: List[str] = Field(default_factory=list, description="Named entities found in the definition text")
-    is_entity: bool = Field(default=False, description="Whether the word itself is a named entity")
-    entity_type: Optional[str] = Field(None, description="The type of entity if is_entity is true")
-    pos: str = Field(description="Part of speech (Noun, Verb, etc.)")
-    simple_text: str = Field(description="Text without Tashkeel/vowels")
+    model_config = ConfigDict(populate_by_name=True)
+    
+    root: str = Field(validation_alias=AliasChoices("root", "Root", "Arabic Root", "arabic_root"))
+    entities: List[str] = Field(default_factory=list, validation_alias=AliasChoices("entities", "Entities", "Named Entities", "named_entities"))
+    is_entity: bool = Field(default=False, validation_alias=AliasChoices("is_entity", "Is Entity", "is_named_entity"))
+    entity_type: Optional[str] = Field(None, validation_alias=AliasChoices("entity_type", "Entity Type", "type"))
+    pos: str = Field(validation_alias=AliasChoices("pos", "POS", "Part of Speech", "part_of_speech"))
+    simple_text: str = Field(validation_alias=AliasChoices("simple_text", "Simple Text", "text_clean"))
+
+    @field_validator("root", mode="before")
+    @classmethod
+    def join_root(cls, v):
+        if isinstance(v, list):
+            return "-".join(v)
+        return v
 
 def clean_arabic(text: str) -> str:
     # Remove Tashkeel and extra characters
