@@ -63,7 +63,7 @@ def enrich_single_entry(sentence_id: str, text: str, word: str):
         "model": OLLAMA_MODEL,
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": f"Word: {word}\nDefinition: {content}"}
+            {"role": "user", "content": f"Word: {word}\nDefinition: {text}"}
         ],
         "stream": False,
         "format": "json"
