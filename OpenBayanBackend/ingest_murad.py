@@ -2,6 +2,7 @@ import os
 import csv
 import re
 import requests
+import hashlib
 from typing import List, Optional
 from dotenv import load_dotenv
 from surrealdb import Surreal, RecordID
@@ -67,7 +68,9 @@ def ingest_batch(batch: List[dict]):
                 # Use a dummy parent record to satisfy schema
                 parent_rid = RecordID("book_section", "murad_all")
 
-                sent_uid = f"murad_{clean_id(word_txt)[:15]}_{hash(def_txt) % 100000}"
+                # Deterministic ID using MD5
+                def_hash = hashlib.md5(def_txt.encode()).hexdigest()[:10]
+                sent_uid = f"murad_{clean_id(word_txt)[:15]}_{def_hash}"
                 sent_rid = RecordID("sentence", sent_uid)
 
                 db.query("""
