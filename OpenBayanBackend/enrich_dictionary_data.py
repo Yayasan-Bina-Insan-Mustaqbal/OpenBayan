@@ -155,20 +155,15 @@ def dictionary_enrichment_flow():
         """
         logger.info("Executing query...")
         results = db.query(query)
-        logger.info(f"DEBUG: RAW Results Type: {type(results)}")
-        logger.info(f"DEBUG: RAW Results Content: {str(results)[:500]}")
         
         entries = []
-        if isinstance(results, list) and len(results) > 0:
-            # Check if it is a list of lists or list of dicts
-            if isinstance(results[0], list):
+        if isinstance(results, list):
+            # If the first element is a dict with 'sent_id', results is our list
+            if len(results) > 0 and isinstance(results[0], dict) and "sent_id" in results[0]:
+                entries = results
+            # If the first element is a list, it's a result set
+            elif len(results) > 0 and isinstance(results[0], list):
                 entries = results[0]
-            elif isinstance(results[0], dict) and "result" in results[0]:
-                entries = results[0]["result"]
-            else:
-                entries = results[0]
-        elif isinstance(results, dict):
-            entries = results.get("result", [])
         
         if not entries:
             logger.info("No entries pending enrichment.")
