@@ -120,12 +120,16 @@ def enrich_single_entry(sentence_id: str, text: str, word: str):
                 headers = {"User-Agent": "OpenBayan-Bot/1.0 (https://openbayan.org; info@openbayan.org)"}
                 try:
                     w_res = requests.get(w_url, headers=headers, timeout=10)
+                    logger.info(f"Wikipedia Status for {data.simple_text}: {w_res.status_code}")
                     if w_res.status_code == 200:
                         w_data = w_res.json()
                         wiki = {
                             "url": w_data.get("content_urls", {}).get("desktop", {}).get("page", ""),
                             "summary": w_data.get("extract", "")
                         }
+                        logger.info(f"Wikipedia Found: {wiki['url']}")
+                    else:
+                        logger.warning(f"Wikipedia Not Found for {data.simple_text} (URL: {w_url})")
                 except: pass
                 
                 db.query("""
