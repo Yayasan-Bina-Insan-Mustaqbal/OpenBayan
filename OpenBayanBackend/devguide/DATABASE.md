@@ -418,6 +418,7 @@ Persists the user's frontend layout across sessions.
 | `entity_relation` | `record<entity>` | `record<entity>` | Entity-to-entity relationship |
 | `entity_tagged_with` | `record<entity>` | `record<category>` | Entity taxonomy |
 | `composed_of` | `record<sentence>` | `record<word>` | Linguistic breakdown |
+| `defines` | `record<sentence>` | `record<word>` | Dictionary definition link |
 | `extracted_from` | `record<faidah>` | `record<sahifah\|ayah>` | *(Legacy — see note)* |
 
 ---
