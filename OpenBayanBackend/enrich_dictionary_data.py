@@ -21,6 +21,16 @@ SURREAL_DB = "openbayan"
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://100.121.116.17:11434")
 OLLAMA_MODEL = "qwen2.5:7b"
 
+SYSTEM_PROMPT = """
+You are an expert in Arabic Linguistics and Islamic Sciences. Your task is to analyze Arabic dictionary entries and extract structured scholarly metadata.
+For each entry:
+1. Identify the Arabic Root (triliteral or quadriliteral).
+2. Detect Named Entities mentioned in the definition (People, Places, Sects).
+3. Determine if the word itself is a significant Islamic Concept or Entity.
+4. Identify the Part of Speech (POS).
+5. Clean the text by removing Tashkeel.
+"""
+
 class EnrichmentData(BaseModel):
     root: str = Field(description="The triliteral/quadriliteral Arabic root")
     entities: List[str] = Field(default_factory=list, description="Named entities found in the definition text")
@@ -39,26 +49,13 @@ def clean_arabic(text: str) -> str:
 def enrich_single_entry(sentence_id: str, text: str, word: str):
     logger = get_run_logger()
     
-    prompt = f"""
-    Analyze this Arabic dictionary entry:
-    Word: {word}
-    Definition: {text}
-    
     Extract:
     1. The Arabic Root (triliteral/quadriliteral).
     2. Any Named Entities (People, Places, Concepts) mentioned in the definition.
     3. Is the Word itself ({word}) a Named Entity or a significant Islamic Concept? (e.g. Prophet, Place, Sect, or terms like 'Khilafah', 'Salah', 'Zakat')
     4. Part of Speech (Noun, Verb, Particle).
     
-    Return ONLY JSON:
-    {{
-        "root": "...",
-        "entities": ["...", "..."],
-        "is_entity": true/false,
-        "entity_type": "Person/Place/Concept/Group",
-        "pos": "...",
-        "simple_text": "..."
-    }}
+    Return ONLY JSON matching the EnrichmentData schema.
     """
     
     payload = {
