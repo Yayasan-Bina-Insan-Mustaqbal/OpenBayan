@@ -117,8 +117,9 @@ def enrich_single_entry(sentence_id: str, text: str, word: str):
                 # Fetch Wikipedia metadata using simple text
                 wiki = {"url": "", "summary": ""}
                 w_url = "https://ar.wikipedia.org/api/rest_v1/page/summary/" + requests.utils.quote(data.simple_text)
+                headers = {"User-Agent": "OpenBayan-Bot/1.0 (https://openbayan.org; info@openbayan.org)"}
                 try:
-                    w_res = requests.get(w_url, timeout=10)
+                    w_res = requests.get(w_url, headers=headers, timeout=10)
                     if w_res.status_code == 200:
                         w_data = w_res.json()
                         wiki = {
