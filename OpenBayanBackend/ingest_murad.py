@@ -102,17 +102,35 @@ def murad_ingestion_flow():
 
     batch_size = 50
     current_batch = []
+    futures = []
+    total_submitted = 0
     
+    logger.info(f"Starting ingestion from {CSV_PATH}")
     with open(CSV_PATH, mode='r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         for row in reader:
             current_batch.append(row)
             if len(current_batch) >= batch_size:
-                ingest_batch.submit(current_batch)
+                futures.append(ingest_batch.submit(current_batch))
                 current_batch = []
+                total_submitted += batch_size
+                if total_submitted % 1000 == 0:
+                    logger.info(f"Submitted {total_submitted} records...")
         
         if current_batch:
-            ingest_batch.submit(current_batch)
+            futures.append(ingest_batch.submit(current_batch))
+            total_submitted += len(current_batch)
+
+    logger.info(f"All {total_submitted} records submitted. Waiting for completion...")
+    
+    # Wait for all futures to complete
+    for future in futures:
+        try:
+            future.result()
+        except Exception as e:
+            logger.error(f"Batch execution failed: {e}")
+
+    logger.info("Murad Dataset Ingestion successfully finished.")
 
 if __name__ == "__main__":
     murad_ingestion_flow()
