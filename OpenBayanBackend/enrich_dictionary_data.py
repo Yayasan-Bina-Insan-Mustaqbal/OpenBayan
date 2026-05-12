@@ -49,6 +49,7 @@ def clean_arabic(text: str) -> str:
 def enrich_single_entry(sentence_id: str, text: str, word: str):
     logger = get_run_logger()
     
+    prompt = f"""
     Extract:
     1. The Arabic Root (triliteral/quadriliteral).
     2. Any Named Entities (People, Places, Concepts) mentioned in the definition.
