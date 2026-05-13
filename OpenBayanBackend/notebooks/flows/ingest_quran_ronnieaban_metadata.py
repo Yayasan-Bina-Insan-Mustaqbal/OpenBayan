@@ -15,7 +15,8 @@ SURREAL_HEADERS = {
     "Accept": "application/json"
 }
 
-CSV_PATH = "/app/notebooks/flows/ronnieaban_quran.csv"
+import os
+CSV_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ronnieaban_quran.csv")
 
 @task(retries=3)
 def upsert_theme_category(label: str):
