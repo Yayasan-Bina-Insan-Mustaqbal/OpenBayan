@@ -29,6 +29,8 @@ The dictionary will be enriched in three logical phases to maximize research uti
 ### Phase C: Cross-Lingual & Contextual Mapping
 *   **Task**: 
     *   Map words to English/Turkish equivalents.
+    *   **Ontological Mapping**: Link words to the `entity` table using `refers_to` (e.g., "Musa" ⮕ `entity:prophet_musa`).
+    *   **Wikipedia Bridge**: Fetch Arabic Wikipedia summaries and URLs for all detected entities.
     *   Link dictionary entries to Quranic occurrences (`mentions` edge).
 *   **Goal**: Create a bridge between the dictionary and the source texts.
 

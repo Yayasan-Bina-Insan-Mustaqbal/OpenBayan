@@ -18,6 +18,8 @@
 8. [Auth & Access](#8-auth--access)
 9. [Index Reference](#9-index-reference)
 10. [Key Query Patterns](#10-key-query-patterns)
+11. [Search Strategy](#11-search-strategy)
+12. [Research Workspace Strategy](#12-research-workspace-strategy)
 
 ---
 
@@ -236,6 +238,7 @@ People, places, events, and concepts mentioned in the texts.
 | `text` | `string` | Primary Arabic word with Tashkeel |
 | `simple_text` | `string` | Clean Arabic without Tashkeel |
 | `root` | `record<root>?` | Triliteral root pointer |
+| `pos` | `string?` | Part of Speech (Noun, Verb, Particle) |
 | `refers_to` | `record<entity>?` | Named entity this word *is* (e.g., `موسى` → `entity:prophet_musa`) |
 | `translations` | `object` | Mapped by lang code: `{ en: [{ text, source, is_ai, timestamp }] }` |
 | `transliterations` | `object` | Mapped by lang code: `{ en: [{ text, source, is_ai, timestamp }] }` |
@@ -653,4 +656,18 @@ RELATE faidah:my_note_id->hashtagged->$tag.id SET tagged_by = $auth.id;
 
 ---
 
-*Last updated: 2026-05-04 | Schema version: v2 (Migration v2)*
+---
+
+## 11. Search Strategy
+
+For advanced search implementation details, including Hybrid Search (RRF), ID-Only extraction, and Redis caching strategies, refer to the [Search Strategy Guide](strategies/SEARCH_STRATEGY.md).
+
+---
+
+## 12. Research Workspace Strategy
+
+For the architecture of the file system, folders, and sharing logic (including Materialized Paths), refer to the [Research Workspace Strategy Guide](strategies/RESEARCH_WORKSPACE_STRATEGY.md).
+
+---
+
+*Last updated: 2026-05-13 | Schema version: v2 (Migration v2)*
