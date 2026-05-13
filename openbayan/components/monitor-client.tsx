@@ -18,8 +18,10 @@ import {
     Maximize2,
     X,
     Search,
+    RefreshCw,
     Table as TableIcon
 } from "lucide-react"
+
 import { renderMermaid } from 'beautiful-mermaid'
 import { querySurreal } from "@/lib/surreal-query"
 
