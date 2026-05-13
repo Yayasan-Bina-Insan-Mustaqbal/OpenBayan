@@ -72,8 +72,8 @@ function getPythonJobs() {
 async function getCount(table: string, whereClause: string = "") {
     try {
         const query = whereClause 
-            ? `SELECT count() FROM ${table} WHERE ${whereClause}`
-            : `SELECT count() FROM ${table}`;
+            ? `SELECT count() FROM ${table} WHERE ${whereClause} GROUP ALL`
+            : `SELECT count() FROM ${table} GROUP ALL`;
         const res = await querySurreal(query);
         const result = res[res.length - 1]?.result?.[0]?.count;
         return typeof result === 'number' ? result : 0;
