@@ -1,10 +1,11 @@
 import { querySurreal } from "@/lib/surreal-query"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Activity, CheckCircle, Clock, Database, RefreshCw, Terminal, FileText, Zap } from "lucide-react"
+import { RefreshCw, Database } from "lucide-react"
 import Link from "next/link"
 import fs from "fs"
 import path from "path"
+import MonitorClient from "@/components/monitor-client"
 
 export const dynamic = "force-dynamic"
 
@@ -45,7 +46,7 @@ function getProgressFiles() {
     return files.map(f => {
       const content = fs.readFileSync(path.join(progressPath, f), 'utf-8');
       const title = content.split('\n')[0].replace(/^#+\s*/, '') || f;
-      return { name: f, title };
+      return { name: f, title, content };
     });
   } catch (e) {
     console.error("Failed to read progress files:", e);
@@ -84,14 +85,14 @@ function getPythonJobs() {
 
 export default async function MonitorPage() {
   const statsQuery = `
-    let $ayahs = (SELECT count() FROM ayah GROUP ALL)[0].count OR 0;
-    let $hadiths = (SELECT count() FROM hadith GROUP ALL)[0].count OR 0;
-    let $books = (SELECT count() FROM book GROUP ALL)[0].count OR 0;
-    let $words = (SELECT count() FROM word GROUP ALL)[0].count OR 0;
-    let $entities = (SELECT count() FROM entity GROUP ALL)[0].count OR 0;
-    let $sentences = (SELECT count() FROM sentence GROUP ALL)[0].count OR 0;
+    let $ayahs = (SELECT count() FROM ayah)[0].count OR 0;
+    let $hadiths = (SELECT count() FROM hadith)[0].count OR 0;
+    let $books = (SELECT count() FROM book)[0].count OR 0;
+    let $words = (SELECT count() FROM word)[0].count OR 0;
+    let $entities = (SELECT count() FROM entity)[0].count OR 0;
+    let $sentences = (SELECT count() FROM sentence)[0].count OR 0;
     
-    let $murad_done = (SELECT count() FROM sentence WHERE source = source:murad_dataset_2026 AND simple_clean_text != NONE GROUP ALL)[0].count OR 0;
+    let $murad_done = (SELECT count() FROM sentence WHERE source = source:murad_dataset_2026 AND simple_clean_text != NONE)[0].count OR 0;
 
     SELECT 
         $ayahs as ayahs,
@@ -195,53 +196,7 @@ export default async function MonitorPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-8">
-        <Card className="bg-slate-900/50 border-slate-800">
-            <CardHeader>
-                <div className="flex items-center gap-2">
-                    <Terminal className="h-5 w-5 text-indigo-400" />
-                    <CardTitle className="text-xl text-slate-300">Active Python Pipelines</CardTitle>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-4">
-                    {pythonJobs.length > 0 ? pythonJobs.map((job: any) => (
-                        <div key={job.name} className="flex justify-between items-center p-3 rounded-lg bg-slate-800/30 border border-slate-800/50">
-                            <span className="font-mono text-sm text-slate-300">{job.name}</span>
-                            {job.name.includes('enrich_dictionary') ? (
-                                <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/10">Running</Badge>
-                            ) : (
-                                <Badge variant="outline" className="border-slate-600 text-slate-400">Idle</Badge>
-                            )}
-                        </div>
-                    )) : (
-                        <p className="text-slate-500 text-sm">No python flows detected in directory.</p>
-                    )}
-                </div>
-            </CardContent>
-        </Card>
-
-        <Card className="bg-slate-900/50 border-slate-800">
-            <CardHeader>
-                <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-sky-400" />
-                    <CardTitle className="text-xl text-slate-300">Progress Reports</CardTitle>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                    {progressFiles.length > 0 ? progressFiles.map((file: any) => (
-                        <div key={file.name} className="flex flex-col p-3 rounded-lg bg-slate-800/30 border border-slate-800/50 gap-1">
-                            <span className="font-semibold text-sm text-slate-200">{file.title}</span>
-                            <span className="font-mono text-xs text-slate-500">{file.name}</span>
-                        </div>
-                    )) : (
-                        <p className="text-slate-500 text-sm">No progress logs detected.</p>
-                    )}
-                </div>
-            </CardContent>
-        </Card>
-      </div>
+      <MonitorClient pythonJobs={pythonJobs} progressFiles={progressFiles} />
     </div>
   )
 }
