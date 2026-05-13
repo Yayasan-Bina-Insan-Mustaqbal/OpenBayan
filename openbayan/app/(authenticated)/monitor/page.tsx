@@ -13,8 +13,9 @@ function Badge({ children, variant = "default", className = "" }: any) {
         default: "bg-slate-800 text-slate-200 border-slate-700",
         outline: "border-slate-800 text-slate-400 bg-transparent",
     }
+    const variantClass = variants[variant] || variants.default
     return (
-        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors ${variants[variant]} ${className}`}>
+        <span className={"inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors " + variantClass + " " + className}>
             {children}
         </span>
     )
@@ -36,15 +37,20 @@ function getProgressFiles() {
 
   if (!progressPath) return [];
 
-  const files = fs.readdirSync(progressPath)
-    .filter(f => f.endsWith('.md') && f !== 'README.md')
-    .sort().reverse();
-  
-  return files.map(f => {
-    const content = fs.readFileSync(path.join(progressPath, f), 'utf-8');
-    const title = content.split('\n')[0].replace(/^#+\s*/, '') || f;
-    return { name: f, title };
-  });
+  try {
+    const files = fs.readdirSync(progressPath)
+      .filter(f => f.endsWith('.md') && f !== 'README.md')
+      .sort().reverse();
+    
+    return files.map(f => {
+      const content = fs.readFileSync(path.join(progressPath, f), 'utf-8');
+      const title = content.split('\n')[0].replace(/^#+\s*/, '') || f;
+      return { name: f, title };
+    });
+  } catch (e) {
+    console.error("Failed to read progress files:", e);
+    return [];
+  }
 }
 
 function getPythonJobs() {
@@ -63,12 +69,17 @@ function getPythonJobs() {
 
   if (!flowsPath) return [];
 
-  const files = fs.readdirSync(flowsPath)
-    .filter(f => f.endsWith('.py'));
-  
-  return files.map(f => {
-    return { name: f };
-  });
+  try {
+    const files = fs.readdirSync(flowsPath)
+      .filter(f => f.endsWith('.py'));
+    
+    return files.map(f => {
+      return { name: f };
+    });
+  } catch (e) {
+    console.error("Failed to read python flows:", e);
+    return [];
+  }
 }
 
 export default async function MonitorPage() {
@@ -124,7 +135,6 @@ export default async function MonitorPage() {
         </div>
       </div>
 
-      {/* Global Knowledge Graph Inventory */}
       <h2 className="text-2xl font-semibold text-slate-200 mt-8 mb-4 border-b border-slate-800 pb-2">Knowledge Graph Inventory</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         
@@ -186,7 +196,6 @@ export default async function MonitorPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-8">
-        {/* Python Jobs Section */}
         <Card className="bg-slate-900/50 border-slate-800">
             <CardHeader>
                 <div className="flex items-center gap-2">
@@ -196,7 +205,7 @@ export default async function MonitorPage() {
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
-                    {pythonJobs.length > 0 ? pythonJobs.map(job => (
+                    {pythonJobs.length > 0 ? pythonJobs.map((job: any) => (
                         <div key={job.name} className="flex justify-between items-center p-3 rounded-lg bg-slate-800/30 border border-slate-800/50">
                             <span className="font-mono text-sm text-slate-300">{job.name}</span>
                             {job.name.includes('enrich_dictionary') ? (
@@ -212,7 +221,6 @@ export default async function MonitorPage() {
             </CardContent>
         </Card>
 
-        {/* Progress Logs Section */}
         <Card className="bg-slate-900/50 border-slate-800">
             <CardHeader>
                 <div className="flex items-center gap-2">
@@ -222,7 +230,7 @@ export default async function MonitorPage() {
             </CardHeader>
             <CardContent>
                 <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                    {progressFiles.length > 0 ? progressFiles.map(file => (
+                    {progressFiles.length > 0 ? progressFiles.map((file: any) => (
                         <div key={file.name} className="flex flex-col p-3 rounded-lg bg-slate-800/30 border border-slate-800/50 gap-1">
                             <span className="font-semibold text-sm text-slate-200">{file.title}</span>
                             <span className="font-mono text-xs text-slate-500">{file.name}</span>
@@ -249,6 +257,7 @@ function InventoryCard({ title, sourceLabel, targetLabel, count, unit, color, to
     }
 
     const progress = total ? (count / total) * 100 : 0
+    const currentColor = colorClasses[color] || colorClasses.emerald
 
     return (
         <Card className="bg-slate-900/50 border-slate-800">
@@ -267,8 +276,8 @@ function InventoryCard({ title, sourceLabel, targetLabel, count, unit, color, to
                     </div>
                 </div>
 
-                <div className={`p-4 rounded-lg border ${colorClasses[color]} flex flex-col items-center justify-center`}>
-                    <p className="text-3xl font-bold tracking-tight">{count?.toLocaleString() || 0}</p>
+                <div className={"p-4 rounded-lg border " + currentColor + " flex flex-col items-center justify-center"}>
+                    <p className="text-3xl font-bold tracking-tight">{(count || 0).toLocaleString()}</p>
                     <p className="text-xs uppercase tracking-wider font-semibold opacity-80 mt-1">{unit}</p>
                 </div>
 
@@ -281,7 +290,7 @@ function InventoryCard({ title, sourceLabel, targetLabel, count, unit, color, to
                         <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
                             <div 
                                 className="h-full bg-teal-500 rounded-full"
-                                style={{ width: \`\${Math.max(progress, 1)}%\` }}
+                                style={{ width: Math.max(progress, 1) + "%" }}
                             />
                         </div>
                     </div>

@@ -81,12 +81,12 @@ DEFINE FIELD layout ON workspace TYPE object;
 DEFINE FIELD active_tabs ON workspace TYPE array<string>;
 DEFINE FIELD updated_at ON workspace TYPE datetime DEFAULT time::now() VALUE time::now();
 
-DEFINE TABLE search_history SCHEMAFULL
-  PERMISSIONS FOR select, update, delete WHERE user = $auth.id, FOR create NONE;
-DEFINE FIELD user ON search_history TYPE record<user> DEFAULT $auth.id;
-DEFINE FIELD query ON search_history TYPE string;
-DEFINE FIELD results_count ON search_history TYPE int;
-DEFINE FIELD created_at ON search_history TYPE datetime DEFAULT time::now();
+DEFINE TABLE bahs SCHEMAFULL
+  PERMISSIONS FOR select, update, delete WHERE owner = $auth.id, FOR create WHERE $auth.id != NONE;
+DEFINE FIELD owner ON bahs TYPE record<user> DEFAULT $auth.id;
+DEFINE FIELD query ON bahs TYPE string;
+DEFINE FIELD result_count ON bahs TYPE int;
+DEFINE FIELD created_at ON bahs TYPE datetime DEFAULT time::now();
 
 DEFINE TABLE user_feedback SCHEMAFULL
   PERMISSIONS FOR select, update, delete WHERE user = $auth.id, FOR create NONE;

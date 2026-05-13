@@ -11,8 +11,8 @@ async def apply_schema():
     url = os.getenv("SURREALDB_URL", "ws://localhost:8000/rpc")
     user = os.getenv("SURREALDB_USERNAME", "root")
     password = os.getenv("SURREALDB_PASSWORD", "root")
-    namespace = os.getenv("SURREALDB_NAMESPACE", "OpenBayan")
-    database = os.getenv("SURREALDB_DATABASE", "OpenBayan")
+    namespace = os.getenv("SURREALDB_NAMESPACE", "openbayan")
+    database = os.getenv("SURREALDB_DATABASE", "openbayan")
     
     schema_path = "schema/combined_schema.surql"
     if not os.path.exists(schema_path):

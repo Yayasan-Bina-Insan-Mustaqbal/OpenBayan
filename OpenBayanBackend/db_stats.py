@@ -9,7 +9,7 @@ def main():
         db.signin({"user": "root", "pass": "RwAbXjBc2z36z"})
         db.use("openbayan", "openbayan")
         
-        tables = ["book_page", "entity", "sentence", "word", "root", "source"]
+        tables = ["book_page", "entity", "sentence", "word", "root", "source", "bahs", "alamah"]
         for table in tables:
             try:
                 res = db.query(f"SELECT count() FROM {table} GROUP ALL")

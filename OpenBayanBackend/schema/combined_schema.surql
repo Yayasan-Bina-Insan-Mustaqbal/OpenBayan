@@ -52,12 +52,14 @@ DEFINE FIELD user ON workspace TYPE record<user> DEFAULT $auth.id ASSERT !!$valu
 DEFINE FIELD created_at ON workspace TYPE datetime DEFAULT time::now();
 DEFINE FIELD updated_at ON workspace TYPE datetime DEFAULT time::now() VALUE time::now();
 
--- Table: search_history (Discovery tracking)
-DEFINE TABLE search_history SCHEMAFULL PERMISSIONS FOR select, update, delete WHERE user = $auth.id;
-DEFINE FIELD query ON search_history TYPE string ASSERT !!$value;
-DEFINE FIELD filters ON search_history TYPE option<object>;
-DEFINE FIELD user ON search_history TYPE record<user> DEFAULT $auth.id ASSERT !!$value;
-DEFINE FIELD created_at ON search_history TYPE datetime DEFAULT time::now();
+-- Table: bahs (Search/Query Log - renamed from search_history)
+DEFINE TABLE bahs SCHEMAFULL 
+  PERMISSIONS FOR select, update, delete WHERE owner = $auth.id, FOR create WHERE $auth.id != NONE;
+DEFINE FIELD owner ON bahs TYPE record<user> DEFAULT $auth.id ASSERT !!$value;
+DEFINE FIELD query ON bahs TYPE string ASSERT !!$value;
+DEFINE FIELD filters ON bahs TYPE option<object>;
+DEFINE FIELD result_count ON bahs TYPE option<int>;
+DEFINE FIELD created_at ON bahs TYPE datetime DEFAULT time::now();
 
 -- 1.2 USER FEEDBACK (AI Relevance Training)
 DEFINE TABLE user_feedback SCHEMAFULL PERMISSIONS FOR select, update, delete WHERE user = $auth.id;
