@@ -1,6 +1,8 @@
 import requests
 import json
 import os
+import re
+import unicodedata
 from typing import List, Dict, Any, Optional
 from prefect import flow, task, get_run_logger
 from datasets import load_dataset
@@ -108,8 +110,13 @@ def ingest_hadith_sanadset(batch_size: int = 50):
         # Use the global source record for this dataset
         source_id = "source:hadith_650k_sanadset"
         
+        # Slugify collection name — SurrealDB record IDs must be ASCII-safe
+        coll_slug = unicodedata.normalize('NFKD', str(collection))
+        coll_slug = coll_slug.encode('ascii', 'ignore').decode('ascii')
+        coll_slug = re.sub(r'[^a-z0-9]+', '_', coll_slug.lower()).strip('_') or 'unknown'
+        
         q = f"""
-        UPSERT hadith:{collection.lower()}_{h_num} CONTENT {{
+        UPSERT hadith:{coll_slug}_{h_num} CONTENT {{
             collection: '{collection}',
             hadith_number: '{h_num}',
             matn_ar: '{escaped_matn}',
