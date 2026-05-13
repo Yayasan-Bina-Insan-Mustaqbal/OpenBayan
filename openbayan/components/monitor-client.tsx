@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { 
     Accordion, 
     AccordionContent, 
@@ -113,8 +114,15 @@ export default function MonitorClient({ pythonJobs, progressFiles, inventoryData
     setIsLoadingTable(true);
     setTableData([]);
     try {
-      // Fetch 50 sample records
-      const res = await querySurreal(query + " LIMIT 50");
+      const response = await fetch("/api/query", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sql: query + " LIMIT 50" })
+      });
+      
+      if (!response.ok) throw new Error("API request failed");
+      
+      const res = await response.json();
       const results = res[res.length - 1].result;
       setTableData(Array.isArray(results) ? results : []);
     } catch (e) {
