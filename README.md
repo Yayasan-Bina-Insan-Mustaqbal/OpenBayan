@@ -95,3 +95,25 @@ OpenBayan bridges NextAuth directly to SurrealDB to eliminate unnecessary backen
     ```
 
 ---
+
+## 5. Credits & Data Sources
+
+OpenBayan is built upon the invaluable work of the global Islamic research and open-source community. For a detailed guide on our data sources and potential expansion datasets (Kaggle/Hugging Face), see our **[Islamic Data Sources Guide](./OpenBayanBackend/devguide/ISLAMIC_DATA_SOURCES.md)**.
+
+We gratefully acknowledge the following data sources and APIs:
+
+*   **[Al Quran Cloud API](https://alquran.cloud/)**: A primary source for Quranic text, translations, and metadata.
+*   **[Fawaz Ahmed's Quran API](https://github.com/fawazahmed0/quran-api)**: Providing comprehensive Quranic editions and translations.
+*   **[Hugging Face (ieasybooks-org)](https://huggingface.co/ieasybooks-org)**: For digitized collections of the **Shamela Waqfeya** library.
+*   **[Quran.com](https://quran.com)**: For Tafsir data and Islamic knowledge APIs.
+*   **[QuranJSON (penggguna)](https://github.com/penggguna/QuranJSON)**: For Indonesian Quran translations and data structures.
+*   **[TafsirWeb](https://tafsirweb.com)**: For various Tafsir sources and scholarly commentaries.
+*   **[Wikipedia (Arabic)](https://ar.wikipedia.org)**: For biographical data and dictionary enrichment.
+*   **[Shamela (المكتبة الشاملة)](https://shamela.ws)**: The foundational digital library for Islamic heritage.
+*   **[Ronnie Aban (ronnieaban)](https://github.com/ronnieaban)**: For Quranic thematic metadata and JSON collections.
+*   **[Kaggle](https://www.kaggle.com/)**: For Quranic thematic and emotional analysis datasets.
+*   **[CAMeL Tools](https://github.com/CAMeL-Lab/camel_tools)**: For Arabic natural language processing and morphological analysis.
+
+Special thanks to the developers and scholars who maintain these resources for the benefit of the Ummah.
+
+---
