@@ -26,11 +26,17 @@ class TransliterationChunk(BaseModel):
     ru: str
     tr: str
 
+class Relation(BaseModel):
+    subject: str
+    predicate: str
+    object: str
+
 class ChunkResult(BaseModel):
     arabic_chunk: str
     transliteration: TransliterationChunk
     categories: List[Categorization]
     entities: List[Entity]
+    relations: List[Relation]
 
 class AyahEnrichmentResult(BaseModel):
     chunks: List[ChunkResult]
@@ -38,8 +44,8 @@ class AyahEnrichmentResult(BaseModel):
 @task(retries=3, retry_delay_seconds=2)
 def get_taxonomy_labels():
     with Surreal(SURREAL_URL) as db:
-        db.signin({"user": "root", "pass": "root"})
-        db.use("main", "main")
+        db.signin({"user": "root", "pass": "RwAbXjBc2z36z"})
+        db.use("openbayan", "openbayan")
         res = db.query("SELECT label FROM category WHERE level >= 2;")
         return [r["label"] for r in res]
 
@@ -59,7 +65,8 @@ def enrich_and_chunk_ayah(arabic_text, trans_en, trans_ru, trans_tr, context, la
 
 ### TASK
 Split this Ayah into semantic sentences based on Quranic waqf marks.
-Assign categories (1-10) and extract entities for EACH chunk.
+Assign categories (1-10), extract entities, and capture narrative relationships for EACH chunk.
+Narrative Relationships: e.g. (Prophet Musa) -> [confronts] -> (Firaun).
 Categories to choose from: {labels_str}
 
 Arabic: {arabic_text}
@@ -74,7 +81,8 @@ Return ONLY this JSON schema:
       "arabic_chunk": "string",
       "transliteration": {{ "en": "string", "ru": "string", "tr": "string" }},
       "categories": [{{ "label": "string", "importance": 10, "reasoning": "string" }}],
-      "entities": [{{ "name": "string", "type": "string" }}]
+      "entities": [{{ "name": "string", "type": "string" }}],
+      "relations": [{{ "subject": "string", "predicate": "string", "object": "string" }}]
     }}
   ]
 }}
@@ -98,8 +106,8 @@ def get_hizb_context(hizb_quarter):
 def save_to_surreal(sid, record, categories, entities, surah_number, ayah_number):
     logger = get_run_logger()
     with Surreal(SURREAL_URL) as db:
-        db.signin({"user": "root", "pass": "root"})
-        db.use("main", "main")
+        db.signin({"user": "root", "pass": "RwAbXjBc2z36z"})
+        db.use("openbayan", "openbayan")
         
         db.query(f"DELETE {sid};")
         db.query(f"CREATE {sid} CONTENT $record", {"record": record})
@@ -119,6 +127,24 @@ def save_to_surreal(sid, record, categories, entities, surah_number, ayah_number
             eid = f"entity:`{safe_ent_name}`"
             db.query(f"UPSERT {eid} SET name = $n, type = $t", {"n": ent.name, "t": ent.type})
             db.query(f"RELATE {sid}->mentions->{eid}")
+
+        for rel in record.get("narrative_relations", []):
+            s_slug = "".join([c for c in rel["subject"].replace(" ", "_").replace("'", "").lower() if c.isalnum() or c == "_"])
+            o_slug = "".join([c for c in rel["object"].replace(" ", "_").replace("'", "").lower() if c.isalnum() or c == "_"])
+            if not s_slug or not o_slug: continue
+            
+            sid_ent = f"entity:`{s_slug}`"
+            oid_ent = f"entity:`{o_slug}`"
+            
+            # Ensure entities exist before relating them
+            db.query(f"UPSERT {sid_ent} SET name = $n", {"n": rel["subject"]})
+            db.query(f"UPSERT {oid_ent} SET name = $n", {"n": rel["object"]})
+            
+            # Create interaction edge
+            db.query(f"RELATE {sid_ent}->interacts_with->{oid_ent} SET action = $p, source = $source", {
+                "p": rel["predicate"],
+                "source": sid
+            })
 
 @flow(name="Quran Multi-Modal Ingestion")
 def quran_ingestion_flow(start_surah: int = 1, end_surah: int = 114):
@@ -167,7 +193,8 @@ def quran_ingestion_flow(start_surah: int = 1, end_surah: int = 114):
                         "hizb_quarter": hizb,
                         "embedding": vec_text,
                         "embedding_transliteration": vec_sound,
-                        "llm_context": hizb_cache[hizb]
+                        "llm_context": hizb_cache[hizb],
+                        "narrative_relations": [r.model_dump() for r in chunk.relations]
                     }
                     
                     save_to_surreal(sid, record, chunk.categories, chunk.entities, surah_number, ref)

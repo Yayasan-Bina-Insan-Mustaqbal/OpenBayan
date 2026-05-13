@@ -13,6 +13,8 @@ OpenBayan is a Knowledge Graph-driven research platform for Islamic texts. The b
 We follow a strict **SCHEMAFULL** policy. 
 - **Do not** use `CREATE` with arbitrary objects.
 - **Always** ensure the `source` and `parent` (Ayah/Hadith/Book) exist before inserting `sentence` chunks.
+- [DATABASE.md](devguide/DATABASE.md): SurrealDB table schema and intent.
+- [REORGANIZATION_PLAN.md](devguide/REORGANIZATION_PLAN.md): Planned directory restructuring for Python scripts.
 - Refer to [KNOWLEDGE_GRAPH.md](./KNOWLEDGE_GRAPH.md) for the table relationship map.
 
 ### Connecting to SurrealDB
