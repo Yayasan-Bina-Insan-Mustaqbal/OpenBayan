@@ -17,6 +17,7 @@ Welcome to the OpenBayan developer documentation. This directory contains detail
 ### 💾 Database & Backend
 - [Master Database Reference](database/DATABASE.md) — Unified schema for Library, Taxonomy, and Research planes.
 - [Semantic Search Strategy](database/strategies/SEARCH_STRATEGY.md) — Hybrid Search, RRF, and optimization.
+- [Embedding Generation Strategy](database/strategies/EMBEDDING_STRATEGY.md) — Architectural options for query vectorization.
 - [Research Workspace Strategy](database/strategies/RESEARCH_WORKSPACE_STRATEGY.md) — File system, folders, and sharing architecture.
 - [SurrealDB Auth Guide](database/auth.md) — NextAuth integration and record access.
 - [Hybrid Vector Search (Legacy)](database/backend_surrealdb_hybrid_search.md) — Earlier BM25 + vector search notes.

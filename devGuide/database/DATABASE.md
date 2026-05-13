@@ -660,7 +660,7 @@ RELATE faidah:my_note_id->hashtagged->$tag.id SET tagged_by = $auth.id;
 
 ## 11. Search Strategy
 
-For advanced search implementation details, including Hybrid Search (RRF), ID-Only extraction, and Redis caching strategies, refer to the [Search Strategy Guide](strategies/SEARCH_STRATEGY.md).
+For advanced search implementation details, including Hybrid Search (RRF), ID-Only extraction, and Redis caching strategies, refer to the [Search Strategy Guide](strategies/SEARCH_STRATEGY.md). For architectural options regarding query vectorization, see the [Embedding Generation Strategy](strategies/EMBEDDING_STRATEGY.md).
 
 ---
 
