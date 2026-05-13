@@ -6,11 +6,15 @@ Enhance the Knowledge Graph by establishing complex cross-entity relationships a
 ## Proposed Workflow
 1. **Relationship Identification**:
     - **Topic Linking**: Connect sentences to a broader `taxonomy` or `subject` graph.
+    - **Sentence-to-Sentence Linkage**: Identify semantic similarity, thematic clusters, or direct references between different sentences.
+    - **Categorization & Tagging**: Map sentences to scholarly categories, topics, and user-generated hashtags.
     - **Citation Graph**: Identify implicit and explicit references between books.
     - **Chronological Linkage**: Map authors and events to a timeline.
 2. **Graph Expansion**:
     - Use SurrealDB graph capabilities (edges) to represent these connections.
     - `sentence -> discusses -> topic`
+    - `sentence -> related_to -> sentence` (semantic or thematic neighbors)
+    - `sentence -> tagged_with -> category | hashtag`
     - `book -> cites -> book`
 3. **Automated Discovery**:
     - Use LLMs to identify relationships that are not explicitly coded in the source text.

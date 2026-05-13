@@ -22,6 +22,8 @@ services:
       - .:/workspaces/openbayan:cached
       - openbayan_node_modules:/workspaces/openbayan/node_modules
       - openbayan_next_cache:/workspaces/openbayan/.next
+      - ../OpenBayanBackend/progress:/workspaces/openbayan/backend_progress:ro
+      - ../OpenBayanBackend/notebooks/flows:/workspaces/openbayan/backend_flows:ro
 
   next-dev:
     build:
@@ -44,6 +46,8 @@ services:
       - .:/workspaces/openbayan:cached
       - openbayan_node_modules:/workspaces/openbayan/node_modules
       - openbayan_next_cache:/workspaces/openbayan/.next
+      - ../OpenBayanBackend/progress:/workspaces/openbayan/backend_progress:ro
+      - ../OpenBayanBackend/notebooks/flows:/workspaces/openbayan/backend_flows:ro
 
 volumes:
   openbayan_node_modules:
