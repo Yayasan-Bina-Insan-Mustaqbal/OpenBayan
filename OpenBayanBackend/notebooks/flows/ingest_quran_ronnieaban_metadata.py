@@ -1,6 +1,7 @@
 import csv
 import requests
 import json
+import re
 import time
 from typing import List, Dict, Any, Optional
 from prefect import flow, task, get_run_logger
@@ -66,10 +67,12 @@ def update_ayah_metadata_batch(rows: List[Dict[str, Any]]):
         # Relationship to theme group
         theme = row["tafsir_theme_group"]
         if theme and theme.strip():
-            # Fix: theme identifier should not have double category: prefix
-            theme_slug = theme.lower().replace(' ', '_').replace('(', '').replace(')', '').replace(',', '')
+            # Slug: ASCII-only alnum + underscore, no apostrophes or spaces
+            theme_slug = re.sub(r"[^a-z0-9]+", "_", theme.lower()).strip("_") or "unknown"
             cat_id = f"theme_{theme_slug}"
-            rel_q = f"UPSERT category:{cat_id} SET label = '{theme}', classification = 'theme'; "
+            # Escape theme label for SurrealQL string
+            escaped_theme = theme.replace("\\", "\\\\").replace("'", "\\'")
+            rel_q = f"UPSERT category:{cat_id} SET label = '{escaped_theme}', classification = 'theme'; "
             rel_q += f"RELATE (SELECT id FROM ayah WHERE surah_number = {s_num} AND ayah_number = {a_num} LIMIT 1)->classified_as->category:{cat_id} SET weight = 10, source = 'ronnieaban';"
             query_parts.append(rel_q)
 
