@@ -57,26 +57,72 @@ def ingest_parallel_translations_flow():
     logger.info(f"Loading parallel translations from {HF_DATASET_NAME}")
     
     try:
-        # Load the dataset (usually has multiple configurations for different translations)
-        # For ImruQays, we might need to iterate through configurations
-        configs = ["arberry", "asad", "pickthall", "yusufali", "sahih"] # Example keys
+        # Load the dataset (all translations are in columns of the 'train' split)
+        ds = load_dataset(HF_DATASET_NAME, split="train")
         
-        for cfg in configs:
-            logger.info(f"Processing translation: {cfg}")
-            try:
-                ds = load_dataset(HF_DATASET_NAME, cfg, split="train")
+        # Translation columns to ingest
+        trans_cols = [
+            'en-ahmedali', 'en-ahmedraza', 'en-arberry', 'en-asad', 
+            'en-daryabadi', 'en-hilali', 'en-itani', 'en-maududi', 
+            'en-mubarakpuri', 'en-pickthall', 'en-qarai', 'en-qaribullah', 
+            'en-sahih', 'en-sarwar', 'en-shakir', 'en-wahiduddi', 'en-yusufali'
+        ]
+        
+        for col in trans_cols:
+            if col not in ds.column_names:
+                logger.warning(f"Column {col} not found in dataset")
+                continue
                 
-                batch = []
-                for row in ds:
-                    batch.append(row)
-                    if len(batch) >= 100:
-                        update_translation_batch(cfg, batch)
-                        batch = []
+            logger.info(f"Processing translation column: {col}")
+            
+            batch = []
+            # For each row, we need the surah/ayah info. 
+            # ImruQays typically has row indices or similar. 
+            # We'll assume the row index + 1 is the sequence if not provided, 
+            # but usually Quran datasets follow the 6236 sequence.
+            # Let's check if it has surah/ayah IDs.
+            
+        # Ayah counts per surah (1-114)
+        ayah_counts = [
+            7, 286, 200, 176, 120, 165, 206, 75, 129, 109, 123, 111, 43, 52, 99, 128, 111, 110, 98, 135, 112, 78, 118, 64, 77, 227, 93, 88, 69, 60, 34, 30, 73, 54, 45, 83, 182, 88, 75, 85, 54, 53, 89, 59, 37, 35, 38, 29, 18, 45, 60, 49, 62, 55, 78, 96, 29, 22, 24, 13, 14, 11, 11, 18, 12, 12, 30, 52, 52, 44, 28, 28, 20, 56, 40, 31, 50, 40, 46, 42, 29, 19, 36, 25, 22, 17, 19, 26, 30, 20, 15, 21, 11, 8, 8, 19, 5, 8, 8, 11, 11, 8, 3, 9, 5, 4, 7, 3, 6, 3, 5, 4, 5, 6
+        ]
+        
+        # Build a mapping list of (surah, ayah)
+        mapping = []
+        for s_idx, count in enumerate(ayah_counts):
+            for a_idx in range(1, count + 1):
+                mapping.append((s_idx + 1, a_idx))
+        
+        for col in trans_cols:
+            if col not in ds.column_names:
+                logger.warning(f"Column {col} not found in dataset")
+                continue
                 
-                if batch:
-                    update_translation_batch(cfg, batch)
-            except Exception as inner_e:
-                logger.warning(f"Config {cfg} not found or failed: {inner_e}")
+            logger.info(f"Processing translation column: {col}")
+            
+            batch = []
+            for i, row in enumerate(ds):
+                if i >= len(mapping):
+                    break
+                    
+                s_num, a_num = mapping[i]
+                text = row.get(col)
+                
+                if not text:
+                    continue
+                
+                batch.append({
+                    "surah_id": s_num, 
+                    "verse_id": a_num, 
+                    "translation_text": text
+                })
+                
+                if len(batch) >= 100:
+                    update_translation_batch(col.replace("en-", ""), batch)
+                    batch = []
+            
+            if batch:
+                update_translation_batch(col.replace("en-", ""), batch)
                 
     except Exception as e:
         logger.error(f"Main flow error: {e}")
