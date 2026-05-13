@@ -94,7 +94,7 @@ def ingest_ronnieaban_flow():
     
     # Using the local file path inside Docker (we will scp it there)
     try:
-        with open("/root/projects/OpenBayan-KG/OpenBayanBackend/notebooks/flows/ronnieaban_quran.csv", mode='r', encoding='utf-8') as f:
+        with open(CSV_PATH, mode='r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             batch = []
             for row in reader:
