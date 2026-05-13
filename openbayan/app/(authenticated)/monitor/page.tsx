@@ -1,26 +1,12 @@
 import { querySurreal } from "@/lib/surreal-query"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Database } from "lucide-react"
+import { RefreshCw } from "lucide-react"
 import Link from "next/link"
 import fs from "fs"
 import path from "path"
 import MonitorClient from "@/components/monitor-client"
 
 export const dynamic = "force-dynamic"
-
-function Badge({ children, variant = "default", className = "" }: any) {
-    const variants: any = {
-        default: "bg-slate-800 text-slate-200 border-slate-700",
-        outline: "border-slate-800 text-slate-400 bg-transparent",
-    }
-    const variantClass = variants[variant] || variants.default
-    return (
-        <span className={"inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors " + variantClass + " " + className}>
-            {children}
-        </span>
-    )
-}
 
 function getProgressFiles() {
   const possiblePaths = [
@@ -83,35 +69,33 @@ function getPythonJobs() {
   }
 }
 
+async function getCount(table: string, whereClause: string = "") {
+    try {
+        const query = whereClause 
+            ? `SELECT count() FROM ${table} WHERE ${whereClause}`
+            : `SELECT count() FROM ${table}`;
+        const res = await querySurreal(query);
+        const result = res[res.length - 1]?.result?.[0]?.count;
+        return typeof result === 'number' ? result : 0;
+    } catch (e) {
+        console.error(`Count failed for ${table}:`, e);
+        return 0;
+    }
+}
+
 export default async function MonitorPage() {
-  const statsQuery = `
-    let $ayahs = (SELECT count() FROM ayah)[0].count OR 0;
-    let $hadiths = (SELECT count() FROM hadith)[0].count OR 0;
-    let $books = (SELECT count() FROM book)[0].count OR 0;
-    let $words = (SELECT count() FROM word)[0].count OR 0;
-    let $entities = (SELECT count() FROM entity)[0].count OR 0;
-    let $sentences = (SELECT count() FROM sentence)[0].count OR 0;
-    
-    let $murad_done = (SELECT count() FROM sentence WHERE source = source:murad_dataset_2026 AND simple_clean_text != NONE)[0].count OR 0;
+  // Fetch counts individually for better reliability
+  const [ayahs, hadiths, books, words, entities, sentences, murad_done] = await Promise.all([
+    getCount("ayah"),
+    getCount("hadith"),
+    getCount("book"),
+    getCount("word"),
+    getCount("entity"),
+    getCount("sentence"),
+    getCount("sentence", "source = source:murad_dataset_2026 AND simple_clean_text != NONE")
+  ]);
 
-    SELECT 
-        $ayahs as ayahs,
-        $hadiths as hadiths,
-        $books as books,
-        $words as words,
-        $entities as entities,
-        $sentences as sentences,
-        $murad_done as murad_done;
-  `
-  
-  let data: any = { ayahs: 0, hadiths: 0, books: 0, words: 0, entities: 0, sentences: 0, murad_done: 0 }
-  try {
-    const res = await querySurreal(statsQuery)
-    data = res[res.length - 1].result[0]
-  } catch (e) {
-    console.error("Monitor Data Fetch Failed:", e)
-  }
-
+  const inventoryData = { ayahs, hadiths, books, words, entities, sentences, murad_done };
   const progressFiles = getProgressFiles();
   const pythonJobs = getPythonJobs();
 
@@ -136,121 +120,11 @@ export default async function MonitorPage() {
         </div>
       </div>
 
-      <h2 className="text-2xl font-semibold text-slate-200 mt-8 mb-4 border-b border-slate-800 pb-2">Knowledge Graph Inventory</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        
-        <InventoryCard 
-            title="Quranic Corpus"
-            sourceLabel="quran api -> ayah"
-            targetLabel="ayah -> sentence, entities"
-            count={data.ayahs}
-            unit="Ayahs"
-            color="emerald"
-        />
-        
-        <InventoryCard 
-            title="Hadith Collections"
-            sourceLabel="hadith dataset -> hadith"
-            targetLabel="hadith -> sentence, rijal"
-            count={data.hadiths}
-            unit="Hadiths"
-            color="amber"
-        />
-
-        <InventoryCard 
-            title="Classical Books"
-            sourceLabel="book dataset -> book"
-            targetLabel="book -> book_section -> sentence"
-            count={data.books}
-            unit="Books"
-            color="blue"
-        />
-
-        <InventoryCard 
-            title="Murad Dictionary"
-            sourceLabel="murad dataset -> sentence"
-            targetLabel="sentence -> word -> entity"
-            count={data.murad_done}
-            unit="Enriched Sentences"
-            total={96243}
-            color="teal"
-            isProgress
-        />
-
-        <InventoryCard 
-            title="Taxonomy & Linguistic"
-            sourceLabel="sentence -> word"
-            targetLabel="word -> root"
-            count={data.words}
-            unit="Unique Words"
-            color="purple"
-        />
-
-        <InventoryCard 
-            title="Named Entities (Rijal/Concepts)"
-            sourceLabel="ilm rijal / extraction"
-            targetLabel="entity"
-            count={data.entities}
-            unit="Entities"
-            color="rose"
-        />
-      </div>
-
-      <MonitorClient pythonJobs={pythonJobs} progressFiles={progressFiles} />
+      <MonitorClient 
+        pythonJobs={pythonJobs} 
+        progressFiles={progressFiles} 
+        inventoryData={inventoryData} 
+      />
     </div>
   )
-}
-
-function InventoryCard({ title, sourceLabel, targetLabel, count, unit, color, total, isProgress }: any) {
-    const colorClasses: any = {
-        emerald: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
-        amber: "text-amber-400 bg-amber-500/10 border-amber-500/20",
-        blue: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-        teal: "text-teal-400 bg-teal-500/10 border-teal-500/20",
-        purple: "text-purple-400 bg-purple-500/10 border-purple-500/20",
-        rose: "text-rose-400 bg-rose-500/10 border-rose-500/20"
-    }
-
-    const progress = total ? (count / total) * 100 : 0
-    const currentColor = colorClasses[color] || colorClasses.emerald
-
-    return (
-        <Card className="bg-slate-900/50 border-slate-800">
-            <CardHeader className="pb-2">
-                <CardTitle className="text-lg text-slate-300">{title}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-slate-500">FROM</span>
-                        <Badge variant="outline" className="text-[10px] py-0">{sourceLabel}</Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-slate-500">TO</span>
-                        <Badge variant="outline" className="text-[10px] py-0 border-slate-600 text-slate-300">{targetLabel}</Badge>
-                    </div>
-                </div>
-
-                <div className={"p-4 rounded-lg border " + currentColor + " flex flex-col items-center justify-center"}>
-                    <p className="text-3xl font-bold tracking-tight">{(count || 0).toLocaleString()}</p>
-                    <p className="text-xs uppercase tracking-wider font-semibold opacity-80 mt-1">{unit}</p>
-                </div>
-
-                {isProgress && total && (
-                    <div className="space-y-1">
-                        <div className="flex justify-between text-[10px] text-slate-400">
-                            <span>{progress.toFixed(2)}%</span>
-                            <span>{total.toLocaleString()} total</span>
-                        </div>
-                        <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                            <div 
-                                className="h-full bg-teal-500 rounded-full"
-                                style={{ width: Math.max(progress, 1) + "%" }}
-                            />
-                        </div>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    )
 }
