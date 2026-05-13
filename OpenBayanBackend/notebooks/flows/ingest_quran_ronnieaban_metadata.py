@@ -66,12 +66,15 @@ def update_ayah_metadata_batch(rows: List[Dict[str, Any]]):
         # Relationship to theme group
         theme = row["tafsir_theme_group"]
         if theme and theme.strip():
-            # RELATE ayah -> classified_as -> category:theme
-            # First find or create category
-            cat_id = f"category:theme_{theme.lower().replace(' ', '_')}"
+            # Fix: theme identifier should not have double category: prefix
+            theme_slug = theme.lower().replace(' ', '_').replace('(', '').replace(')', '').replace(',', '')
+            cat_id = f"theme_{theme_slug}"
             rel_q = f"UPSERT category:{cat_id} SET label = '{theme}', classification = 'theme'; "
-            rel_q += f"RELATE (SELECT id FROM ayah WHERE surah_number = {s_num} AND ayah_number = {a_num})->classified_as->category:{cat_id} SET weight = 10, source = 'ronnieaban';"
+            rel_q += f"RELATE (SELECT id FROM ayah WHERE surah_number = {s_num} AND ayah_number = {a_num} LIMIT 1)->classified_as->category:{cat_id} SET weight = 10, source = 'ronnieaban';"
             query_parts.append(rel_q)
+
+    if not query_parts:
+        return
 
     full_query = "\n".join(query_parts)
     
@@ -85,7 +88,17 @@ def update_ayah_metadata_batch(rows: List[Dict[str, Any]]):
     if res.status_code != 200:
         logger.error(f"Failed batch update: {res.text[:500]}")
     else:
-        logger.info(f"Successfully updated batch of {len(rows)} ayahs")
+        # Check for errors in the multi-statement response
+        try:
+            results = res.json()
+            for r in results:
+                if r.get("status") == "ERR":
+                    logger.error(f"SurrealDB Error in batch: {r.get('result')}")
+                    # In a real scenario we might want to raise here, 
+                    # but for now we log so we can see which records fail.
+        except:
+            pass
+        logger.info(f"Successfully processed batch of {len(rows)} ayahs")
 
 @flow(name="Ingest Ronnie Aban Quran Metadata")
 def ingest_ronnieaban_flow():
