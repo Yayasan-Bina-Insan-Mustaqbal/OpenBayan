@@ -23,6 +23,12 @@ Enhance the Knowledge Graph by establishing complex cross-entity relationships a
     - Use LLMs to identify relationships that are not explicitly coded in the source text.
 4. **Maintenance**: Prefect flows to periodically scan for new connection opportunities.
 
+## Current Progress (2026-05-14)
+- **Quran-to-Quran Connections**: ✅ 51,613 edges established (Source: `ShahamFarooq`).
+- **Thematic Ayah Mapping**: ✅ 7,660 thematic links established via `classified_as` (Source: `RonnieAban`).
+- **Narrator Chains (Isnad)**: ✅ 37,169+ connections established from classical Hadith sources.
+- **Thematic Categories**: ✅ 1,314 unique themes/categories indexed.
+
 ## Success Criteria
 - Denser Knowledge Graph with meaningful cross-references.
 - Improved discovery through graph-based traversal.

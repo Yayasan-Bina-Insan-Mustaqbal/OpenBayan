@@ -12,6 +12,7 @@ Standardize the ingestion of classical books into the Library Plane (`book`, `bo
     - Parse pages into atomic units in the `sentence` table.
     - Tag sentences with source metadata.
 4. **Automation**: Use existing `ingest_shamela_books.py` as a template for other digitized sources.
+5. **Fatwa Ingestion**: Ingest the **Fatwaset** (130k+ records) to provide real-world legal context and modern scholarly rulings.
 
 ## Success Criteria
 - Books correctly indexed in the Library Plane.

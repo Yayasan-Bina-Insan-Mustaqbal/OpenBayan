@@ -58,11 +58,11 @@ def update_ayah_metadata_batch(rows: List[Dict[str, Any]]):
         }
         
         # Construct SurrealDB update query
-        # We merge into metadata object and tafsir object
-        meta_json = json.dumps(metadata_update).replace("\\", "\\\\").replace("'", "\\'")
-        tafsir_json = json.dumps(tafsir_update).replace("\\", "\\\\").replace("'", "\\'")
+        # Use += to merge objects, and json.dumps() to provide a valid SurrealQL object
+        meta_json = json.dumps(metadata_update)
+        tafsir_json = json.dumps(tafsir_update)
         
-        q = f"UPDATE ayah SET metadata = metadata || {meta_json}, tafsir = tafsir || {tafsir_json} WHERE surah_number = {s_num} AND ayah_number = {a_num};"
+        q = f"UPDATE ayah SET metadata += {meta_json}, tafsir += {tafsir_json} WHERE surah_number = {s_num} AND ayah_number = {a_num};"
         query_parts.append(q)
         
         # Relationship to theme group

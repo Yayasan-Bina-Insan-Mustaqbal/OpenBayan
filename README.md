@@ -98,22 +98,36 @@ OpenBayan bridges NextAuth directly to SurrealDB to eliminate unnecessary backen
 
 ## 5. Credits & Data Sources
 
-OpenBayan is built upon the invaluable work of the global Islamic research and open-source community. For a detailed guide on our data sources and potential expansion datasets (Kaggle/Hugging Face), see our **[Islamic Data Sources Guide](./OpenBayanBackend/devguide/ISLAMIC_DATA_SOURCES.md)**.
+OpenBayan is built upon the invaluable work of the global Islamic research and open-source community. We gratefully acknowledge the following data sources, datasets, and APIs that power the OpenBayan Knowledge Graph:
 
-We gratefully acknowledge the following data sources and APIs:
+### 📖 Quran & Tafsir (Exegesis)
+*   **[Al Quran Cloud API](https://alquran.cloud/)**: Primary source for canonical Quranic text (Uthmani), translations, and audio metadata.
+*   **[Quran.com API (v4)](https://quran.com)**: For scholarly Tafsir data (Ibn Kathir, Al-Jalalayn, etc.) and Islamic knowledge endpoints.
+*   **[TafsirWeb](https://tafsirweb.com)**: For comprehensive Indonesian Tafsir sources including *Tafsir Kemenag (Tahlili/Wajiz)* and *Tafsir Al-Muyassar*.
+*   **[MohamedRashad/Quran-Tafseer](https://huggingface.co/datasets/MohamedRashad/Quran-Tafseer)**: A massive collection of classical Arabic interpretations.
+*   **[Fawaz Ahmed's Quran API](https://github.com/fawazahmed0/quran-api)**: Providing a wide range of Quranic editions and translations.
+*   **[QuranJSON (penggguna)](https://github.com/penggguna/QuranJSON)**: Clean JSON structures for Indonesian translations.
 
-*   **[Al Quran Cloud API](https://alquran.cloud/)**: A primary source for Quranic text, translations, and metadata.
-*   **[Fawaz Ahmed's Quran API](https://github.com/fawazahmed0/quran-api)**: Providing comprehensive Quranic editions and translations.
-*   **[Hugging Face (ieasybooks-org)](https://huggingface.co/ieasybooks-org)**: For digitized collections of the **Shamela Waqfeya** library.
-*   **[Quran.com](https://quran.com)**: For Tafsir data and Islamic knowledge APIs.
-*   **[QuranJSON (penggguna)](https://github.com/penggguna/QuranJSON)**: For Indonesian Quran translations and data structures.
-*   **[TafsirWeb](https://tafsirweb.com)**: For various Tafsir sources and scholarly commentaries.
-*   **[Wikipedia (Arabic)](https://ar.wikipedia.org)**: For biographical data and dictionary enrichment.
-*   **[Shamela (المكتبة الشاملة)](https://shamela.ws)**: The foundational digital library for Islamic heritage.
-*   **[Ronnie Aban (ronnieaban)](https://github.com/ronnieaban)**: For Quranic thematic metadata and JSON collections.
-*   **[Kaggle](https://www.kaggle.com/)**: For Quranic thematic and emotional analysis datasets.
-*   **[CAMeL Tools](https://github.com/CAMeL-Lab/camel_tools)**: For Arabic natural language processing and morphological analysis.
+### 🧠 Thematic & Semantic Mapping
+*   **[Ronnie Aban (ronnieaban)](https://github.com/ronnieaban)**: For Quranic thematic metadata, theme categories, and structural JSON collections.
+*   **[Nabeel Qureshi](https://github.com/nabeelqureshi)**: For foundational thematic annotations and Ayah-to-Topic linking strategies.
+*   **[ShahamFarooq/quran-bil-quran-connections](https://huggingface.co/datasets/ShahamFarooq/quran-bil-quran-connections)**: For Ayah-to-Ayah cross-reference mapping (Quran explaining Quran).
 
-Special thanks to the developers and scholars who maintain these resources for the benefit of the Ummah.
+### 📜 Hadith & Sanad (Isnad)
+*   **[Sanadset (freococo)](https://huggingface.co/datasets/freococo/650k_sanadset)**: A monumental dataset of 650,000+ hadith narrations and sanad (narrator chains).
+*   **[meeAtif/hadith_datasets](https://huggingface.co/datasets/meeAtif/hadith_datasets)**: For standardized collections of *Kutub al-Sittah*.
+*   **[Slepovichev/hadith-14-books](https://huggingface.co/datasets/Slepovichev/hadith-14-books-collection)**: Broad collection covering 14 classical books of Hadith.
+
+### 📚 Linguistic & Dictionary
+*   **[MURAD Reverse Arabic Dictionary](https://github.com/RIOTU-Lab)**: Provided by **RIOTU Lab**, serving as the foundation for our reverse-semantic search.
+*   **[Shamela Library (ieasybooks-org)](https://huggingface.co/ieasybooks-org)**: For digitized collections of the *Shamela Waqfeya* library, including classical dictionaries like *Lisan al-Arab* and *Al-Qamus al-Muhit*.
+*   **[CAMeL Tools](https://github.com/CAMeL-Lab/camel_tools)**: For essential Arabic NLP, morphological analysis, and lemmatization.
+
+### 🛠️ Technical Stack
+*   **[SurrealDB](https://surrealdb.com)**: The Multi-Model Knowledge Graph database.
+*   **[Prefect](https://prefect.io)**: Our orchestration engine for data ingestion and AI pipelines.
+*   **[Next.js](https://nextjs.org)** & **[NextAuth.js](https://nextauth.js.org)**: Powering our frontend and auth bridge.
+
+Special thanks to the developers, researchers, and scholars who maintain these resources for the benefit of the Ummah. *Jazakumullahu Khayran.*
 
 ---

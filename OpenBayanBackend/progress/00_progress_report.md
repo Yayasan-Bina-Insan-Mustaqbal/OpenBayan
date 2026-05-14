@@ -1,23 +1,25 @@
 # OpenBayan Knowledge Graph - Progress Report (00)
 
-**Date**: May 11, 2026
-**Commit Base**: `b509b97` (Last: "feat(ingestion): add verification script for dictionary knowledge graph")
+**Date**: May 14, 2026
+**Commit Base**: `b6637ba` (Last: "fix: dynamic CSV path using __file__ for host/container portability")
 
 ## 1. Current Ingestion Progress
 Based on current database metrics (`db_stats.py` / `check_overall_progress.py`):
 
 ### Core Texts (Library Plane)
-- **Quran**: 100% Ingested (6,236 Ayahs with multi-translation and transliteration).
-- **Hadith**: 50,884 total Hadiths ingested across major collections (Bukhari, Muslim, Abu Dawud, Tirmidhi, etc.).
-- **Major Kitabs**: Major classical texts (e.g., Lisan al-Arab, Tafsir Ibn Kathir, Siyar A'lam al-Nubala) are ingested as book pages (thousands of pages).
+- **Quran**: 100% Ingested (6,236 Ayahs with multi-translation, transliteration, and Indonesian Tafsir).
+- **Hadith**: 88,690 total Hadiths ingested (Significant expansion with HF Enhanced Sanadset).
+- **Major Kitabs**: Major classical texts (e.g., Lisan al-Arab, Tafsir Ibn Kathir, Siyar A'lam al-Nubala) are ingested as book pages (83,915 pages).
 - **Murad Dataset**: Fixed schema collision and successfully ingested.
 
 ### Graph & Extraction (Knowledge Plane)
-- **Narrators**: 20,188 indexed.
-- **Network Relations (Teacher/Student)**: 37,169 directed edges established.
-- **Concepts/Roots**: 1,146 identified.
+- **Thematic Categories**: 1,314 themes from RonnieAban integrated.
+- **Classified Links**: 7,660 Ayah-to-Theme / Sentence-to-Topic relations established.
+- **Narrators/Entities**: 66,901 indexed.
+- **Network Relations (Isnad/Quran-to-Quran)**: 88,782 directed edges established (51,613 Quran connections + Sanad relations).
+- **Concepts/Roots**: 17,948 identified.
 - **Ilm al-Rijal Extraction**: 24.6% complete (690 / 2,805 pages of Mizan al-I'tidal).
-- **Dictionary Root Extraction**: 0.72% complete (600 / 83,915 chunks). **(Major Bottleneck)**
+- **Dictionary Root Extraction**: 0.72% complete (600 / 83,915 chunks). **(Stabilized)**
 
 ## 2. Time Completion Prediction
 - **Dictionary Extraction**: At current rate (processing LLM extraction chunks serially/small batches), processing ~83k chunks will take **days/weeks**.

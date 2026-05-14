@@ -23,7 +23,8 @@ The ingestion uses an optimized batch-update strategy to minimize API calls and 
 ## Roadmap
 - [x] Identify API sources for "all text".
 - [x] Build multi-edition ingestion flow.
-- [ ] Complete download of 141 editions (In Progress).
+- [x] Complete download of 141 editions.
+- [x] Integrated Indonesian Tafsir (Tahlili/Wajiz) from **TafsirWeb**.
 - [ ] Link Tafsir chunks to `sentence` table for graph search.
 
 ## Success Criteria
