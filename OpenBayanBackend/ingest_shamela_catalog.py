@@ -131,34 +131,22 @@ def ingest_book_metadata(row, root_source_id):
     # SurrealDB /sql endpoint supports multi-statement queries
     # We'll use a slightly different approach to inject params into the query string for /sql
     
-    # For now, let's just use the direct UPSERTs
-    sql = f"UPSERT {source_id} CONTENT " + json.dumps({
-        "identifier": identifier,
-        "title": title,
-        "author": author,
-        "type": "book",
-        "metadata": {
-            "category": category,
-            "pages": params["pages"],
-            "volumes": params["volumes"]
-        },
-        "file_paths": {
-            "pdf": pdf_paths,
-            "txt": txt_paths,
-            "docx": docx_paths
-        }
-    }) + "; "
+    # Use SET instead of CONTENT for better type handling of record IDs
+    sql = f"UPSERT {source_id} SET "
+    sql += f"identifier = {json.dumps(identifier)}, "
+    sql += f"title = {json.dumps(title)}, "
+    sql += f"author = {json.dumps(author)}, "
+    sql += f"type = 'book', "
+    sql += f"language = 'ar', "
+    sql += f"metadata = {json.dumps({'category': category, 'pages': params['pages'], 'volumes': params['volumes']})}, "
+    sql += f"file_paths = {json.dumps({'pdf': pdf_paths, 'txt': txt_paths, 'docx': docx_paths})}; "
     
-    sql += f"UPSERT {book_id} CONTENT " + json.dumps({
-        "title": title,
-        "author": author,
-        "category": category,
-        "source": source_id,
-        "extra_metadata": {
-            "shamela_id": identifier,
-            "root_source": root_source_id
-        }
-    }) + ";"
+    sql += f"UPSERT {book_id} SET "
+    sql += f"title = {json.dumps(title)}, "
+    sql += f"author = {json.dumps(author)}, "
+    sql += f"category = {json.dumps(category)}, "
+    sql += f"source = {source_id}, "
+    sql += f"extra_metadata = {json.dumps({'shamela_id': identifier, 'root_source': root_source_id})};"
 
     try:
         query_surreal(sql)
