@@ -22,6 +22,12 @@ SURREAL_HEADERS = {
 }
 
 def query_surreal(sql, params=None):
+    # Debug: print first few SQLs
+    if "SQL_DEBUG_COUNT" not in globals(): globals()["SQL_DEBUG_COUNT"] = 0
+    if globals()["SQL_DEBUG_COUNT"] < 5:
+        print(f"SQL Debug: {sql[:200]}...")
+        globals()["SQL_DEBUG_COUNT"] += 1
+
     # Standardizing on HTTP for easier batching and portability
     req = requests.post(
         SURREAL_URL,
