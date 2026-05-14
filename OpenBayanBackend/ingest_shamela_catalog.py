@@ -163,9 +163,12 @@ def ingest_book_metadata(row, root_source_id):
     sql += f"source = {source_id}, "
     sql += f"extra_metadata = {json.dumps({'shamela_id': identifier, 'root_source': root_source_id})};"
 
+    logger = get_run_logger()
     try:
+        # print(f"Ingesting: {title}")
         query_surreal(sql)
     except Exception as e:
+        print(f"CRITICAL ERROR in ingest_book_metadata: {e}")
         logger.error(f"Failed to ingest {title}: {e}")
 
 @flow(name="Shamela Catalog Ingestion")
