@@ -31,7 +31,16 @@ def query_surreal(sql, params=None):
     )
     if req.status_code != 200:
         print(f"Error: {req.text}")
-    return req.json()
+        return []
+    
+    results = req.json()
+    # Check if any of the statements in the batch failed
+    if isinstance(results, list):
+        for res in results:
+            if res.get("status") != "OK":
+                print(f"Statement Error: {res.get('status')}")
+                print(res.get("result"))
+    return results
 
 def safe_eval(val):
     if not val:
