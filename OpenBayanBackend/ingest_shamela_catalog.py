@@ -45,8 +45,9 @@ def query_surreal(sql, params=None):
     if isinstance(results, list):
         for i, res in enumerate(results):
             if res.get("status") != "OK":
-                logger.error(f"Statement {i} Error: {res.get('status')}")
-                logger.error(res.get("result"))
+                logger.error(f"Statement {i} Error in batch: {res.get('status')}")
+                logger.error(f"Result: {res.get('result')}")
+                logger.error(f"Full SQL was: {sql}")
     return results
 
 def safe_eval(val):
@@ -100,61 +101,16 @@ def ingest_book_metadata(row, root_source_id):
     # We also create a specific source record for THIS edition of the book
     source_id = f"source:`{identifier}`"
 
-    query = """
-    UPSERT type::record($source_id) SET
-        identifier = $identifier,
-        title = $title,
-        author = $author,
-        type = 'book',
-        metadata = {
-            category: $category,
-            pages: $pages,
-            volumes: $volumes
-        },
-        file_paths = {
-            pdf: $pdf,
-            txt: $txt,
-            docx: $docx
-        };
-
-    UPSERT type::record($book_id) SET
-        title = $title,
-        author = $author,
-        category = $category,
-        source = type::record($source_id),
-        extra_metadata = {
-            shamela_id: $identifier,
-            root_source: $root_source
-        };
-    """
+    pages = int(row.get("pages")) if row.get("pages") and str(row.get("pages")).isdigit() else 0
+    volumes = int(row.get("volumes")) if row.get("volumes") and str(row.get("volumes")).isdigit() else 0
     
-    params = {
-        "source_id": source_id,
-        "book_id": book_id,
-        "identifier": identifier,
-        "title": title,
-        "author": author,
-        "category": category,
-        "pages": int(row.get("pages")) if row.get("pages") and str(row.get("pages")).isdigit() else 0,
-        "volumes": int(row.get("volumes")) if row.get("volumes") and str(row.get("volumes")).isdigit() else 0,
-        "pdf": pdf_paths,
-        "txt": txt_paths,
-        "docx": docx_paths,
-        "root_source": root_source_id
-    }
-    
-    # Note: query_surreal for batch/multi-statement needs careful handling or just use standard requests
-    # SurrealDB /sql endpoint supports multi-statement queries
-    # We'll use a slightly different approach to inject params into the query string for /sql
-    
-    # Use SET instead of CONTENT for better type handling of record IDs
     sql = f"UPSERT {source_id} SET "
     sql += f"identifier = {json.dumps(identifier)}, "
     sql += f"title = {json.dumps(title)}, "
     sql += f"author = {json.dumps(author)}, "
     sql += f"type = 'book', "
     sql += f"language = 'ar', "
-    sql += f"metadata = {json.dumps({'category': category, 'pages': params['pages'], 'volumes': params['volumes']})}, "
+    sql += f"metadata = {json.dumps({'category': category, 'pages': pages, 'volumes': volumes})}, "
     sql += f"file_paths = {json.dumps({'pdf': pdf_paths, 'txt': txt_paths, 'docx': docx_paths})}; "
     
     sql += f"UPSERT {book_id} SET "
