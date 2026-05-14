@@ -76,7 +76,7 @@ def ensure_shamela_source():
     query_surreal(query)
     return "source:shamela_waqfeya"
 
-@task
+@task(name="Ingest Book Metadata")
 def ingest_book_metadata(row, root_source_id):
     logger = get_run_logger()
     title = row.get("title") or row.get("book_name")
@@ -86,11 +86,14 @@ def ingest_book_metadata(row, root_source_id):
     if not title:
         return
     
+    import hashlib
+    row_str = json.dumps(row, sort_keys=True)
+    row_hash = hashlib.md5(row_str.encode()).hexdigest()[:8]
+    
     # Create a unique identifier for the book
-    # Slugify title and author
-    safe_title = re.sub(r'[^\w\s]', '', title).replace(' ', '_').lower()[:50]
-    safe_author = re.sub(r'[^\w\s]', '', author).replace(' ', '_').lower()[:30] if author else "unknown"
-    identifier = f"shamela_{safe_title}_{safe_author}"
+    safe_title = re.sub(r'[^\w\s]', '', title).replace(' ', '_')[:60]
+    safe_author = re.sub(r'[^\w\s]', '', author).replace(' ', '_')[:40] if author else "unknown"
+    identifier = f"shamela_{safe_title}_{safe_author}_{row_hash}"
     book_id = f"book:`{identifier}`"
     
     # Parse paths
