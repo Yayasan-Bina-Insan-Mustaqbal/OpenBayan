@@ -39,13 +39,14 @@ def query_surreal(sql, params=None):
         print(f"Error: {req.text}")
         return []
     
+    logger = get_run_logger()
     results = req.json()
     # Check if any of the statements in the batch failed
     if isinstance(results, list):
         for i, res in enumerate(results):
             if res.get("status") != "OK":
-                print(f"Statement {i} Error: {res.get('status')}")
-                print(res.get("result"))
+                logger.error(f"Statement {i} Error: {res.get('status')}")
+                logger.error(res.get("result"))
     return results
 
 def safe_eval(val):
