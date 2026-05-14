@@ -217,8 +217,8 @@ DEFINE FIELD created_at ON extracted_from TYPE datetime DEFAULT time::now();
 DEFINE TABLE contains SCHEMAFULL TYPE RELATION IN majmu OUT faidah|sahifah|sentence|ayah ENFORCED;
 DEFINE FIELD created_at ON contains TYPE datetime DEFAULT time::now();
 
--- Relation: [Sentence|Hadith] ->classified_as-> [Topic|Category]  (AI/System pipeline only)
-DEFINE TABLE classified_as SCHEMAFULL TYPE RELATION IN sentence | hadith OUT topic | category;
+-- Relation: [Sentence|Hadith|BookSection] ->classified_as-> [Topic|Category]  (AI/System pipeline only)
+DEFINE TABLE classified_as SCHEMAFULL TYPE RELATION IN sentence | hadith | book_section OUT topic | category;
 DEFINE FIELD weight     ON classified_as TYPE int DEFAULT 5 ASSERT $value >= 1 AND $value <= 10;
 DEFINE FIELD reasoning  ON classified_as TYPE option<string>;
 DEFINE FIELD created_at ON classified_as TYPE datetime DEFAULT time::now();
