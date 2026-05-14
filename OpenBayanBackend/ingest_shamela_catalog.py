@@ -40,12 +40,6 @@ def query_surreal(sql, params=None):
             if res.get("status") != "OK":
                 print(f"Statement {i} Error: {res.get('status')}")
                 print(res.get("result"))
-            else:
-                # Debug: print first few successes
-                if "DEBUG_COUNT" not in globals(): globals()["DEBUG_COUNT"] = 0
-                if globals()["DEBUG_COUNT"] < 10:
-                    print(f"Statement {i} OK: {res.get('result')[:1]}")
-                    globals()["DEBUG_COUNT"] += 1
     return results
 
 def safe_eval(val):

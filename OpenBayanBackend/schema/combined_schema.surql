@@ -91,20 +91,13 @@ DEFINE INDEX category_label ON category FIELDS label UNIQUE;
 
 
 -- 3. SOURCE (Catalog of Books/Editions)
-DEFINE TABLE source SCHEMAFULL;
+DEFINE TABLE source SCHEMALESS;
 DEFINE FIELD identifier ON source TYPE string ASSERT !!$value; -- e.g. "quran_uthmani", "shamela_12345"
 DEFINE FIELD title      ON source TYPE string ASSERT !!$value;
 DEFINE FIELD author     ON source TYPE option<string>;
 DEFINE FIELD type       ON source TYPE string ASSERT $value IN ["quran", "hadith", "book", "lexicon"];
 DEFINE FIELD language   ON source TYPE string DEFAULT "ar";
-DEFINE FIELD metadata   ON source TYPE option<object>; -- For pages, volumes, category, etc.
-DEFINE FIELD metadata.category ON source TYPE option<string>;
-DEFINE FIELD metadata.pages ON source TYPE option<int>;
-DEFINE FIELD metadata.volumes ON source TYPE option<int>;
-DEFINE FIELD file_paths ON source TYPE option<object>; -- { pdf: [], txt: [], docx: [] }
-DEFINE FIELD file_paths.pdf ON source TYPE option<array>;
-DEFINE FIELD file_paths.txt ON source TYPE option<array>;
-DEFINE FIELD file_paths.docx ON source TYPE option<array>;
+
 DEFINE FIELD created_at ON source TYPE datetime DEFAULT time::now();
 DEFINE INDEX source_identifier ON source FIELDS identifier UNIQUE;
 
@@ -118,12 +111,12 @@ DEFINE FIELD created_at ON TABLE sahifah TYPE datetime DEFAULT time::now();
 DEFINE FIELD updated_at ON TABLE sahifah TYPE datetime DEFAULT time::now() VALUE time::now();
 
 -- 5. BOOKS & SECTIONS (Immutable Source Texts)
-DEFINE TABLE book SCHEMAFULL;
+DEFINE TABLE book SCHEMALESS;
 DEFINE FIELD title      ON book TYPE string ASSERT !!$value;
 DEFINE FIELD author     ON book TYPE option<string>;
 DEFINE FIELD category   ON book TYPE option<string>;
 DEFINE FIELD source     ON book TYPE record<source> ASSERT $value != NONE;
-DEFINE FIELD extra_metadata ON book TYPE option<object>;
+
 DEFINE FIELD created_at ON book TYPE datetime DEFAULT time::now();
 DEFINE INDEX book_title ON book FIELDS title;
 
