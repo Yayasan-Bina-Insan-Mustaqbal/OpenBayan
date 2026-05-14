@@ -36,8 +36,8 @@ def query_surreal(sql, params=None):
         data=sql.encode('utf-8')
     )
     if req.status_code != 200:
-        print(f"Error: {req.text}")
-        return []
+        logger.error(f"SurrealDB Error {req.status_code}: {req.text}")
+        raise Exception(f"SurrealDB Error {req.status_code}: {req.text}")
     
     logger = get_run_logger()
     results = req.json()
