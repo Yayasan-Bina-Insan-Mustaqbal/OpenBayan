@@ -44,17 +44,17 @@ OpenBayan's intelligence lies in its multi-plane architecture, where immutable s
 ```mermaid
 graph TD
     subgraph Library_Plane ["📖 Library Plane (Source Texts)"]
-        source[Source/Edition] --> book[Book]
-        book --> book_section[Book Section]
+        source["Source/Edition"] --> book["Book"]
+        book --> book_section["Book Section"]
         book_section --> sentence["Sentence (Atom ⭐)"]
-        ayah[Ayah] --> sentence
-        hadith[Hadith] --> sentence
+        ayah["Ayah"] --> sentence
+        hadith["Hadith"] --> sentence
     end
 
     subgraph Taxonomy_Plane ["🏷️ Taxonomy Plane"]
-        topic[Topic Hierarchy]
-        category[Semantic Tags]
-        entity[Named Entities]
+        topic["Topic Hierarchy"]
+        category["Semantic Tags"]
+        entity["Named Entities"]
         
         sentence -- classified_as --> topic
         sentence -- classified_as --> category
@@ -63,8 +63,8 @@ graph TD
     end
 
     subgraph Linguistic_Plane ["🔤 Linguistic Plane"]
-        word[Arabic Word]
-        root[Triliteral Root]
+        word["Arabic Word"]
+        root["Triliteral Root"]
         
         sentence -- composed_of --> word
         sentence -- defines --> word
@@ -72,11 +72,11 @@ graph TD
     end
 
     subgraph Research_Plane ["🔍 Research Plane (User Workspace)"]
-        user[Researcher]
+        user["Researcher"]
         alamah["Alamah (Bookmark)"]
-        faidah[Faidah (Note)]
-        sahifah[Sahifah (Article)]
-        majmu[Majmu (Folder)]
+        faidah["Faidah (Note)"]
+        sahifah["Sahifah (Article)"]
+        majmu["Majmu (Folder)"]
         
         user -- creates --> alamah
         alamah -- targets --> sentence
