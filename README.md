@@ -1,6 +1,43 @@
-# OpenBayan: Service Communication & Repository Guide
+# OpenBayan: The Islamic Knowledge Graph
 
-This document maps out the **"Minimal AI Stack"** architecture for OpenBayan. It defines the monorepo structure, port mappings, and service communication protocols.
+OpenBayan is a specialized "Minimal AI Stack" designed for multi-source Islamic research. It leverages a multi-model Knowledge Graph to connect Quranic verses, Hadith narrations, and classical scholarly works.
+
+![Home Page Screen](screenshots/home.png)
+
+## 🎯 Current Condition (May 2026)
+
+The project has transitioned from foundational infrastructure to active data enrichment. The Knowledge Graph is currently live on the **Devserver (Tailscale: 100.64.8.38)** with the following metrics:
+
+| Domain | Status | Count | Note |
+| :--- | :--- | :--- | :--- |
+| **Quranic Corpus** | ✅ 100% | 6,236 Ayahs | Full Uthmani text with multi-source Tafsir. |
+| **Hadith Collections** | 🔄 Enriched | 88,690 Hadiths | Major collections (Bukhari, Muslim) integrated. |
+| **Classical Books** | 🔄 Ingesting | 4,661 Books | Active ingestion of the Shamela library. |
+| **Linguistic Graph** | 🔄 Active | 95,715 Sentences | Enriched via Murad Reverse Arabic Dictionary. |
+| **Named Entities** | 🔄 Growing | 87,293 Entities | Mapped Narrators (Rijal) and Semantic Roots. |
+
+### Active Focus:
+- **Hybrid Search Strategy**: Combining Vector (Semantic) and BM25 (Keyword) search via SurrealDB.
+- **Research Workspace**: Consolidating the IDE-style editor for scholarly research.
+- **Linguistic Augmentation**: Finalizing dictionary root extraction and verbatim transliteration.
+
+---
+
+## 🖼️ Project Gallery
+
+### 1. Research Workspace (Editor)
+The scholar's IDE for exploring connections across the Islamic graph. It features a split-pane view for source text, semantic correlation, and entity metadata.
+![Editor Screen](screenshots/editor.png)
+
+### 2. Knowledge Graph Inventory (Monitoring)
+Real-time dashboard tracking the density and growth of nodes across the Library Plane.
+![Monitor Screen](screenshots/monitor.png)
+
+### 3. Pipeline Orchestration (Prefect)
+Backend monitoring for high-concurrency ingestion and AI enrichment jobs.
+![Prefect Screen](screenshots/prefect.png)
+
+---
 
 ## 1. The Monorepo Structure
 
