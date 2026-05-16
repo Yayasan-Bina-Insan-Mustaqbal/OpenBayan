@@ -37,6 +37,60 @@ Real-time dashboard tracking the density and growth of nodes across the Library 
 Backend monitoring for high-concurrency ingestion and AI enrichment jobs.
 ![Prefect Screen](screenshots/prefect.png)
 
+## 🧠 Knowledge Graph Architecture
+
+OpenBayan's intelligence lies in its multi-plane architecture, where immutable sacred texts are connected to dynamic scholarly research and linguistic analysis.
+
+```mermaid
+graph TD
+    subgraph Library_Plane ["📖 Library Plane (Source Texts)"]
+        source[Source/Edition] --> book[Book]
+        book --> book_section[Book Section]
+        book_section --> sentence["Sentence (Atom ⭐)"]
+        ayah[Ayah] --> sentence
+        hadith[Hadith] --> sentence
+    end
+
+    subgraph Taxonomy_Plane ["🏷️ Taxonomy Plane"]
+        topic[Topic Hierarchy]
+        category[Semantic Tags]
+        entity[Named Entities]
+        
+        sentence -- classified_as --> topic
+        sentence -- classified_as --> category
+        sentence -- mentions --> entity
+        entity -- relation --> entity
+    end
+
+    subgraph Linguistic_Plane ["🔤 Linguistic Plane"]
+        word[Arabic Word]
+        root[Triliteral Root]
+        
+        sentence -- composed_of --> word
+        sentence -- defines --> word
+        word --> root
+    end
+
+    subgraph Research_Plane ["🔍 Research Plane (User Workspace)"]
+        user[Researcher]
+        alamah["Alamah (Bookmark)"]
+        faidah[Faidah (Note)]
+        sahifah[Sahifah (Article)]
+        majmu[Majmu (Folder)]
+        
+        user -- creates --> alamah
+        alamah -- targets --> sentence
+        alamah -- targets --> entity
+        faidah -- tied_to --> alamah
+        majmu -- contains --> alamah
+        majmu -- contains --> sahifah
+    end
+
+    %% Cross-Plane Connections
+    sentence -.-> Research_Plane
+    entity -.-> Linguistic_Plane
+```
+
 ---
 
 ## 1. The Monorepo Structure
