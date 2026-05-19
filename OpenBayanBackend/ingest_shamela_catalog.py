@@ -13,11 +13,22 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configuration
-SURREAL_URL = os.getenv("SURREAL_URL", "http://192.168.100.33:8000/sql")
-SURREAL_AUTH = (os.getenv("SURREAL_USER", "root"), os.getenv("SURREAL_PASS", "RwAbXjBc2z36z"))
+SURREAL_URL = os.getenv("SURREALDB_URL", "http://192.168.100.33:8000/sql")
+if SURREAL_URL.startswith("ws"):
+    SURREAL_URL = SURREAL_URL.replace("ws", "http").replace("/rpc", "/sql")
+if not SURREAL_URL.endswith("/sql"):
+    SURREAL_URL = f"{SURREAL_URL.rstrip('/')}/sql"
+
+SURREAL_USER = os.getenv("SURREALDB_USERNAME", "root")
+SURREAL_PASS = os.getenv("SURREALDB_PASSWORD", "RwAbXjBc2z36z")
+SURREAL_AUTH = (SURREAL_USER, SURREAL_PASS)
+
+SURREAL_NS = os.getenv("SURREALDB_NAMESPACE", "openbayan")
+SURREAL_DB = os.getenv("SURREALDB_DATABASE", "openbayan")
+
 SURREAL_HEADERS = {
-    "surreal-ns": "openbayan",
-    "surreal-db": "openbayan",
+    "surreal-ns": SURREAL_NS,
+    "surreal-db": SURREAL_DB,
     "Accept": "application/json"
 }
 
@@ -131,6 +142,43 @@ def ingest_book_metadata(row, root_source_id):
         print(f"CRITICAL ERROR in ingest_book_metadata: {e}")
         logger.error(f"Failed to ingest {title}: {e}")
 
+@task
+def get_existing_book_ids():
+    logger = get_run_logger()
+    try:
+        # Standardizing on HTTP for easier batching and portability
+        req = requests.post(
+            SURREAL_URL,
+            auth=SURREAL_AUTH,
+            headers=SURREAL_HEADERS,
+            data="SELECT id FROM book;".encode('utf-8')
+        )
+        if req.status_code != 200:
+            return set()
+        res = req.json()
+        existing_ids = set()
+        if res and res[0].get("result"):
+            for r in res[0]["result"]:
+                existing_ids.add(r["id"])
+        logger.info(f"Loaded {len(existing_ids)} existing book IDs from database.")
+        return existing_ids
+    except Exception as e:
+        logger.warning(f"Could not load existing book IDs: {e}")
+        return set()
+
+def compute_book_id(row):
+    title = row.get("title") or row.get("book_name")
+    author = row.get("author")
+    if not title:
+        return None
+    import hashlib
+    row_str = json.dumps(row, sort_keys=True)
+    row_hash = hashlib.md5(row_str.encode()).hexdigest()[:8]
+    safe_title = re.sub(r'[^\w\s]', '', title).replace(' ', '_')[:60]
+    safe_author = re.sub(r'[^\w\s]', '', author).replace(' ', '_')[:40] if author else "unknown"
+    identifier = f"shamela_{safe_title}_{safe_author}_{row_hash}"
+    return f"book:`{identifier}`"
+
 @flow(name="Shamela Catalog Ingestion")
 def shamela_catalog_ingestion_flow(
     dataset_name: str = "ieasybooks-org/shamela-waqfeya-library",
@@ -140,19 +188,31 @@ def shamela_catalog_ingestion_flow(
     logger.info(f"Starting Shamela Catalog Ingestion from {dataset_name}")
     
     root_source = ensure_shamela_source()
+    existing_ids = get_existing_book_ids()
     
     dataset = load_dataset(dataset_name, split="index", streaming=True)
     
     count = 0
+    new_count = 0
+    skipped_count = 0
+    
     for row in dataset:
-        ingest_book_metadata(row, root_source)
         count += 1
-        if count % 100 == 0:
-            logger.info(f"Ingested {count} books...")
-        if limit and count >= limit:
+        book_id = compute_book_id(row)
+        if book_id and book_id in existing_ids:
+            skipped_count += 1
+            if skipped_count % 500 == 0:
+                logger.info(f"Skipped {skipped_count} existing books...")
+            continue
+            
+        ingest_book_metadata(row, root_source)
+        new_count += 1
+        if new_count % 100 == 0:
+            logger.info(f"Ingested {new_count} new books...")
+        if limit and new_count >= limit:
             break
             
-    logger.info(f"Completed ingestion of {count} book metadata records.")
+    logger.info(f"Completed catalog flow. Total processed in dataset: {count}. Skipped: {skipped_count}. Ingested new: {new_count}.")
 
 if __name__ == "__main__":
     shamela_catalog_ingestion_flow()

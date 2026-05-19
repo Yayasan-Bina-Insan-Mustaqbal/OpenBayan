@@ -6,11 +6,23 @@ from typing import List, Optional
 from pydantic import BaseModel
 from surrealdb import Surreal
 
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
 # Configuration
-SURREAL_URL = "ws://surrealdb:8000/rpc"
-OLLAMA_URL = "http://100.121.116.17:11434"
-MODEL_ENRICH = "qwen2.5:7b"
-MODEL_EMBED = "mxbai-embed-large:latest"
+SURREAL_URL = os.getenv("SURREALDB_URL", "ws://192.168.100.33:8000/rpc")
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://100.121.116.17:11434")
+MODEL_ENRICH = os.getenv("OLLAMA_LLM_MODEL", "qwen2.5:7b")
+MODEL_EMBED = os.getenv("OLLAMA_EMBED_MODEL", "mxbai-embed-large:latest")
+
+SURREAL_USER = os.getenv("SURREALDB_USERNAME", "root")
+SURREAL_PASS = os.getenv("SURREALDB_PASSWORD", "RwAbXjBc2z36z")
+SURREAL_NS = os.getenv("SURREALDB_NAMESPACE", "openbayan")
+SURREAL_DB = os.getenv("SURREALDB_DATABASE", "openbayan")
+
 SURAH_NUMBER = 2  # Al-Baqarah
 
 class Categorization(BaseModel):
@@ -38,8 +50,8 @@ class AyahEnrichmentResult(BaseModel):
 
 def get_taxonomy_labels():
     with Surreal(SURREAL_URL) as db:
-        db.signin({"user": "root", "pass": "root"})
-        db.use("main", "main")
+        db.signin({"user": SURREAL_USER, "pass": SURREAL_PASS})
+        db.use(SURREAL_NS, SURREAL_DB)
         res = db.query("SELECT label FROM category WHERE level >= 2;")
         return [r["label"] for r in res]
 
@@ -63,7 +75,10 @@ Transliteration (TR): {trans_tr}
 Task:
 1. Split the Ayah into logical semantic chunks (sentences) based on Quranic waqf marks if present.
 2. Align the English, Russian, and Turkish transliterations perfectly with each Arabic chunk.
-   **CRITICAL RULE:** All chunks MUST be verbatim, exact subsets of the original text. Do NOT rephrase or omit words.
+   **CRITICAL VERBATIM ALIGNMENT RULES:** 
+   - Each "arabic_chunk" MUST be a verbatim, exact contiguous substring of the original "Ayah (Uthmani)". Do not add, omit, or rephrase any words.
+   - The English, Russian, and Turkish transliteration fields in the "transliteration" object MUST be exact, verbatim contiguous substrings of their respective source transliteration texts.
+   - Omissions, rephrasing, translations, or spelling adjustments of the transliterations are STRICTLY PROHIBITED.
 3. For each chunk, map to relevant categories from this list:
 {labels_str}
 4. Extract entities for each chunk.
@@ -106,8 +121,8 @@ def ingest_surah(limit=None):
     hizb_cache = {}
 
     with Surreal(SURREAL_URL) as db:
-        db.signin({"user": "root", "pass": "root"})
-        db.use("main", "main")
+        db.signin({"user": SURREAL_USER, "pass": SURREAL_PASS})
+        db.use(SURREAL_NS, SURREAL_DB)
 
         for i in range(total):
             ayah_u = res_u[i]
