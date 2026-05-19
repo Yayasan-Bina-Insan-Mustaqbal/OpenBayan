@@ -5,30 +5,23 @@ import path from "path"
 
 export async function GET() {
   try {
-    // 1. Get counts from SurrealDB
-    const countsQuery = `
-      SELECT count() FROM hadith GROUP ALL;
-      SELECT count() FROM book_page WHERE id >= book_page:athar_ AND id < book_page:athar_z GROUP ALL;
-      SELECT count() FROM book_page WHERE id >= book_page:s AND id < book_page:t GROUP ALL;
-      SELECT count() FROM ayah GROUP ALL;
-      SELECT count() FROM sentence GROUP ALL;
-      SELECT count() FROM entity GROUP ALL;
-    `;
-    
+    // 1. Get counts from SurrealDB via system_counters in sub-milliseconds
+    const countsQuery = `SELECT count, id FROM system_counters;`;
     const dbRes = await querySurreal(countsQuery);
+    const results = dbRes[0]?.result || [];
     
     const counts = {
-      hadith: dbRes[0]?.result?.[0]?.count || 0,
-      athar: dbRes[1]?.result?.[0]?.count || 0,
-      shamela: dbRes[2]?.result?.[0]?.count || 0,
-      quran: dbRes[3]?.result?.[0]?.count || 0,
-      sentences: dbRes[4]?.result?.[0]?.count || 0,
-      entities: dbRes[5]?.result?.[0]?.count || 0
+      hadith: results.find((r: any) => r.id === "system_counters:hadith")?.count || 0,
+      athar: results.find((r: any) => r.id === "system_counters:athar")?.count || 0,
+      shamela: results.find((r: any) => r.id === "system_counters:shamela")?.count || 0,
+      quran: results.find((r: any) => r.id === "system_counters:quran")?.count || 0,
+      sentences: results.find((r: any) => r.id === "system_counters:sentences")?.count || 0,
+      entities: results.find((r: any) => r.id === "system_counters:entities")?.count || 0
     };
 
-    // 2. Load ingestion state for speed/ETA (Shared with Python script)
+    // 2. Load ingestion state for speed/ETA (Shared with Python script, now in accessible location inside container)
     let prevState: any = {};
-    const statePath = path.join(process.cwd(), '../ingestion_state.json');
+    const statePath = path.join(process.cwd(), 'ingestion_state.json');
     if (fs.existsSync(statePath)) {
         prevState = JSON.parse(fs.readFileSync(statePath, 'utf-8'));
     }
