@@ -101,27 +101,44 @@ def atomize_ayah(ayah: Dict[str, Any]):
 def quran_atomization_flow(limit: Optional[int] = None):
     logger = get_run_logger()
     
+    logger.info("Fetching existing atomized parents from sentence table...")
+    try:
+        parent_res = execute_sql("SELECT DISTINCT parent FROM sentence WHERE source = source:quran_uthmani;")
+        existing_parents = set()
+        if parent_res and parent_res[0].get("result"):
+            for r in parent_res[0]["result"]:
+                if r.get("parent"):
+                    existing_parents.add(r["parent"])
+        logger.info(f"Found {len(existing_parents)} already-atomized Ayahs.")
+    except Exception as e:
+        logger.warning(f"Could not load existing atomized parents: {e}")
+        existing_parents = set()
+
     logger.info("Fetching Ayahs from SurrealDB...")
     # Fetch ayahs via HTTP
     res = execute_sql("SELECT * FROM ayah ORDER BY surah_number ASC, ayah_number ASC")
     ayahs = res[0]['result']
         
+    logger.info(f"Filtering {len(ayahs)} total Ayahs...")
+    unprocessed_ayahs = [a for a in ayahs if a['id'] not in existing_parents]
+    logger.info(f"Found {len(unprocessed_ayahs)} unprocessed Ayahs remaining.")
+
     if limit:
-        ayahs = ayahs[:limit]
+        unprocessed_ayahs = unprocessed_ayahs[:limit]
         
-    logger.info(f"Starting atomization for {len(ayahs)} ayahs...")
+    logger.info(f"Starting atomization for {len(unprocessed_ayahs)} ayahs...")
     
     total_segments = 0
-    for ayah in ayahs:
+    for idx, ayah in enumerate(unprocessed_ayahs):
         try:
             count = atomize_ayah(ayah)
             total_segments += count
-            if ayah['ayah_number'] % 50 == 0:
-                logger.info(f"Processed Surah {ayah['surah_number']} Ayah {ayah['ayah_number']} (Total Sents: {total_segments})")
+            if (idx + 1) % 10 == 0 or ayah['ayah_number'] % 50 == 0:
+                logger.info(f"Processed {idx + 1}/{len(unprocessed_ayahs)} (Surah {ayah['surah_number']} Ayah {ayah['ayah_number']}, Total Sents: {total_segments})")
         except Exception as e:
             logger.error(f"Failed Surah {ayah['surah_number']} Ayah {ayah['ayah_number']}: {e}")
             
-    logger.info(f"Finished! Total sentences created: {total_segments}")
+    logger.info(f"Finished! Total sentences created in this run: {total_segments}")
 
 if __name__ == "__main__":
     import argparse
