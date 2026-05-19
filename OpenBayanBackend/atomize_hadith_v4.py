@@ -10,11 +10,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configuration
-SURREAL_SQL_URL = "http://192.168.100.33:8000/sql"
+SURREAL_SQL_URL = os.getenv("SURREALDB_URL", "http://192.168.100.33:8000/sql")
+if SURREAL_SQL_URL.startswith("ws"):
+    SURREAL_SQL_URL = SURREAL_SQL_URL.replace("ws", "http").replace("/rpc", "/sql")
+if not SURREAL_SQL_URL.endswith("/sql"):
+    SURREAL_SQL_URL = f"{SURREAL_SQL_URL.rstrip('/')}/sql"
+
 SURREAL_USER = os.getenv("SURREALDB_USERNAME", "root")
 SURREAL_PASS = os.getenv("SURREALDB_PASSWORD", "RwAbXjBc2z36z")
-SURREAL_NS = "openbayan"
-SURREAL_DB = "openbayan"
+SURREAL_NS = os.getenv("SURREALDB_NAMESPACE", "openbayan")
+SURREAL_DB = os.getenv("SURREALDB_DATABASE", "openbayan")
 
 SURREAL_AUTH = (SURREAL_USER, SURREAL_PASS)
 SURREAL_HEADERS = {
@@ -23,8 +28,8 @@ SURREAL_HEADERS = {
     "Accept": "application/json"
 }
 
-OLLAMA_URL = "http://100.121.116.17:11434"
-OLLAMA_EMBED_MODEL = "mxbai-embed-large:latest"
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://100.121.116.17:11434")
+OLLAMA_EMBED_MODEL = os.getenv("OLLAMA_EMBED_MODEL", "mxbai-embed-large:latest")
 
 def strip_tashkeel(text: str) -> str:
     if not text: return ""
