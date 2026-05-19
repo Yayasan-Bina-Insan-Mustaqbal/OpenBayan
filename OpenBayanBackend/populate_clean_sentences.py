@@ -33,6 +33,7 @@ HEADERS = {
 AUTH = (SURREAL_USER, SURREAL_PASS)
 
 from concurrent.futures import ThreadPoolExecutor
+from prefect import flow, task, get_run_logger
 
 def execute_surreal(query: str):
     res = requests.post(SURREAL_URL, headers=HEADERS, auth=AUTH, data=query.encode('utf-8'), timeout=15)
@@ -40,7 +41,9 @@ def execute_surreal(query: str):
         raise Exception(f"SurrealDB Error: {res.text}")
     return res.json()
 
+@task(name="Update Single Sentence Harakat")
 def update_single_sentence(record):
+    logger = get_run_logger()
     record_id = record["id"]
     raw_text = record.get("text", "")
     clean_text = strip_tashkeel(raw_text)
@@ -58,13 +61,14 @@ def update_single_sentence(record):
         execute_surreal(query)
         return True
     except Exception as e:
-        # If it failed due to a syntax error, try setting simple_clean_text empty or just log it
-        print(f"Warning: Failed to update {record_id}: {e}")
+        logger.warning(f"Failed to update {record_id}: {e}")
         return False
 
+@flow(name="Sentence Harakat Stripping Flow")
 def populate_clean_sentences(batch_size: int = 200):
-    print("Bismillahir Rahmanir Rahim.")
-    print("Starting Harakat Stripping migration utility for sentence table...")
+    logger = get_run_logger()
+    logger.info("Bismillahir Rahmanir Rahim.")
+    logger.info("Starting Harakat Stripping migration utility for sentence table...")
     
     # Start system-wide memory safety guard
     start_memory_guard(min_available_mb=500)
@@ -77,9 +81,9 @@ def populate_clean_sentences(batch_size: int = 200):
     if res and res[0].get("result"):
         pending_count = res[0]["result"][0].get("count", 0)
     
-    print(f"Found {pending_count} sentences lacking simple_clean_text.")
+    logger.info(f"Found {pending_count} sentences lacking simple_clean_text.")
     if pending_count == 0:
-        print("No sentences need updating. Alhamdulillah!")
+        logger.info("No sentences need updating. Alhamdulillah!")
         return
 
     processed = 0
@@ -94,7 +98,7 @@ def populate_clean_sentences(batch_size: int = 200):
         if not records:
             break
             
-        print(f"Processing batch of {len(records)} sentences concurrently...")
+        logger.info(f"Processing batch of {len(records)} sentences concurrently...")
         
         # Execute concurrent updates
         with ThreadPoolExecutor(max_workers=20) as executor:
@@ -106,13 +110,13 @@ def populate_clean_sentences(batch_size: int = 200):
         speed = processed / elapsed if elapsed > 0 else 0
         eta = (pending_count - processed) / speed if speed > 0 else 0
         
-        print(f"  -> Processed {processed}/{pending_count} ({processed/pending_count*100:.2f}%) | Success: {success_count}/{len(records)} | Speed: {speed:.1f}/s | ETA: {eta/60:.1f}m")
+        logger.info(f"  -> Processed {processed}/{pending_count} ({processed/pending_count*100:.2f}%) | Success: {success_count}/{len(records)} | Speed: {speed:.1f}/s | ETA: {eta/60:.1f}m")
         log_memory_status(f"Batch {processed}")
         
         # Be gentle to RocksDB memory pools
         time.sleep(0.05)
 
-    print(f"\nAlhamdulillah! Harakat stripping utility complete! Processed {processed} sentences in {time.time() - t0:.1f}s.")
+    logger.info(f"Alhamdulillah! Harakat stripping utility complete! Processed {processed} sentences in {time.time() - t0:.1f}s.")
 
 if __name__ == "__main__":
     populate_clean_sentences()

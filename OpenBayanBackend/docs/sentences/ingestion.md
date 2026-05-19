@@ -51,7 +51,14 @@ The transition to the Sentence (Atomic) unit follows a prioritized sequence:
 3.  **Phase 3: Hadith (Planned)**: Breaking down the sanadset into individual narration units and matn chunks.
 4.  **Phase 4: Books (Advanced)**: Massive-scale chunking of classical digitized pages (83k+ pages).
 
+## TODO: Future Analysis
+- [ ] **Harakat Stripping (Post-Ingestion)**: 
+    - **Context**: Ensure all `sentence` records have a `simple_clean_text` field (Arabic text without diacritics).
+    - **Task**: Use `OpenBayanBackend/populate_clean_sentences.py` to re-analyze the table one by one.
+    - **Reason**: Critical for fuzzy search and cross-referencing reliability.
+
 ## Data Example (Sentence Atom)
+
 ```json
 {
   "id": "sentence:dict_mura_12345",
