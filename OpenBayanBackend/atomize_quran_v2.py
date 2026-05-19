@@ -103,7 +103,7 @@ def quran_atomization_flow(limit: Optional[int] = None):
     
     logger.info("Fetching existing atomized parents from sentence table...")
     try:
-        parent_res = execute_sql("SELECT DISTINCT parent FROM sentence WHERE source = source:quran_uthmani;")
+        parent_res = execute_sql("SELECT parent FROM sentence WHERE source = source:quran_uthmani GROUP BY parent;")
         existing_parents = set()
         if parent_res and parent_res[0].get("result"):
             for r in parent_res[0]["result"]:
