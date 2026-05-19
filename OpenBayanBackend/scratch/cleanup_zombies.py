@@ -43,7 +43,7 @@ def cleanup_zombies():
         
         # Threshold: We consider anything started before May 14th 20:00Z as a zombie
         # (The active one started at 22:50Z)
-        threshold = "2026-05-14T20:00:00"
+        threshold = "2026-05-19T23:59:59"
         
         for run in runs:
             start_time = run.get("start_time", "")
