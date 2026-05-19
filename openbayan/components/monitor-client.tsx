@@ -20,11 +20,11 @@ import {
     X,
     Search,
     RefreshCw,
-    Table as TableIcon
+    Table as TableIcon,
+    ArrowUpRight
 } from "lucide-react"
 
 import { renderMermaid } from 'beautiful-mermaid'
-import { querySurreal } from "@/lib/surreal-query"
 
 function Badge({ children, variant = "default", className = "" }: any) {
     const variants: any = {
@@ -39,59 +39,67 @@ function Badge({ children, variant = "default", className = "" }: any) {
     )
 }
 
-// Pipeline Metadata & Diagrams
 const PIPELINE_INFO: Record<string, any> = {
-  "enrich_dictionary_data.py": {
-    description: "LLM-based morphological and entity enrichment for dictionary entries.",
-    speed: "~120 entries/hr",
-    prediction: "Completion expected mid-June 2026",
+  "ingest_athar_final.py": {
+    description: "Multi-stage Athar dataset ingestion using HTTP streaming.",
+    speed: "Auto-detected",
+    prediction: "Dynamic",
     mermaid: `graph TD
-    A[Murad Dataset] -->|Ingest| B(Sentence Table)
-    B -->|Batch 1k| C{LLM Processing}
-    C -->|Extract| D[Word/Root]
-    C -->|NER| E[Entity]
-    E -->|Wiki API| F[Knowledge Mapping]
-    D --> G((Knowledge Graph))
-    F --> G`
+    HF[HuggingFace Hub] -->|Stream| S{Auth Client}
+    S -->|HTTP POST| DB[(SurrealDB)]
+    DB -->|UPSERT| SRC[Source Table]
+    DB -->|UPSERT| PG[Book Page Table]`
   },
-  "ingest_murad.py": {
-    description: "Initial data ingestion from raw source to sentence table.",
-    speed: "~50k records/hr",
-    prediction: "Completed",
-    mermaid: `graph LR
-    Source[(SQLite/CSV)] --> Clean[Text Cleaning]
-    Clean --> Chunk[Sentence Chunking]
-    Chunk --> Store[(SurrealDB Sentence)]`
-  },
-  "shamela_hf_ingestion.py": {
-    description: "Ingesting Shamela HF datasets into the Library plane.",
-    speed: "~20 books/hr",
-    prediction: "On-demand",
-    mermaid: `graph TD
-    HF[HuggingFace Dataset] --> Filter[Arabic Filtering]
-    Filter --> Book[Book Table]
-    Book --> Section[Book Section]
-    Section --> Sentence[Sentence Atom]`
-  },
-  "quran_ingestion": {
-    description: "Canonical Quranic verse ingestion via API.",
+  "ingest_hf_enhanced_knowledge.py": {
+    description: "650k Hadith Sanadset ingestion with normalized identifiers.",
     speed: "Fast",
     prediction: "Completed",
     mermaid: `graph LR
-    API[Quran API] --> Ayah[Ayah Table]
-    Ayah --> Sentence[Sentence Map]
-    Sentence --> Taxonomy[Topic/Tagging]`
+    HF[HF Sanadset] --> Map[ID Normalization]
+    Map --> Hadith[(Hadith Table)]
+    Hadith --> Relation[Graph Links]`
+  },
+  "enrich_dictionary_data.py": {
+    description: "LLM-based morphological and entity enrichment for dictionary entries.",
+    speed: "~120 entries/hr",
+    prediction: "Ongoing",
+    mermaid: `graph TD
+    S(Sentence) -->|Batch 1k| LLM{LLM Extract}
+    LLM --> Word[Word/Root]
+    LLM --> Entity[Entity]`
   }
 }
 
-export default function MonitorClient({ pythonJobs, progressFiles, inventoryData }: { pythonJobs: any[], progressFiles: any[], inventoryData: any }) {
+export default function MonitorClient({ pythonJobs, progressFiles, inventoryData: initialData }: { pythonJobs: any[], progressFiles: any[], inventoryData: any }) {
   const [selectedReport, setSelectedReport] = useState<any>(null);
   const [selectedInventoryTable, setSelectedInventoryTable] = useState<string | null>(null);
   const [tableData, setTableData] = useState<any[]>([]);
   const [isLoadingTable, setIsLoadingTable] = useState(false);
   const [mermaidSvgs, setMermaidSvgs] = useState<Record<string, string>>({});
+  const [metrics, setMetrics] = useState<any>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Handle Mermaid rendering (it might be async)
+  const fetchMetrics = async () => {
+    setIsRefreshing(true);
+    try {
+        const res = await fetch("/api/monitor-stats");
+        if (res.ok) {
+            const data = await res.json();
+            setMetrics(data);
+        }
+    } catch (e) {
+        console.error("Failed to fetch metrics:", e);
+    } finally {
+        setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMetrics();
+    const interval = setInterval(fetchMetrics, 30000); // Auto refresh every 30s
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     const renderAll = async () => {
       const svgs: Record<string, string> = {};
@@ -108,7 +116,6 @@ export default function MonitorClient({ pythonJobs, progressFiles, inventoryData
     renderAll();
   }, []);
 
-  // Handle Inventory Table Click
   const browseTable = async (table: string, query: string) => {
     setSelectedInventoryTable(table);
     setIsLoadingTable(true);
@@ -132,149 +139,187 @@ export default function MonitorClient({ pythonJobs, progressFiles, inventoryData
     }
   };
 
+  const formatETA = (seconds: number | null) => {
+      if (seconds === null || seconds < 0) return "--";
+      if (seconds < 60) return `${Math.round(seconds)}s`;
+      if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
+      if (seconds < 86400) return `${Math.round(seconds / 3600)}h`;
+      return `${(seconds / 86400).toFixed(1)}d`;
+  };
+
   return (
     <div className="space-y-8">
-      {/* Knowledge Graph Inventory Section */}
-      <h2 className="text-2xl font-semibold text-slate-200 mt-8 mb-4 border-b border-slate-800 pb-2">Knowledge Graph Inventory</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-semibold text-slate-200 border-b border-slate-800 pb-2">Knowledge Graph Inventory</h2>
+        <Button 
+            size="sm" 
+            variant="ghost" 
+            onClick={fetchMetrics} 
+            className="text-slate-500 hover:text-emerald-400"
+            disabled={isRefreshing}
+        >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Updating...' : 'Refresh Stats'}
+        </Button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <InventoryCard 
             title="Quranic Corpus"
-            sourceLabel="quran api -> ayah"
-            targetLabel="ayah -> sentence, entities"
-            count={inventoryData.ayahs}
+            sourceLabel="quran api"
+            targetLabel="ayah"
+            stats={metrics?.quran}
             unit="Ayahs"
             color="emerald"
             onClick={() => browseTable("ayah", "SELECT uthmani_text, surah_number, ayah_number, created_at FROM ayah")}
         />
         <InventoryCard 
             title="Hadith Collections"
-            sourceLabel="hadith dataset -> hadith"
-            targetLabel="hadith -> sentence, rijal"
-            count={inventoryData.hadiths}
-            unit="Hadiths"
+            sourceLabel="650k sanadset"
+            targetLabel="hadith"
+            stats={metrics?.hadith}
+            unit="Records"
             color="amber"
-            onClick={() => browseTable("hadith", "SELECT main_full, hadith_number, collection, grade FROM hadith")}
+            onClick={() => browseTable("hadith", "SELECT collection, hadith_number, matn_ar FROM hadith")}
+        />
+        <InventoryCard 
+            title="Athar Passages"
+            sourceLabel="Kandil7/Athar"
+            targetLabel="book_page"
+            stats={metrics?.athar}
+            unit="Passages"
+            color="blue"
+            onClick={() => browseTable("book_page", "SELECT content, category, page_number FROM book_page WHERE id >= book_page:athar_")}
         />
         <InventoryCard 
             title="Classical Books"
-            sourceLabel="book dataset -> book"
-            targetLabel="book -> book_section -> sentence"
-            count={inventoryData.books}
-            unit="Books"
-            color="blue"
-            onClick={() => browseTable("book", "SELECT title, author, category FROM book")}
-        />
-        <InventoryCard 
-            title="Murad Dictionary"
-            sourceLabel="murad dataset -> sentence"
-            targetLabel="sentence -> word -> entity"
-            count={inventoryData.murad_done}
-            unit="Enriched Sentences"
-            total={96243}
+            sourceLabel="Shamela Dataset"
+            targetLabel="book"
+            stats={metrics?.shamela}
+            unit="Pages"
             color="teal"
-            isProgress
-            onClick={() => browseTable("sentence", "SELECT text, simple_clean_text, source FROM sentence WHERE source = source:murad_dataset_2026")}
+            onClick={() => browseTable("book_page", "SELECT content, page_number FROM book_page WHERE id >= book_page:s")}
         />
         <InventoryCard 
-            title="Taxonomy & Linguistic"
-            sourceLabel="sentence -> word"
-            targetLabel="word -> root"
-            count={inventoryData.words}
-            unit="Unique Words"
+            title="Knowledge Atoms"
+            targetLabel="sentence"
+            stats={metrics?.sentences}
+            unit="Sentences"
             color="purple"
-            onClick={() => browseTable("word", "SELECT text, root, created_at FROM word")}
+            onClick={() => browseTable("sentence", "SELECT text, source FROM sentence")}
         />
         <InventoryCard 
             title="Named Entities"
-            sourceLabel="ilm rijal / extraction"
             targetLabel="entity"
-            count={inventoryData.entities}
+            stats={metrics?.entities}
             unit="Entities"
             color="rose"
-            onClick={() => browseTable("entity", "SELECT label, type, created_at FROM entity")}
+            onClick={() => browseTable("entity", "SELECT label, type FROM entity")}
         />
       </div>
 
       {/* Interactive Pipeline Section */}
-      <Card className="bg-slate-900/50 border-slate-800">
-          <CardHeader>
-              <div className="flex items-center gap-2">
-                  <Terminal className="h-5 w-5 text-indigo-400" />
-                  <CardTitle className="text-xl text-slate-300">Active & Historical Pipelines</CardTitle>
+      <Card className="bg-slate-900/50 border-slate-800 shadow-xl">
+          <CardHeader className="border-b border-slate-800/50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <Terminal className="h-5 w-5 text-indigo-400" />
+                    <CardTitle className="text-xl text-slate-300">Active Pipelines</CardTitle>
+                </div>
+                <Badge variant="outline" className="animate-pulse bg-emerald-500/5 text-emerald-500 border-emerald-500/20">System Live</Badge>
               </div>
           </CardHeader>
-          <CardContent>
-              <Accordion type="single" collapsible className="w-full space-y-2">
-                  {[...pythonJobs, { name: "quran_ingestion" }].map((job, idx) => {
+          <CardContent className="pt-6">
+              <Accordion type="single" collapsible className="w-full space-y-3">
+                  {[...pythonJobs].map((job, idx) => {
                       const info = PIPELINE_INFO[job.name] || {
-                        description: "Custom pipeline flow.",
-                        speed: "Unknown",
+                        description: "External processing flow.",
+                        speed: "N/A",
                         prediction: "N/A",
                         mermaid: `graph LR\n  Start --> Process[Processing] --> End`
                       };
                       
+                      const isActive = job.name === 'ingest_athar_final.py';
+                      
                       return (
-                          <AccordionItem key={job.name} value={`item-${idx}`} className="border border-slate-800 rounded-lg px-4 bg-slate-900/30 overflow-hidden">
+                          <AccordionItem key={job.name} value={`item-${idx}`} className="border border-slate-800 rounded-xl px-4 bg-slate-900/30 hover:bg-slate-900/50 transition-colors overflow-hidden">
                               <AccordionTrigger className="hover:no-underline py-4">
                                   <div className="flex items-center justify-between w-full pr-4 text-left">
                                       <div className="flex items-center gap-3">
-                                          <div className="p-2 bg-slate-800 rounded text-indigo-400">
-                                              <Play className="h-4 w-4" />
+                                          <div className={`p-2 rounded ${isActive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
+                                              {isActive ? <Zap className="h-4 w-4 animate-pulse" /> : <Play className="h-4 w-4" />}
                                           </div>
                                           <div>
                                               <p className="font-mono text-sm text-slate-200">{job.name}</p>
                                               <p className="text-xs text-slate-500">{info.description}</p>
                                           </div>
                                       </div>
-                                      {job.name.includes('enrich_dictionary') ? (
-                                          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Running</Badge>
-                                      ) : (
-                                          <Badge variant="outline" className="text-slate-500 border-slate-700">Idle</Badge>
-                                      )}
+                                      <div className="flex items-center gap-4">
+                                        {isActive && (
+                                            <div className="text-right hidden md:block">
+                                                <p className="text-[10px] font-bold text-slate-500 uppercase">Live Speed</p>
+                                                <p className="text-xs font-mono text-emerald-400">~{metrics?.athar?.speed.toFixed(1)}/m</p>
+                                            </div>
+                                        )}
+                                        {isActive ? (
+                                            <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 px-3">ACTIVE</Badge>
+                                        ) : (
+                                            <Badge variant="outline" className="text-slate-600 border-slate-800">IDLE</Badge>
+                                        )}
+                                      </div>
                                   </div>
                               </AccordionTrigger>
                               <AccordionContent className="pt-2 pb-6 border-t border-slate-800/50">
                                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-4">
-                                      <div className="bg-slate-950/50 p-4 rounded-lg border border-slate-800/50 flex flex-col items-center min-h-[300px] justify-center">
-                                          <div className="w-full flex justify-between items-center mb-4">
-                                              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Process Flow</span>
-                                              <Zap className="h-3 w-3 text-yellow-400" />
+                                      <div className="bg-slate-950/50 p-4 rounded-lg border border-slate-800/50 flex flex-col items-center min-h-[300px] justify-center relative">
+                                          <div className="absolute top-2 left-2 flex items-center gap-2">
+                                              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Logic Visualization</span>
                                           </div>
                                           {mermaidSvgs[job.name] ? (
                                             <div 
-                                                className="mermaid-svg opacity-90 hover:opacity-100 transition-opacity w-full overflow-x-auto text-center"
+                                                className="mermaid-svg opacity-80 hover:opacity-100 transition-opacity w-full overflow-x-auto text-center"
                                                 dangerouslySetInnerHTML={{ __html: mermaidSvgs[job.name] }} 
                                             />
                                           ) : (
-                                            <div className="flex items-center gap-2 text-slate-600">
+                                            <div className="flex items-center gap-2 text-slate-700">
                                                 <RefreshCw className="h-4 w-4 animate-spin" />
-                                                <span className="text-xs">Rendering diagram...</span>
+                                                <span className="text-xs">Generating flow map...</span>
                                             </div>
                                           )}
                                       </div>
                                       <div className="space-y-6">
                                           <div className="grid grid-cols-2 gap-4">
-                                              <div className="p-4 bg-slate-800/20 rounded-lg border border-slate-800/50">
+                                              <div className="p-4 bg-slate-800/20 rounded-xl border border-slate-800/50">
                                                   <div className="flex items-center gap-2 text-slate-500 mb-1">
                                                       <Zap className="h-3 w-3" />
-                                                      <span className="text-[10px] uppercase font-bold">Speed</span>
+                                                      <span className="text-[10px] uppercase font-bold">Performance</span>
                                                   </div>
-                                                  <p className="text-xl font-bold text-slate-200">{info.speed}</p>
+                                                  <p className="text-xl font-bold text-slate-200">
+                                                      {isActive ? `~${metrics?.athar?.speed.toFixed(0)}/m` : info.speed}
+                                                  </p>
                                               </div>
-                                              <div className="p-4 bg-slate-800/20 rounded-lg border border-slate-800/50">
+                                              <div className="p-4 bg-slate-800/20 rounded-xl border border-slate-800/50">
                                                   <div className="flex items-center gap-2 text-slate-500 mb-1">
                                                       <Clock className="h-3 w-3" />
-                                                      <span className="text-[10px] uppercase font-bold">Prediction</span>
+                                                      <span className="text-[10px] uppercase font-bold">ETA</span>
                                                   </div>
-                                                  <p className="text-sm font-semibold text-emerald-400">{info.prediction}</p>
+                                                  <p className={`text-sm font-semibold ${isActive ? 'text-emerald-400' : 'text-slate-500'}`}>
+                                                      {isActive ? formatETA(metrics?.athar?.eta) : info.prediction}
+                                                  </p>
                                               </div>
                                           </div>
-                                          <div className="p-4 bg-indigo-950/10 rounded-lg border border-indigo-500/10">
-                                              <h4 className="text-xs font-bold text-indigo-400 uppercase mb-2">Technical Note</h4>
-                                              <p className="text-xs text-slate-400 leading-relaxed">
-                                                  This pipeline utilizes asynchronous worker pools to maximize throughput. 
-                                                  Backpressure is managed via SurrealDB transaction locks.
+                                          <div className="p-5 bg-indigo-950/10 rounded-xl border border-indigo-500/10">
+                                              <h4 className="text-xs font-bold text-indigo-400 uppercase mb-2 flex items-center gap-2">
+                                                  <FileText className="h-3 w-3" />
+                                                  Pipeline Context
+                                              </h4>
+                                              <p className="text-xs text-slate-400 leading-relaxed italic">
+                                                  "This process handles heavy transformation. It leverages reciprocal rank fusion for indexing and utilizes the mxbai-embed-large model for semantic mapping."
                                               </p>
+                                          </div>
+                                          <div className="flex gap-2">
+                                              <Button size="sm" variant="outline" className="flex-1 border-slate-800 hover:bg-slate-800 text-[10px] h-9 uppercase font-bold">View Logs</Button>
+                                              <Button size="sm" className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-[10px] h-9 uppercase font-bold">Debug Flow</Button>
                                           </div>
                                       </div>
                                   </div>
@@ -287,15 +332,15 @@ export default function MonitorClient({ pythonJobs, progressFiles, inventoryData
       </Card>
 
       {/* Progress Reports Section */}
-      <Card className="bg-slate-900/50 border-slate-800">
-          <CardHeader>
+      <Card className="bg-slate-900/50 border-slate-800 shadow-xl">
+          <CardHeader className="border-b border-slate-800/50">
               <div className="flex items-center gap-2">
                   <FileText className="h-5 w-5 text-sky-400" />
-                  <CardTitle className="text-xl text-slate-300">Progress Reports</CardTitle>
+                  <CardTitle className="text-xl text-slate-300">System Logs</CardTitle>
               </div>
           </CardHeader>
-          <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <CardContent className="pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {progressFiles.map(file => (
                       <div 
                         key={file.name} 
@@ -303,13 +348,13 @@ export default function MonitorClient({ pythonJobs, progressFiles, inventoryData
                         className="group flex flex-col p-4 rounded-xl bg-slate-800/20 border border-slate-800/50 hover:bg-slate-800/40 hover:border-sky-500/30 transition-all cursor-pointer relative overflow-hidden"
                       >
                           <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Maximize2 className="h-3 w-3 text-sky-400" />
+                              <ArrowUpRight className="h-4 w-4 text-sky-400" />
                           </div>
-                          <span className="font-semibold text-sm text-slate-200 group-hover:text-sky-400 transition-colors line-clamp-1">{file.title}</span>
-                          <span className="font-mono text-[10px] text-slate-500 mt-1">{file.name}</span>
-                          <div className="mt-3 flex items-center gap-2">
-                              <Badge variant="outline" className="text-[9px] uppercase border-slate-700 text-slate-500">Log</Badge>
-                              <span className="text-[10px] text-slate-600">Click to view content</span>
+                          <span className="font-semibold text-xs text-slate-400 uppercase tracking-tighter mb-1">{file.name}</span>
+                          <span className="font-bold text-sm text-slate-200 group-hover:text-sky-400 transition-colors line-clamp-2 leading-tight">{file.title}</span>
+                          <div className="mt-auto pt-4 flex items-center justify-between">
+                              <Badge variant="outline" className="text-[9px] uppercase border-slate-700 text-slate-500">Log Entry</Badge>
+                              <span className="text-[10px] text-slate-600 font-mono italic">Click to expand</span>
                           </div>
                       </div>
                   ))}
@@ -319,19 +364,19 @@ export default function MonitorClient({ pythonJobs, progressFiles, inventoryData
 
       {/* Report Modal */}
       {selectedReport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col shadow-2xl scale-in-center">
-            <div className="flex justify-between items-center p-6 border-b border-slate-800">
+            <div className="flex justify-between items-center p-6 border-b border-slate-800 bg-slate-900/50">
               <div>
+                <p className="text-[10px] font-bold text-sky-400 uppercase tracking-[0.2em] mb-1">System Log</p>
                 <h3 className="text-xl font-bold text-slate-200">{selectedReport.title}</h3>
-                <p className="text-xs font-mono text-slate-500 mt-1">{selectedReport.name}</p>
               </div>
               <button onClick={() => setSelectedReport(null)} className="p-2 hover:bg-slate-800 rounded-full transition-colors text-slate-400">
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-8 prose prose-invert max-w-none">
-              <pre className="whitespace-pre-wrap text-sm text-slate-300 font-sans leading-relaxed">
+            <div className="flex-1 overflow-y-auto p-8 bg-slate-950/30">
+              <pre className="whitespace-pre-wrap text-xs text-slate-400 font-mono leading-relaxed p-4 bg-black/20 rounded-lg border border-slate-800/50">
                 {selectedReport.content}
               </pre>
             </div>
@@ -341,42 +386,42 @@ export default function MonitorClient({ pythonJobs, progressFiles, inventoryData
 
       {/* Inventory Data Browser Modal */}
       {selectedInventoryTable && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-6xl max-h-[85vh] overflow-hidden flex flex-col shadow-2xl scale-in-center">
-            <div className="flex justify-between items-center p-6 border-b border-slate-800">
+            <div className="flex justify-between items-center p-6 border-b border-slate-800 bg-slate-900/50">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-slate-800 rounded-lg">
+                <div className="p-2 bg-emerald-500/10 rounded-lg">
                     <TableIcon className="h-5 w-5 text-emerald-400" />
                 </div>
                 <div>
-                    <h3 className="text-xl font-bold text-slate-200 uppercase tracking-tight">{selectedInventoryTable} Browser</h3>
-                    <p className="text-xs text-slate-500 mt-0.5">Showing latest 50 records from Knowledge Graph</p>
+                    <h3 className="text-xl font-bold text-slate-200 uppercase tracking-tight">{selectedInventoryTable} Node Browser</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">Direct SurrealDB Query Interface</p>
                 </div>
               </div>
               <button onClick={() => setSelectedInventoryTable(null)} className="p-2 hover:bg-slate-800 rounded-full transition-colors text-slate-400">
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="flex-1 overflow-auto p-0">
+            <div className="flex-1 overflow-auto bg-slate-950/20">
               {isLoadingTable ? (
-                <div className="h-full flex flex-col items-center justify-center gap-4 text-slate-500 py-20">
-                    <RefreshCw className="h-8 w-8 animate-spin" />
-                    <p className="text-sm font-medium">Fetching Knowledge Graph nodes...</p>
+                <div className="h-full flex flex-col items-center justify-center gap-4 text-slate-600 py-32">
+                    <RefreshCw className="h-10 w-10 animate-spin text-emerald-500/20" />
+                    <p className="text-sm font-medium animate-pulse">Scanning graph shards...</p>
                 </div>
               ) : (
                 <table className="w-full text-left border-collapse">
-                    <thead className="sticky top-0 bg-slate-900/95 backdrop-blur z-10 border-b border-slate-800">
+                    <thead className="sticky top-0 bg-slate-900/95 backdrop-blur z-10 border-b border-slate-800 shadow-sm">
                         <tr>
                             {tableData.length > 0 ? Object.keys(tableData[0]).map(key => (
-                                <th key={key} className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 border-r border-slate-800/50 last:border-0">{key}</th>
-                            )) : <th className="p-10 text-center text-slate-600">No data found in this table.</th>}
+                                <th key={key} className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.1em] text-slate-500 border-r border-slate-800/30 last:border-0">{key}</th>
+                            )) : <th className="p-20 text-center text-slate-700 italic font-mono">End of dataset or empty table.</th>}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/50">
+                    <tbody className="divide-y divide-slate-800/30">
                         {tableData.map((row, i) => (
-                            <tr key={i} className="hover:bg-slate-800/20 transition-colors">
+                            <tr key={i} className="hover:bg-indigo-500/5 transition-colors group">
                                 {Object.values(row).map((val: any, j) => (
-                                    <td key={j} className="px-6 py-4 text-sm text-slate-300 font-mono border-r border-slate-800/30 last:border-0">
+                                    <td key={j} className="px-6 py-4 text-xs text-slate-400 font-mono border-r border-slate-800/20 last:border-0 group-hover:text-slate-200">
                                         <div className="max-w-[400px] truncate" title={String(val)}>
                                             {typeof val === 'object' ? JSON.stringify(val) : String(val)}
                                         </div>
@@ -388,11 +433,15 @@ export default function MonitorClient({ pythonJobs, progressFiles, inventoryData
                 </table>
               )}
             </div>
-            <div className="p-4 bg-slate-950/50 border-t border-slate-800 flex justify-between items-center">
-                <p className="text-xs text-slate-500 font-mono">Found {inventoryData[selectedInventoryTable + 's'] || inventoryData[selectedInventoryTable] || 'N/A'} total records</p>
+            <div className="p-4 bg-slate-950 border-t border-slate-800 flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                    <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">Query complete</p>
+                    <div className="h-4 w-px bg-slate-800" />
+                    <p className="text-xs text-slate-400 font-mono">{tableData.length} records in view</p>
+                </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="h-8 text-[10px] border-slate-800">Export CSV</Button>
-                    <Button size="sm" className="h-8 text-[10px] bg-slate-800 hover:bg-slate-700">Load More</Button>
+                    <Button variant="outline" size="sm" className="h-8 text-[10px] border-slate-800 bg-transparent text-slate-500 hover:text-slate-200 uppercase font-black tracking-widest">JSON</Button>
+                    <Button size="sm" className="h-8 text-[10px] bg-slate-800 hover:bg-slate-700 uppercase font-black tracking-widest px-6">Fetch Next 50</Button>
                 </div>
             </div>
           </div>
@@ -402,52 +451,86 @@ export default function MonitorClient({ pythonJobs, progressFiles, inventoryData
   )
 }
 
-function InventoryCard({ title, sourceLabel, targetLabel, count, unit, color, total, isProgress, onClick }: any) {
+function InventoryCard({ title, sourceLabel, targetLabel, stats, unit, color, onClick }: any) {
     const colorClasses: any = {
-        emerald: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20 group-hover:border-emerald-500/40",
-        amber: "text-amber-400 bg-amber-500/10 border-amber-500/20 group-hover:border-amber-500/40",
-        blue: "text-blue-400 bg-blue-500/10 border-blue-500/20 group-hover:border-blue-500/40",
-        teal: "text-teal-400 bg-teal-500/10 border-teal-500/20 group-hover:border-teal-500/40",
-        purple: "text-purple-400 bg-purple-500/10 border-purple-500/20 group-hover:border-purple-500/40",
-        rose: "text-rose-400 bg-rose-500/10 border-rose-500/20 group-hover:border-rose-500/40"
+        emerald: "text-emerald-400 bg-emerald-500/5 border-emerald-500/10 group-hover:border-emerald-500/30",
+        amber: "text-amber-400 bg-amber-500/5 border-amber-500/10 group-hover:border-amber-500/30",
+        blue: "text-blue-400 bg-blue-500/5 border-blue-500/10 group-hover:border-blue-500/30",
+        teal: "text-teal-400 bg-teal-500/5 border-teal-500/10 group-hover:border-teal-500/30",
+        purple: "text-purple-400 bg-purple-500/5 border-purple-500/10 group-hover:border-purple-500/30",
+        rose: "text-rose-400 bg-rose-500/5 border-rose-500/10 group-hover:border-rose-500/30"
     }
 
-    const progress = total ? (count / total) * 100 : 0
+    const count = stats?.count || 0
+    const total = stats?.total
+    const progress = stats?.progress
+    const speed = stats?.speed
+    const eta = stats?.eta
+
     const currentColor = colorClasses[color] || colorClasses.emerald
 
+    const formatETA = (seconds: number | null) => {
+        if (seconds === null || seconds < 0) return "--";
+        if (seconds < 60) return `${Math.round(seconds)}s`;
+        if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
+        if (seconds < 86400) return `${Math.round(seconds / 3600)}h`;
+        return `${(seconds / 86400).toFixed(1)}d`;
+    };
+
     return (
-        <Card onClick={onClick} className="bg-slate-900/50 border-slate-800 hover:bg-slate-900/80 transition-all cursor-pointer group">
-            <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                <CardTitle className="text-lg text-slate-300 group-hover:text-slate-100 transition-colors">{title}</CardTitle>
-                <Search className="h-3 w-3 text-slate-600 group-hover:text-slate-400" />
+        <Card onClick={onClick} className="bg-slate-900/40 border-slate-800/80 hover:bg-slate-900/70 transition-all cursor-pointer group shadow-lg">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+                <div>
+                    <CardTitle className="text-sm font-black text-slate-500 uppercase tracking-[0.2em] group-hover:text-slate-400 transition-colors">{title}</CardTitle>
+                </div>
+                <div className={`p-1.5 rounded-md opacity-50 group-hover:opacity-100 transition-all ${currentColor.split(' ')[0]}`}>
+                    <Search className="h-3.5 w-3.5" />
+                </div>
             </CardHeader>
             <CardContent className="space-y-4">
-                <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-slate-500">FROM</span>
-                        <Badge variant="outline" className="text-[10px] py-0">{sourceLabel}</Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-slate-500">TO</span>
-                        <Badge variant="outline" className="text-[10px] py-0 border-slate-600 text-slate-300">{targetLabel}</Badge>
-                    </div>
-                </div>
-
-                <div className={"p-4 rounded-lg border transition-all " + currentColor + " flex flex-col items-center justify-center"}>
-                    <p className="text-3xl font-bold tracking-tight">{(count || 0).toLocaleString()}</p>
-                    <p className="text-xs uppercase tracking-wider font-semibold opacity-80 mt-1">{unit}</p>
-                </div>
-
-                {isProgress && total && (
-                    <div className="space-y-1">
-                        <div className="flex justify-between text-[10px] text-slate-400">
-                            <span>{progress.toFixed(2)}%</span>
-                            <span>{total.toLocaleString()} total</span>
+                <div className="flex flex-col gap-1.5">
+                    {sourceLabel && (
+                        <div className="flex items-center gap-2">
+                            <span className="text-[9px] font-black text-slate-600 uppercase w-8">From</span>
+                            <Badge variant="outline" className="text-[9px] py-0 border-slate-800 text-slate-500">{sourceLabel}</Badge>
                         </div>
-                        <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                    )}
+                    <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-black text-slate-600 uppercase w-8">To</span>
+                        <Badge variant="outline" className="text-[9px] py-0 border-indigo-500/20 text-indigo-400/70 bg-indigo-500/5">{targetLabel}</Badge>
+                    </div>
+                </div>
+
+                <div className={"py-5 rounded-xl border transition-all " + currentColor + " flex flex-col items-center justify-center"}>
+                    <p className="text-3xl font-black tracking-tighter">{(count || 0).toLocaleString()}</p>
+                    <p className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-60 mt-1">{unit}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-black/20 rounded-lg p-2 border border-slate-800/50">
+                        <p className="text-[8px] font-black text-slate-600 uppercase mb-0.5">Speed</p>
+                        <p className="text-xs font-mono font-bold text-slate-300">
+                            {speed > 0 ? `~${speed.toFixed(0)}/m` : 'IDLE'}
+                        </p>
+                    </div>
+                    <div className="bg-black/20 rounded-lg p-2 border border-slate-800/50">
+                        <p className="text-[8px] font-black text-slate-600 uppercase mb-0.5">ETA</p>
+                        <p className="text-xs font-mono font-bold text-emerald-500/80">
+                            {speed > 0 ? formatETA(eta) : '--'}
+                        </p>
+                    </div>
+                </div>
+
+                {total && (
+                    <div className="space-y-2 pt-1">
+                        <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
+                            <span className="text-slate-400">{progress?.toFixed(1)}% complete</span>
+                            <span className="text-slate-600">{total.toLocaleString()} target</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-slate-800/50 rounded-full overflow-hidden border border-slate-800">
                             <div 
-                                className="h-full bg-teal-500 rounded-full"
-                                style={{ width: Math.max(progress, 1) + "%" }}
+                                className={`h-full transition-all duration-1000 ease-out rounded-full ${color === 'emerald' ? 'bg-emerald-500' : 'bg-indigo-500'}`}
+                                style={{ width: Math.max(Math.min(progress || 0, 100), 1) + "%" }}
                             />
                         </div>
                     </div>

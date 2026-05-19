@@ -28,6 +28,7 @@ def get_count(table, condition=None):
     return 0
 
 def format_time(seconds):
+    if seconds < 0: return "--"
     if seconds < 60:
         return f"{seconds:.1f}s"
     elif seconds < 3600:
@@ -41,21 +42,27 @@ if __name__ == "__main__":
     current_time = time.time()
     
     # 1. Gather counts
+    total_book_pages = get_count("book_page")
+    athar_count = get_count("book_page", "id >= book_page:athar_ AND id < book_page:athar_z")
+    shamela_count = total_book_pages - athar_count
+    
     counts = {
         "hadith": get_count("hadith"),
-        "athar": get_count("book_page", "source.identifier CONTAINS 'athar'"),
-        "shamela": get_count("book_page", "source.identifier CONTAINS 'shamela'"),
+        "athar": athar_count,
+        "shamela": shamela_count,
         "quran": get_count("ayah"),
         "sentences": get_count("sentence"),
         "entities": get_count("entity")
     }
     
-    HADITH_TOTAL = 650000
+    HADITH_TOTAL = 650000 
     ATHAR_TOTAL = 2000000 # Estimated total passages
+    SHAMELA_TOTAL = 83915 # The "Previous" dataset seems to be these major kitabs
     
     totals = {
         "hadith": HADITH_TOTAL,
-        "athar": ATHAR_TOTAL
+        "athar": ATHAR_TOTAL,
+        "shamela": SHAMELA_TOTAL
     }
     
     # 2. Load previous state for speed calc

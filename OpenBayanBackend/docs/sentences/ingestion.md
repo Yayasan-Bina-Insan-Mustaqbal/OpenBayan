@@ -29,10 +29,12 @@ Sentences are not ingested directly from external sources. Instead, they are the
     3.  Each entry is saved as a `sentence` linked back to the page.
 
 ### 3. Enrichment (The Knowledge Plane)
-Once a `sentence` record is created, it undergoes several enrichment steps:
+Every `sentence` record undergoes a rigorous enrichment pipeline to transition from raw text to a structured knowledge unit:
 - **Vectorization**: Call to Ollama for 1024-dim embeddings.
-- **Entity Extraction**: LLM identifies people, places, and concepts.
-- **Linguistic Mapping**: Linking the text to Arabic `roots` and `words`.
+- **Categorization**: Each sentence is automatically classified into **Taxonomies** (Shamela taxonomy) and **Topics** (Thematic categories) to enable hierarchical browsing.
+- **Entity Extraction**: LLM identifies people, places, and concepts, creating `mentions` links to the `entity` table.
+- **Relationship Mapping**: The system identifies connections between entities within the sentence, populating the `entity_relation` table.
+- **Linguistic Mapping**: Linking the text to Arabic `roots` and `words` via the `composed_of` and `defines` relations.
 
 ## Current Status
 As of the latest health check:

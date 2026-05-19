@@ -61,12 +61,14 @@ def ingest_hadith_sanadset(batch_size: int = 50, skip_to: int = 0):
         escaped_sanad = str(sanad).replace("\\", "\\\\").replace("'", "\\'") if sanad else ""
         source_id = "source:hadith_650k_sanadset"
         
-        coll_slug = unicodedata.normalize('NFKD', str(collection))
-        coll_slug = coll_slug.encode('ascii', 'ignore').decode('ascii')
-        coll_slug = re.sub(r'[^a-z0-9]+', '_', coll_slug.lower()).strip('_') or 'unknown'
+        # Better slug: allow Arabic but sanitize for IDs
+        coll_slug = re.sub(r'[^\w]', '_', str(collection)).strip('_') or 'unknown'
+        
+        # Use backticks for safety in record IDs
+        record_id = f"hadith:`{coll_slug}_{h_num}`"
         
         q = f"""
-        UPSERT hadith:{coll_slug}_{h_num} CONTENT {{
+        UPSERT {record_id} CONTENT {{
             collection: '{collection}',
             hadith_number: '{h_num}',
             matn_ar: '{escaped_matn}',
@@ -80,14 +82,11 @@ def ingest_hadith_sanadset(batch_size: int = 50, skip_to: int = 0):
         if len(queries) >= batch_size:
             execute_query("\n".join(queries))
             queries = []
-            # Added slight delay between batches to reduce load
-            time.sleep(0.2)
+            time.sleep(0.1) # Throttling
             
         count += 1
         if count % 1000 == 0:
             logger.info(f"Progress: {count} total records seen")
-            # Cool down every 1000 records
-            time.sleep(1)
                 
     if queries:
         execute_query("\n".join(queries))

@@ -24,21 +24,13 @@ SURREAL_HEADERS = {
     "Accept": "application/json"
 }
 
-def execute_query(query: str, vars: Dict[str, Any] = None):
+def execute_query(query: str):
     """Execute query via HTTP."""
-    data = query
-    if vars:
-        # SurrealDB HTTP SQL endpoint doesn't support vars easily in the same way as RPC
-        # We'll just rely on formatting for this specific script or use the JSON approach
-        # For simplicity in this script, we'll use a single block with embedded values if needed,
-        # but better to use a template.
-        pass
-    
     res = requests.post(
         SURREAL_URL,
         auth=SURREAL_AUTH,
         headers=SURREAL_HEADERS,
-        data=data.encode('utf-8')
+        data=query.encode('utf-8')
     )
     return res
 
@@ -48,13 +40,14 @@ def process_batch(batch: List[Dict[str, Any]], col_name: str, count_offset: int,
         bid = item.get("book_id", 0)
         pnum = item.get("page_number", 0)
         
+        # Unique ID combining collection and offset to avoid collisions
         p_id = f"athar_{col_name}_{bid}_p{pnum}_{count_offset + i}"
         src_id = f"athar_book_{bid}"
         
         title = (item.get("book_title") or "Unknown Athar Book").replace("'", "\\'")
         author = (item.get("author") or "Unknown Author").replace("'", "\\'")
-        content = (item.get("content", "")).replace("\\", "\\\\").replace("'", "\\'")
-        cat = item.get("category", col_name).replace("'", "\\'")
+        content = (str(item.get("content", ""))).replace("\\", "\\\\").replace("'", "\\'")
+        cat = str(item.get("category", col_name)).replace("'", "\\'")
         
         q = f"""
         UPSERT source:`{src_id}` SET 
@@ -85,63 +78,63 @@ def process_batch(batch: List[Dict[str, Any]], col_name: str, count_offset: int,
         logger.error(f"Request Error: {e}")
         return False
 
-@flow(name="Athar Large Scale Ingestion HTTP")
-def athar_ingestion_flow(skip_global: int = 0, max_items: Optional[int] = None):
+@flow(name="Athar Final Ingestion Phase")
+def athar_ingestion_flow(resume_col_idx: int = 6, skip_in_col: int = 366000):
     logger = get_run_logger()
-    logger.info(f"Starting Athar Datasets Ingestion (skipping {skip_global}, max {max_items})...")
     
     collections = [
-        "aqeedah_passages.jsonl.gz",
-        "arabic_language_passages.jsonl.gz",
-        "fiqh_passages.jsonl.gz",
-        "general_islamic.jsonl.gz",
-        "hadith_passages.jsonl.gz",
-        "islamic_history_passages.jsonl.gz",
-        "quran_tafsir.jsonl.gz",
-        "seerah_passages.jsonl.gz",
-        "spirituality_passages.jsonl.gz",
-        "usul_fiqh.jsonl.gz"
+        "aqeedah_passages.jsonl.gz",         # 0
+        "arabic_language_passages.jsonl.gz",  # 1
+        "fiqh_passages.jsonl.gz",             # 2
+        "general_islamic.jsonl.gz",          # 3 (Schema issues)
+        "hadith_passages.jsonl.gz",           # 4 (Schema issues)
+        "islamic_history_passages.jsonl.gz",  # 5 (Done)
+        "quran_tafsir.jsonl.gz",             # 6 (Resuming)
+        "seerah_passages.jsonl.gz",          # 7
+        "spirituality_passages.jsonl.gz",     # 8
+        "usul_fiqh.jsonl.gz"                 # 9
     ]
     
-    batch_size = 50 
-    global_count = 0
-    processed_count = 0
+    target_collections = collections[resume_col_idx:]
     
-    for col_file in collections:
+    logger.info(f"Starting final phase for {len(target_collections)} Athar collections...")
+    
+    batch_size = 50 
+    
+    for i, col_file in enumerate(target_collections):
         logger.info(f"Processing collection: {col_file}")
         col_name = col_file.split(".")[0]
+        
+        # Only skip on the first collection in this loop
+        current_skip = skip_in_col if i == 0 else 0
+        
         try:
             dataset = load_dataset(
                 "Kandil7/Athar-Datasets", 
                 data_files=f"collections/{col_file}",
                 split="train", 
-                streaming=True, token=os.getenv("HF_TOKEN")
+                streaming=True,
+                token=os.getenv("HF_TOKEN")
             )
             
             count = 0
             current_batch = []
             for row in dataset:
-                global_count += 1
-                if global_count <= skip_global:
+                count += 1
+                if count <= current_skip:
                     continue
                     
                 current_batch.append(row)
-                count += 1
-                processed_count += 1
                 
                 if len(current_batch) >= batch_size:
                     success = process_batch(current_batch, col_name, count - len(current_batch), logger)
                     if not success:
-                        time.sleep(5) # Wait on failure
+                        time.sleep(2)
                         
-                    if count % 1000 == 0:
-                        logger.info(f"[{col_file}] Ingested {count} passages... (Global: {global_count})")
+                    if count % 5000 == 0:
+                        logger.info(f"[{col_file}] Ingested {count} passages...")
                     current_batch = []
-                
-                if max_items and processed_count >= max_items:
-                    logger.info(f"Reached max items limit ({max_items}). Stopping.")
-                    return
-
+            
             # Final batch
             if current_batch:
                  process_batch(current_batch, col_name, count - len(current_batch), logger)
@@ -149,12 +142,12 @@ def athar_ingestion_flow(skip_global: int = 0, max_items: Optional[int] = None):
 
         except Exception as e:
             logger.error(f"Failed collection {col_file}: {e}")
-            time.sleep(10)
+            time.sleep(5)
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--skip", type=int, default=0)
-    parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--col", type=int, default=6, help="Start from collection index")
+    parser.add_argument("--skip", type=int, default=366000, help="Skip N passages in the first collection")
     args = parser.parse_args()
-    athar_ingestion_flow(skip_global=args.skip, max_items=args.limit)
+    athar_ingestion_flow(resume_col_idx=args.col, skip_in_col=args.skip)
