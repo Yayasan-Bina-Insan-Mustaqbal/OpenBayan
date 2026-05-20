@@ -227,24 +227,91 @@ def atomize_hadith_task(hadith: Dict[str, Any]):
         execute_sql("\n".join(queries))
     return len(sentences)
 
+def update_progress_state(job_name: str, count: int, total: int, speed: float = 0, eta: float = 0):
+    try:
+        paths = [
+            "/app/notebooks/flows/ingestion_state.json",
+            os.path.join(os.path.dirname(__file__), 'ingestion_state.json'),
+            "ingestion_state.json"
+        ]
+        
+        state_file = None
+        for p in paths:
+            dir_name = os.path.dirname(p)
+            if os.path.exists(dir_name) or dir_name == '':
+                state_file = p
+                break
+                
+        if not state_file:
+            state_file = "ingestion_state.json"
+            
+        state = {}
+        if os.path.exists(state_file):
+            try:
+                with open(state_file, 'r') as f:
+                    state = json.load(f)
+            except Exception:
+                state = {}
+                
+        state[job_name] = {
+            "count": count,
+            "total": total,
+            "speed": speed,
+            "eta": eta if eta > 0 else None,
+            "time": time.time()
+        }
+        
+        with open(state_file, 'w') as f:
+            json.dump(state, f, indent=2)
+    except Exception as e:
+        print(f"Failed to update progress state: {e}")
+
 @flow(name="Enterprise Hybrid Hadith Atomization")
 def enterprise_hadith_flow(batch_size: int = 15, limit: Optional[int] = None):
     logger = get_run_logger()
     logger.info("Bismillahir Rahmanir Rahim. Starting Enterprise Hybrid Hadith Atomization v5...")
     
+    total_hadiths = 739676
+    try:
+        res = execute_sql("SELECT count() FROM hadith GROUP ALL;")
+        if res and res[0].get('result'):
+            total_hadiths = res[0]['result'][0]['count']
+    except Exception as e:
+        logger.warning(f"Could not fetch total hadith count: {e}")
+        
+    processed_existing = 0
+    try:
+        res = execute_sql("SELECT count() FROM hadith WHERE processed_for_sentences = true GROUP ALL;")
+        if res and res[0].get('result'):
+            processed_existing = res[0]['result'][0]['count']
+    except Exception as e:
+        logger.warning(f"Could not fetch processed hadith count: {e}")
+        
+    start_time = time.time()
     processed_total = 0
+    
+    update_progress_state("atomize_hadith_v5.py", processed_existing, total_hadiths, 0, 0)
+    
     while True:
         res = execute_sql(f"SELECT * FROM hadith WHERE processed_for_sentences != true LIMIT {batch_size}")
         batch = res[0].get('result', [])
         
         if not batch:
             logger.info("Alhamdulillah! Ingestion complete.")
+            update_progress_state("atomize_hadith_v5.py", total_hadiths, total_hadiths, 0, 0)
             break
             
         for hadith in batch:
             try:
                 atomize_hadith_task(hadith)
                 processed_total += 1
+                
+                count = processed_existing + processed_total
+                elapsed = time.time() - start_time
+                speed = (processed_total / elapsed) * 60 if elapsed > 0 else 0
+                eta = ((total_hadiths - count) / speed) * 60 if speed > 0 else 0
+                update_progress_state("atomize_hadith_v5.py", count, total_hadiths, speed, eta)
+                
                 if processed_total % 50 == 0:
                     logger.info(f"Progress: {processed_total} hadiths atomized.")
             except Exception as e:

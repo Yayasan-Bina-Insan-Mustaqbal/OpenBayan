@@ -118,6 +118,45 @@ def atomize_tafsir_task(ayah: Dict[str, Any], tafsir_key: str):
         execute_sql("\n".join(queries))
     return len(chunks)
 
+def update_progress_state(job_name: str, count: int, total: int, speed: float = 0, eta: float = 0):
+    try:
+        paths = [
+            "/app/notebooks/flows/ingestion_state.json",
+            os.path.join(os.path.dirname(__file__), 'ingestion_state.json'),
+            "ingestion_state.json"
+        ]
+        
+        state_file = None
+        for p in paths:
+            dir_name = os.path.dirname(p)
+            if os.path.exists(dir_name) or dir_name == '':
+                state_file = p
+                break
+                
+        if not state_file:
+            state_file = "ingestion_state.json"
+            
+        state = {}
+        if os.path.exists(state_file):
+            try:
+                with open(state_file, 'r') as f:
+                    state = json.load(f)
+            except Exception:
+                state = {}
+                
+        state[job_name] = {
+            "count": count,
+            "total": total,
+            "speed": speed,
+            "eta": eta if eta > 0 else None,
+            "time": time.time()
+        }
+        
+        with open(state_file, 'w') as f:
+            json.dump(state, f, indent=2)
+    except Exception as e:
+        print(f"Failed to update progress state: {e}")
+
 @flow(name="Tafsir Atomization Flow")
 def tafsir_atomization_flow(tafsir_key: str = "ar_saddi", batch_size: int = 50, limit: Optional[int] = None):
     logger = get_run_logger()
@@ -136,7 +175,19 @@ def tafsir_atomization_flow(tafsir_key: str = "ar_saddi", batch_size: int = 50, 
     except Exception as e:
         logger.warning(f"Failed to fetch existing parents: {e}")
 
+    total_ayahs = 6236
+    try:
+        res = execute_sql(f"SELECT count() FROM ayah WHERE tafsir.{tafsir_key} != NONE AND tafsir.{tafsir_key} != '' GROUP ALL;")
+        if res and res[0].get('result'):
+            total_ayahs = res[0]['result'][0]['count']
+    except Exception as e:
+        logger.warning(f"Could not fetch total tafsir count: {e}")
+
+    processed_existing = len(existing_parents)
+    start_time = time.time()
     processed_total = 0
+    
+    update_progress_state("atomize_tafsir.py", processed_existing, total_ayahs, 0, 0)
     
     while True:
         # Fetch ayahs that have the requested tafsir
@@ -145,6 +196,7 @@ def tafsir_atomization_flow(tafsir_key: str = "ar_saddi", batch_size: int = 50, 
         
         if not ayahs:
             logger.info("Alhamdulillah! Finished processing available Tafsir records.")
+            update_progress_state("atomize_tafsir.py", total_ayahs, total_ayahs, 0, 0)
             break
             
         # Filter out existing ones
@@ -152,14 +204,20 @@ def tafsir_atomization_flow(tafsir_key: str = "ar_saddi", batch_size: int = 50, 
         
         if not batch:
             logger.info("Current batch already processed. Skipping...")
-            # We might need a better way to paginate if the table is huge, 
-            # but for 6k ayahs, filtering in memory is fine.
+            update_progress_state("atomize_tafsir.py", total_ayahs, total_ayahs, 0, 0)
             break
 
         for ayah in batch[:batch_size]:
             try:
                 atomize_tafsir_task(ayah, tafsir_key) 
                 processed_total += 1
+                
+                count = processed_existing + processed_total
+                elapsed = time.time() - start_time
+                speed = (processed_total / elapsed) * 60 if elapsed > 0 else 0
+                eta = ((total_ayahs - count) / speed) * 60 if speed > 0 else 0
+                update_progress_state("atomize_tafsir.py", count, total_ayahs, speed, eta)
+                
                 if processed_total % 50 == 0:
                     logger.info(f"Progress: {processed_total} Ayahs processed for Tafsir.")
             except Exception as e:

@@ -129,12 +129,78 @@ def atomize_page_task(page: Dict[str, Any]):
         execute_sql("\n".join(queries))
     return len(chunks)
 
+def update_progress_state(job_name: str, count: int, total: int, speed: float = 0, eta: float = 0):
+    try:
+        paths = [
+            "/app/notebooks/flows/ingestion_state.json",
+            os.path.join(os.path.dirname(__file__), 'ingestion_state.json'),
+            "ingestion_state.json"
+        ]
+        
+        state_file = None
+        for p in paths:
+            dir_name = os.path.dirname(p)
+            if os.path.exists(dir_name) or dir_name == '':
+                state_file = p
+                break
+                
+        if not state_file:
+            state_file = "ingestion_state.json"
+            
+        state = {}
+        if os.path.exists(state_file):
+            try:
+                with open(state_file, 'r') as f:
+                    state = json.load(f)
+            except Exception:
+                state = {}
+                
+        state[job_name] = {
+            "count": count,
+            "total": total,
+            "speed": speed,
+            "eta": eta if eta > 0 else None,
+            "time": time.time()
+        }
+        
+        with open(state_file, 'w') as f:
+            json.dump(state, f, indent=2)
+    except Exception as e:
+        print(f"Failed to update progress state: {e}")
+
 @flow(name="Kitab Atomization Flow")
 def kitab_atomization_flow(source_id: Optional[str] = None, batch_size: int = 20, limit: Optional[int] = None):
     logger = get_run_logger()
     logger.info("Bismillah. Starting Kitab (Book Page) atomization...")
     
+    total_pages = 1000
+    try:
+        query = "SELECT count() FROM book_page"
+        if source_id:
+            query += f" WHERE source = {source_id}"
+        query += " GROUP ALL;"
+        res = execute_sql(query)
+        if res and res[0].get('result'):
+            total_pages = res[0]['result'][0]['count']
+    except Exception as e:
+        logger.warning(f"Could not fetch total pages: {e}")
+
+    processed_existing = 0
+    try:
+        query = "SELECT count() FROM book_page WHERE processed_for_sentences = true"
+        if source_id:
+            query += f" AND source = {source_id}"
+        query += " GROUP ALL;"
+        res = execute_sql(query)
+        if res and res[0].get('result'):
+            processed_existing = res[0]['result'][0]['count']
+    except Exception as e:
+        logger.warning(f"Could not fetch processed pages: {e}")
+
+    start_time = time.time()
     processed_total = 0
+    
+    update_progress_state("atomize_kitab.py", processed_existing, total_pages, 0, 0)
     
     while True:
         # Fetch pages that are not yet atomized
@@ -148,12 +214,20 @@ def kitab_atomization_flow(source_id: Optional[str] = None, batch_size: int = 20
         
         if not batch:
             logger.info("Alhamdulillah! All available book pages processed.")
+            update_progress_state("atomize_kitab.py", total_pages, total_pages, 0, 0)
             break
             
         for page in batch:
             try:
                 count = atomize_page_task(page)
                 processed_total += 1
+                
+                count_abs = processed_existing + processed_total
+                elapsed = time.time() - start_time
+                speed = (processed_total / elapsed) * 60 if elapsed > 0 else 0
+                eta = ((total_pages - count_abs) / speed) * 60 if speed > 0 else 0
+                update_progress_state("atomize_kitab.py", count_abs, total_pages, speed, eta)
+                
                 if processed_total % 50 == 0:
                     logger.info(f"Progress: {processed_total} pages atomized.")
             except Exception as e:
