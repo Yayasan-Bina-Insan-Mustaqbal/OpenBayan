@@ -69,33 +69,53 @@ function getPythonJobs() {
   }
 }
 
-async function getCount(table: string, whereClause: string = "") {
-    try {
-        const query = whereClause 
-            ? `SELECT count() FROM ${table} WHERE ${whereClause} GROUP ALL`
-            : `SELECT count() FROM ${table} GROUP ALL`;
-        const res = await querySurreal(query);
-        const result = res[res.length - 1]?.result?.[0]?.count;
-        return typeof result === 'number' ? result : 0;
-    } catch (e) {
-        console.error(`Count failed for ${table}:`, e);
-        return 0;
-    }
-}
-
 export default async function MonitorPage() {
-  // Fetch counts individually for better reliability
-  const [ayahs, hadiths, books, words, entities, sentences, murad_done] = await Promise.all([
-    getCount("ayah"),
-    getCount("hadith"),
-    getCount("book"),
-    getCount("word"),
-    getCount("entity"),
-    getCount("sentence"),
-    getCount("sentence", "source = source:murad_dataset_2026 AND simple_clean_text != NONE")
-  ]);
+  // 1. Fetch counts from system_counters in sub-milliseconds
+  let counts = {
+    hadith: 0,
+    athar: 0,
+    shamela: 0,
+    quran: 0,
+    sentences: 0,
+    entities: 0
+  };
 
-  const inventoryData = { ayahs, hadiths, books, words, entities, sentences, murad_done };
+  try {
+    const dbRes = await querySurreal("SELECT count, id FROM system_counters;");
+    const results = dbRes[0]?.result || [];
+    counts = {
+      hadith: results.find((r: any) => r.id === "system_counters:hadith")?.count || 0,
+      athar: results.find((r: any) => r.id === "system_counters:athar")?.count || 0,
+      shamela: results.find((r: any) => r.id === "system_counters:shamela")?.count || 0,
+      quran: results.find((r: any) => r.id === "system_counters:quran")?.count || 0,
+      sentences: results.find((r: any) => r.id === "system_counters:sentences")?.count || 0,
+      entities: results.find((r: any) => r.id === "system_counters:entities")?.count || 0
+    };
+  } catch (e) {
+    console.error("Failed to query system_counters:", e);
+  }
+
+  // 2. Build initial metrics to avoid client-side mount populating lag
+  const totals: any = {
+    hadith: 650000,
+    athar: 10000000,
+    shamela: 83915,
+    quran: 6236
+  };
+
+  const initialMetrics: any = { jobs: {} };
+  for (const key of Object.keys(counts)) {
+    const count = (counts as any)[key];
+    const total = totals[key];
+    initialMetrics[key] = {
+      count,
+      total,
+      progress: total ? (count / total) * 100 : null,
+      speed: 0,
+      eta: null
+    };
+  }
+
   const progressFiles = getProgressFiles();
   const pythonJobs = getPythonJobs();
 
@@ -114,16 +134,18 @@ export default async function MonitorPage() {
                     Back to Workspace
                 </Button>
             </Link>
-            <Button className="bg-emerald-600 hover:bg-emerald-500 text-white">
-                <RefreshCw className="mr-2 h-4 w-4" /> Refresh
-            </Button>
+            <Link href="/monitor">
+                <Button className="bg-emerald-600 hover:bg-emerald-500 text-white">
+                    <RefreshCw className="mr-2 h-4 w-4" /> Refresh
+                </Button>
+            </Link>
         </div>
       </div>
 
       <MonitorClient 
         pythonJobs={pythonJobs} 
         progressFiles={progressFiles} 
-        inventoryData={inventoryData} 
+        initialMetrics={initialMetrics} 
       />
     </div>
   )

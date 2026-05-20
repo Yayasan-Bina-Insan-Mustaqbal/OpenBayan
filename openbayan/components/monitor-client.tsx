@@ -122,13 +122,13 @@ const PIPELINE_INFO: Record<string, any> = {
   }
 }
 
-export default function MonitorClient({ pythonJobs, progressFiles, inventoryData: initialData }: { pythonJobs: any[], progressFiles: any[], inventoryData: any }) {
+export default function MonitorClient({ pythonJobs, progressFiles, initialMetrics }: { pythonJobs: any[], progressFiles: any[], initialMetrics: any }) {
   const [selectedReport, setSelectedReport] = useState<any>(null);
   const [selectedInventoryTable, setSelectedInventoryTable] = useState<string | null>(null);
   const [tableData, setTableData] = useState<any[]>([]);
   const [isLoadingTable, setIsLoadingTable] = useState(false);
   const [mermaidSvgs, setMermaidSvgs] = useState<Record<string, string>>({});
-  const [metrics, setMetrics] = useState<any>(null);
+  const [metrics, setMetrics] = useState<any>(initialMetrics);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchMetrics = async () => {
