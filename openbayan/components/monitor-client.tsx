@@ -40,6 +40,58 @@ function Badge({ children, variant = "default", className = "" }: any) {
 }
 
 const PIPELINE_INFO: Record<string, any> = {
+  "atomize_quran_v2.py": {
+    description: "Linguistic Quranic Ayah segmentation and semantic sentence mapping.",
+    speed: "~1,200 Ayahs/hr",
+    prediction: "Quran Corpus",
+    mermaid: `graph TD
+    A[Quranic Ayahs] -->|Segment by Punctuation| B(Linguistic Segments)
+    B -->|Strip Tashkeel| C(Clean Simple Text)
+    C -->|Embed via Ollama| D[mxbai-embed-large]
+    D -->|UPSERT| E[(sentence Table)]`
+  },
+  "atomize_hadith_v5.py": {
+    description: "Hybrid narration analysis, isnad/matn split, and sentence atomization.",
+    speed: "~800 Hadiths/hr",
+    prediction: "Hadith Collections",
+    mermaid: `graph TD
+    A[Hadith Records] -->|Regex boundary anchors| B{Isnad/Matn Split}
+    B -->|Extract Matn| C[Arabic Punctuation Chunker]
+    C -->|If long paragraph| D[Sub-segment by Particles]
+    D -->|Embed via Ollama| E[mxbai-embed-large]
+    E -->|UPSERT| F[(sentence Table)]`
+  },
+  "atomize_tafsir.py": {
+    description: "Verse commentary chunking and semantic HTML text extraction.",
+    speed: "~1,500 Ayahs/hr",
+    prediction: "Tafsir Commentaries",
+    mermaid: `graph TD
+    A[HTML Tafsir Content] -->|Strip HTML Tags| B(Clean Tafsir Text)
+    B -->|Punctuation Splitter .?!| C{Length Guard}
+    C -->|>500 chars fallback| D[80-Word Block Chunker]
+    C -->|Standard Sentence| E[mxbai-embed-large]
+    D --> E
+    E -->|UPSERT| F[(sentence Table)]`
+  },
+  "atomize_kitab.py": {
+    description: "Recursive book page passage chunking with 15% overlap context-retention.",
+    speed: "~2,000 Pages/hr",
+    prediction: "Classical Book Pages",
+    mermaid: `graph TD
+    A[Classical Book Pages] -->|Recursive Chunker| B(350-Word Passages)
+    B -->|Apply 15% Overlap| C(Context-Preserved Chunks)
+    C -->|Embed via Ollama| D[mxbai-embed-large]
+    D -->|UPSERT| E[(sentence Table)]`
+  },
+  "populate_clean_sentences.py": {
+    description: "High-concurrence Arabic diacritics (Harakat) stripping utility.",
+    speed: "~15,000 Sentences/min",
+    prediction: "Harakat Migration",
+    mermaid: `graph LR
+    A[Lacking simple_clean_text] -->|ThreadPoolExecutor 20| B[Batch fetch 200]
+    B -->|strip_tashkeel| C[Update simple_clean_text]
+    C -->|RocksDB Memory Safe| D[(Update DB Records)]`
+  },
   "ingest_athar_final.py": {
     description: "Multi-stage Athar dataset ingestion using HTTP streaming.",
     speed: "Auto-detected",

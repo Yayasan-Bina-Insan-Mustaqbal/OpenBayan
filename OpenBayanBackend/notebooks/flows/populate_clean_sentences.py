@@ -6,8 +6,10 @@ import requests
 import json
 from dotenv import load_dotenv
 
-# Ensure we can import utils
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Ensure we can import utils (supports executing from backend root or notebooks/flows)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(current_dir)
+sys.path.append(os.path.dirname(os.path.dirname(current_dir)))
 from utils import strip_tashkeel, start_memory_guard, log_memory_status
 
 # Load environment variables
