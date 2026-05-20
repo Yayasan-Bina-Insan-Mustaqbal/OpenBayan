@@ -21,10 +21,17 @@ export async function GET() {
 
     // 2. Load ingestion state for speed/ETA (Shared with Python script, now in accessible location inside container)
     let prevState: any = {};
+    const flowsStatePath = path.join(process.cwd(), 'backend_flows', 'ingestion_state.json');
     const progressStatePath = path.join(process.cwd(), 'backend_progress', 'ingestion_state.json');
     const localStatePath = path.join(process.cwd(), 'ingestion_state.json');
     
-    if (fs.existsSync(progressStatePath)) {
+    if (fs.existsSync(flowsStatePath)) {
+        try {
+            prevState = JSON.parse(fs.readFileSync(flowsStatePath, 'utf-8'));
+        } catch (e) {
+            console.error("Failed to parse flows state:", e);
+        }
+    } else if (fs.existsSync(progressStatePath)) {
         try {
             prevState = JSON.parse(fs.readFileSync(progressStatePath, 'utf-8'));
         } catch (e) {

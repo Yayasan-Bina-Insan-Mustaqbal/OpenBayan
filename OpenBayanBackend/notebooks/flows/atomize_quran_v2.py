@@ -100,15 +100,15 @@ def atomize_ayah(ayah: Dict[str, Any]):
 def update_progress_state(job_name: str, count: int, total: int, speed: float = 0, eta: float = 0):
     try:
         paths = [
-            "/app/progress/ingestion_state.json",
-            "/app/notebooks/../progress/ingestion_state.json",
-            "../../progress/ingestion_state.json"
+            "/app/notebooks/flows/ingestion_state.json",
+            os.path.join(os.path.dirname(__file__), 'ingestion_state.json'),
+            "ingestion_state.json"
         ]
         
         state_file = None
         for p in paths:
             dir_name = os.path.dirname(p)
-            if os.path.exists(dir_name):
+            if os.path.exists(dir_name) or dir_name == '':
                 state_file = p
                 break
                 
