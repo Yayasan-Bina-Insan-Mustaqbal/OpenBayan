@@ -291,7 +291,21 @@ export default function MonitorClient({ pythonJobs, progressFiles, inventoryData
                         mermaid: `graph LR\n  Start --> Process[Processing] --> End`
                       };
                       
-                      const isActive = job.name === 'ingest_athar_final.py';
+                      const isNewJob = [
+                          'atomize_quran_v2.py',
+                          'atomize_hadith_v5.py',
+                          'atomize_tafsir.py',
+                          'atomize_kitab.py',
+                          'populate_clean_sentences.py'
+                      ].includes(job.name);
+
+                      const jobStats = isNewJob 
+                          ? metrics?.jobs?.[job.name] 
+                          : (job.name === 'ingest_athar_final.py' ? metrics?.athar : null);
+
+                      const isActive = jobStats?.active || (job.name === 'ingest_athar_final.py' && metrics?.athar?.speed > 0);
+                      const speedText = jobStats?.speed ? `~${jobStats.speed.toFixed(1)}/m` : info.speed;
+                      const etaText = (jobStats?.eta !== undefined && jobStats?.eta !== null) ? formatETA(jobStats.eta) : info.prediction;
                       
                       return (
                           <AccordionItem key={job.name} value={`item-${idx}`} className="border border-slate-800 rounded-xl px-4 bg-slate-900/30 hover:bg-slate-900/50 transition-colors overflow-hidden">
@@ -310,7 +324,7 @@ export default function MonitorClient({ pythonJobs, progressFiles, inventoryData
                                         {isActive && (
                                             <div className="text-right hidden md:block">
                                                 <p className="text-[10px] font-bold text-slate-500 uppercase">Live Speed</p>
-                                                <p className="text-xs font-mono text-emerald-400">~{metrics?.athar?.speed.toFixed(1)}/m</p>
+                                                <p className="text-xs font-mono text-emerald-400">{speedText}</p>
                                             </div>
                                         )}
                                         {isActive ? (
@@ -347,7 +361,7 @@ export default function MonitorClient({ pythonJobs, progressFiles, inventoryData
                                                       <span className="text-[10px] uppercase font-bold">Performance</span>
                                                   </div>
                                                   <p className="text-xl font-bold text-slate-200">
-                                                      {isActive ? `~${metrics?.athar?.speed.toFixed(0)}/m` : info.speed}
+                                                      {speedText}
                                                   </p>
                                               </div>
                                               <div className="p-4 bg-slate-800/20 rounded-xl border border-slate-800/50">
@@ -356,7 +370,7 @@ export default function MonitorClient({ pythonJobs, progressFiles, inventoryData
                                                       <span className="text-[10px] uppercase font-bold">ETA</span>
                                                   </div>
                                                   <p className={`text-sm font-semibold ${isActive ? 'text-emerald-400' : 'text-slate-500'}`}>
-                                                      {isActive ? formatETA(metrics?.athar?.eta) : info.prediction}
+                                                      {etaText}
                                                   </p>
                                               </div>
                                           </div>

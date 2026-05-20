@@ -97,6 +97,45 @@ def atomize_ayah(ayah: Dict[str, Any]):
             
     return len(segments)
 
+def update_progress_state(job_name: str, count: int, total: int, speed: float = 0, eta: float = 0):
+    try:
+        paths = [
+            "/app/progress/ingestion_state.json",
+            "/app/notebooks/../progress/ingestion_state.json",
+            "../../progress/ingestion_state.json"
+        ]
+        
+        state_file = None
+        for p in paths:
+            dir_name = os.path.dirname(p)
+            if os.path.exists(dir_name):
+                state_file = p
+                break
+                
+        if not state_file:
+            state_file = "ingestion_state.json"
+            
+        state = {}
+        if os.path.exists(state_file):
+            try:
+                with open(state_file, 'r') as f:
+                    state = json.load(f)
+            except Exception:
+                pass
+                
+        state[job_name] = {
+            "count": count,
+            "total": total,
+            "speed": speed,
+            "eta": eta,
+            "time": time.time()
+        }
+        
+        with open(state_file, 'w') as f:
+            json.dump(state, f, indent=2)
+    except Exception as e:
+        print(f"Failed to update progress state: {e}")
+
 @flow(name="Quran Atomization Flow v2")
 def quran_atomization_flow(limit: Optional[int] = None):
     logger = get_run_logger()
@@ -128,11 +167,35 @@ def quran_atomization_flow(limit: Optional[int] = None):
         
     logger.info(f"Starting atomization for {len(unprocessed_ayahs)} ayahs...")
     
+    start_time = time.time()
+    existing_count = len(existing_parents)
+    total_quran_ayahs = 6236
+    
+    # Initialize progress state
+    update_progress_state("atomize_quran_v2.py", existing_count, total_quran_ayahs, speed=0, eta=0)
+    
     total_segments = 0
     for idx, ayah in enumerate(unprocessed_ayahs):
         try:
             count = atomize_ayah(ayah)
             total_segments += count
+            
+            # Compute live metrics
+            elapsed = time.time() - start_time
+            processed_now = idx + 1
+            speed = processed_now / elapsed if elapsed > 0 else 0  # per second
+            speed_per_min = speed * 60
+            remaining = len(unprocessed_ayahs) - processed_now
+            eta = remaining / speed if speed > 0 else 0
+            
+            update_progress_state(
+                "atomize_quran_v2.py",
+                existing_count + processed_now,
+                total_quran_ayahs,
+                speed=speed_per_min,
+                eta=eta
+            )
+            
             if (idx + 1) % 10 == 0 or ayah['ayah_number'] % 50 == 0:
                 logger.info(f"Processed {idx + 1}/{len(unprocessed_ayahs)} (Surah {ayah['surah_number']} Ayah {ayah['ayah_number']}, Total Sents: {total_segments})")
         except Exception as e:

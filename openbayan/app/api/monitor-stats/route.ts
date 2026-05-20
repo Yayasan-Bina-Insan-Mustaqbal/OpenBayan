@@ -21,9 +21,21 @@ export async function GET() {
 
     // 2. Load ingestion state for speed/ETA (Shared with Python script, now in accessible location inside container)
     let prevState: any = {};
-    const statePath = path.join(process.cwd(), 'ingestion_state.json');
-    if (fs.existsSync(statePath)) {
-        prevState = JSON.parse(fs.readFileSync(statePath, 'utf-8'));
+    const progressStatePath = path.join(process.cwd(), 'backend_progress', 'ingestion_state.json');
+    const localStatePath = path.join(process.cwd(), 'ingestion_state.json');
+    
+    if (fs.existsSync(progressStatePath)) {
+        try {
+            prevState = JSON.parse(fs.readFileSync(progressStatePath, 'utf-8'));
+        } catch (e) {
+            console.error("Failed to parse progress state:", e);
+        }
+    } else if (fs.existsSync(localStatePath)) {
+        try {
+            prevState = JSON.parse(fs.readFileSync(localStatePath, 'utf-8'));
+        } catch (e) {
+            console.error("Failed to parse local state:", e);
+        }
     }
 
     // 3. Define totals
@@ -36,7 +48,7 @@ export async function GET() {
 
     // 4. Calculate metrics
     const now = Date.now() / 1000;
-    const metrics: any = {};
+    const metrics: any = { jobs: {} };
 
     for (const key of Object.keys(counts)) {
         const count = (counts as any)[key];
@@ -65,6 +77,49 @@ export async function GET() {
             speed: speed * 60, // per min
             eta
         };
+    }
+
+    // 5. Calculate live metrics for specific python flows if present in shared state
+    const jobKeys = [
+        "atomize_quran_v2.py",
+        "atomize_hadith_v5.py",
+        "atomize_tafsir.py",
+        "atomize_kitab.py",
+        "populate_clean_sentences.py"
+    ];
+
+    for (const jobName of jobKeys) {
+        const jobState = prevState[jobName];
+        if (jobState) {
+            const count = jobState.count || 0;
+            const total = jobState.total || 0;
+            const time = jobState.time || now;
+            const lastUpdated = jobState.time || 0;
+            
+            // A job is active if it was updated in the last 2 minutes
+            const isActive = (now - lastUpdated) < 120;
+            let speed = jobState.speed || 0; // per min or per sec
+            let eta = jobState.eta || null;
+            let progress = total > 0 ? (count / total) * 100 : 0;
+
+            metrics.jobs[jobName] = {
+                count,
+                total,
+                progress,
+                speed,
+                eta,
+                active: isActive
+            };
+        } else {
+            metrics.jobs[jobName] = {
+                count: 0,
+                total: 0,
+                progress: 0,
+                speed: 0,
+                eta: null,
+                active: false
+            };
+        }
     }
 
     return NextResponse.json(metrics);
