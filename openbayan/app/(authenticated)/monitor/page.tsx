@@ -81,6 +81,52 @@ function getPythonJobs() {
   }
 }
 
+function getDocumentationDocs() {
+  const possiblePaths = [
+    path.join(process.cwd(), 'backend_docs'),
+    path.join(process.cwd(), '../OpenBayanBackend/docs')
+  ]
+  
+  let docsPath = null;
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      docsPath = p;
+      break;
+    }
+  }
+
+  if (!docsPath) return [];
+
+  try {
+    const listFilesRecursive = (dir: string, baseDir: string): any[] => {
+      let results: any[] = [];
+      const list = fs.readdirSync(dir);
+      list.forEach(file => {
+        const filePath = path.join(dir, file);
+        const stat = fs.statSync(filePath);
+        if (stat && stat.isDirectory()) {
+          results = results.concat(listFilesRecursive(filePath, baseDir));
+        } else if (file.endsWith('.md')) {
+          const content = fs.readFileSync(filePath, 'utf-8');
+          const title = content.split('\n')[0].replace(/^#+\s*/, '') || file;
+          const relativePath = path.relative(baseDir, filePath);
+          results.push({
+            name: relativePath,
+            title,
+            content
+          });
+        }
+      });
+      return results;
+    };
+    
+    return listFilesRecursive(docsPath, docsPath);
+  } catch (e) {
+    console.error("Failed to read documentation files:", e);
+    return [];
+  }
+}
+
 export default async function MonitorPage() {
   // 1. Fetch counts from system_counters in sub-milliseconds
   let counts = {
@@ -141,6 +187,7 @@ export default async function MonitorPage() {
 
   const progressFiles = getProgressFiles();
   const pythonJobs = getPythonJobs();
+  const documentationDocs = getDocumentationDocs();
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50 p-8 space-y-8">
@@ -168,6 +215,7 @@ export default async function MonitorPage() {
       <MonitorClient 
         pythonJobs={pythonJobs} 
         progressFiles={progressFiles} 
+        documentationDocs={documentationDocs}
         initialMetrics={initialMetrics} 
       />
     </div>

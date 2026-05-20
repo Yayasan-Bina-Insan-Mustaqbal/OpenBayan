@@ -125,7 +125,9 @@ const PIPELINE_INFO: Record<string, any> = {
   }
 }
 
-export default function MonitorClient({ pythonJobs, progressFiles, initialMetrics }: { pythonJobs: any[], progressFiles: any[], initialMetrics: any }) {
+import { MarkdownDocsRenderer } from './markdown-renderer';
+
+export default function MonitorClient({ pythonJobs, progressFiles, documentationDocs = [], initialMetrics }: { pythonJobs: any[], progressFiles: any[], documentationDocs?: any[], initialMetrics: any }) {
   const [selectedReport, setSelectedReport] = useState<any>(null);
   const [selectedInventoryTable, setSelectedInventoryTable] = useState<string | null>(null);
   const [tableData, setTableData] = useState<any[]>([]);
@@ -133,6 +135,7 @@ export default function MonitorClient({ pythonJobs, progressFiles, initialMetric
   const [mermaidSvgs, setMermaidSvgs] = useState<Record<string, string>>({});
   const [metrics, setMetrics] = useState<any>(initialMetrics);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activeDoc, setActiveDoc] = useState<any>(documentationDocs?.[0] || null);
 
   const fetchMetrics = async () => {
     setIsRefreshing(true);
@@ -517,6 +520,58 @@ export default function MonitorClient({ pythonJobs, progressFiles, initialMetric
             </CardContent>
         </Card>
       </div>
+
+      {/* Documentation Hub Section */}
+      {documentationDocs && documentationDocs.length > 0 && (
+          <Card className="bg-slate-900/50 border-slate-800 shadow-xl">
+              <CardHeader className="border-b border-slate-800/50 flex flex-row items-center justify-between py-4">
+                  <div className="flex items-center gap-2">
+                      <Layers className="h-5 w-5 text-indigo-400" />
+                      <CardTitle className="text-xl text-slate-300">Architecture & Ingestion Documentation</CardTitle>
+                  </div>
+                  <Badge variant="outline" className="bg-indigo-500/5 text-indigo-400 border-indigo-500/20 uppercase text-[9px] tracking-widest font-black">Knowledge Base</Badge>
+              </CardHeader>
+              <CardContent className="pt-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                      {/* Doc Sidebar Navigation */}
+                      <div className="space-y-1.5">
+                          {documentationDocs.map((doc: any) => {
+                              const category = doc.name.split('/')[0];
+                              const isActive = activeDoc?.name === doc.name;
+                              return (
+                                  <button
+                                      key={doc.name}
+                                      onClick={() => setActiveDoc(doc)}
+                                      className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all ${
+                                          isActive 
+                                              ? 'bg-slate-800/80 border-indigo-500/50 text-slate-100 shadow-md shadow-indigo-500/5' 
+                                              : 'bg-slate-900/20 border-slate-800/50 hover:bg-slate-800/30 text-slate-400 hover:text-slate-200'
+                                      }`}
+                                  >
+                                      <div>
+                                          <span className="text-[9px] font-black uppercase text-indigo-400 tracking-wider block mb-0.5">{category}</span>
+                                          <span className="font-semibold text-xs leading-tight line-clamp-1">{doc.title}</span>
+                                      </div>
+                                      <ChevronRight className={`h-3.5 w-3.5 transition-transform ${isActive ? 'rotate-90 text-indigo-400' : 'text-slate-600'}`} />
+                                  </button>
+                              )
+                          })}
+                      </div>
+                      {/* Active Doc Viewer */}
+                      <div className="lg:col-span-3 bg-slate-950/30 border border-slate-800/80 rounded-2xl p-8 max-h-[600px] overflow-y-auto shadow-inner">
+                          {activeDoc ? (
+                              <MarkdownDocsRenderer content={activeDoc.content} />
+                          ) : (
+                              <div className="h-full min-h-[300px] flex flex-col items-center justify-center text-slate-500 gap-2">
+                                  <FileText className="h-8 w-8 text-slate-700 animate-bounce" />
+                                  <p className="text-xs font-semibold">Select a documentation page from the sidebar to view details</p>
+                              </div>
+                          )}
+                      </div>
+                  </div>
+              </CardContent>
+          </Card>
+      )}
 
       {/* Progress Reports Section */}
       <Card className="bg-slate-900/50 border-slate-800 shadow-xl">
