@@ -53,7 +53,7 @@ export default function HeroSection() {
                 the evidence and summarize it yourself.
               </p>
 
-              <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row flex-wrap">
                 <Button size="lg" asChild>
                   <Link href="/workspace">
                     <IconSearch data-icon="inline-start" />
@@ -62,6 +62,9 @@ export default function HeroSection() {
                 </Button>
                 <Button size="lg" variant="outline" asChild>
                   <Link href="#features">View features</Link>
+                </Button>
+                <Button size="lg" variant="secondary" className="border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10" asChild>
+                  <Link href="/docs/quran_ingestion">Read the Docs</Link>
                 </Button>
               </div>
             </motion.div>

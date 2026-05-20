@@ -66,12 +66,12 @@ export default async function PublicDocPage({ params }: { params: Promise<{ slug
                         <span className="text-xl">📚</span> OpenBayan Docs
                     </Link>
                     <nav className="hidden md:flex gap-6 text-sm font-medium text-slate-400">
-                        <Link href="/quran_ingestion" className="hover:text-emerald-400 transition-colors">Quran</Link>
-                        <Link href="/hadith_ingestion" className="hover:text-emerald-400 transition-colors">Hadith</Link>
-                        <Link href="/books_ingestion" className="hover:text-emerald-400 transition-colors">Books</Link>
-                        <Link href="/sentences_ingestion" className="hover:text-emerald-400 transition-colors">Sentences</Link>
-                        <Link href="/dictionary_murad_ingestion" className="hover:text-emerald-400 transition-colors">Dictionary</Link>
-                        <Link href="/search" className="hover:text-emerald-400 transition-colors">Search Engine</Link>
+                        <Link href="/docs/quran_ingestion" className="hover:text-emerald-400 transition-colors">Quran</Link>
+                        <Link href="/docs/hadith_ingestion" className="hover:text-emerald-400 transition-colors">Hadith</Link>
+                        <Link href="/docs/books_ingestion" className="hover:text-emerald-400 transition-colors">Books</Link>
+                        <Link href="/docs/sentences_ingestion" className="hover:text-emerald-400 transition-colors">Sentences</Link>
+                        <Link href="/docs/dictionary_murad_ingestion" className="hover:text-emerald-400 transition-colors">Dictionary</Link>
+                        <Link href="/docs/search" className="hover:text-emerald-400 transition-colors">Search Engine</Link>
                     </nav>
                 </div>
             </header>

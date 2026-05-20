@@ -14,6 +14,7 @@ const menuItems = [
   { name: "Pipeline", href: "/#pipeline" },
   { name: "Sahifah", href: "/#sahifah" },
   { name: "Future", href: "/#future" },
+  { name: "Docs", href: "/docs/quran_ingestion" },
 ]
 
 export function SiteHeader() {
