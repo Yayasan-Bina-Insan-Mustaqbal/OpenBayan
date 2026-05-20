@@ -57,12 +57,24 @@ function getPythonJobs() {
   if (!flowsPath) return [];
 
   try {
-    const files = fs.readdirSync(flowsPath)
-      .filter(f => f.endsWith('.py'));
-    
-    return files.map(f => {
-      return { name: f };
-    });
+    const jobs: any[] = [];
+    const rootFiles = fs.readdirSync(flowsPath);
+    for (const f of rootFiles) {
+      const fullPath = path.join(flowsPath, f);
+      const stat = fs.statSync(fullPath);
+      if (stat.isFile() && f.endsWith('.py')) {
+        jobs.push({ name: f });
+      } else if (stat.isDirectory() && f !== '.ipynb_checkpoints') {
+        const subFiles = fs.readdirSync(fullPath);
+        for (const sf of subFiles) {
+          const sFullPath = path.join(fullPath, sf);
+          if (fs.statSync(sFullPath).isFile() && sf.endsWith('.py')) {
+            jobs.push({ name: sf });
+          }
+        }
+      }
+    }
+    return jobs;
   } catch (e) {
     console.error("Failed to read python flows:", e);
     return [];
@@ -77,19 +89,30 @@ export default async function MonitorPage() {
     shamela: 0,
     quran: 0,
     sentences: 0,
-    entities: 0
+    entities: 0,
+    relations: 0
   };
 
   try {
     const dbRes = await querySurreal("SELECT count, id FROM system_counters;");
     const results = dbRes[0]?.result || [];
+    
+    let relationsCount = 0;
+    try {
+        const relRes = await querySurreal("SELECT count() FROM defines GROUP ALL; SELECT count() FROM mentions GROUP ALL;");
+        relationsCount = (relRes[0]?.result?.[0]?.count || 0) + (relRes[1]?.result?.[0]?.count || 0);
+    } catch (e) {
+        console.error("Failed to query relations count:", e);
+    }
+
     counts = {
       hadith: results.find((r: any) => r.id === "system_counters:hadith")?.count || 0,
       athar: results.find((r: any) => r.id === "system_counters:athar")?.count || 0,
       shamela: results.find((r: any) => r.id === "system_counters:shamela")?.count || 0,
       quran: results.find((r: any) => r.id === "system_counters:quran")?.count || 0,
       sentences: results.find((r: any) => r.id === "system_counters:sentences")?.count || 0,
-      entities: results.find((r: any) => r.id === "system_counters:entities")?.count || 0
+      entities: results.find((r: any) => r.id === "system_counters:entities")?.count || 0,
+      relations: relationsCount
     };
   } catch (e) {
     console.error("Failed to query system_counters:", e);

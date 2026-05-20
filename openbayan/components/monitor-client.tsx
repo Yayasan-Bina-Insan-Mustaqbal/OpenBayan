@@ -21,7 +21,10 @@ import {
     Search,
     RefreshCw,
     Table as TableIcon,
-    ArrowUpRight
+    ArrowUpRight,
+    Cpu,
+    Layers,
+    Network
 } from "lucide-react"
 
 import { renderMermaid } from 'beautiful-mermaid'
@@ -199,203 +202,321 @@ export default function MonitorClient({ pythonJobs, progressFiles, initialMetric
       return `${(seconds / 86400).toFixed(1)}d`;
   };
 
-  return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-semibold text-slate-200 border-b border-slate-800 pb-2">Knowledge Graph Inventory</h2>
-        <Button 
-            size="sm" 
-            variant="ghost" 
-            onClick={fetchMetrics} 
-            className="text-slate-500 hover:text-emerald-400"
-            disabled={isRefreshing}
-        >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? 'Updating...' : 'Refresh Stats'}
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <InventoryCard 
-            title="Quranic Corpus"
-            sourceLabel="quran api"
-            targetLabel="ayah"
-            stats={metrics?.quran}
-            unit="Ayahs"
-            color="emerald"
-            onClick={() => browseTable("ayah", "SELECT uthmani_text, surah_number, ayah_number, created_at FROM ayah")}
-        />
-        <InventoryCard 
-            title="Hadith Collections"
-            sourceLabel="650k sanadset"
-            targetLabel="hadith"
-            stats={metrics?.hadith}
-            unit="Records"
-            color="amber"
-            onClick={() => browseTable("hadith", "SELECT collection, hadith_number, matn_ar FROM hadith")}
-        />
-        <InventoryCard 
-            title="Athar Passages"
-            sourceLabel="Kandil7/Athar"
-            targetLabel="book_page"
-            stats={metrics?.athar}
-            unit="Passages"
-            color="blue"
-            onClick={() => browseTable("book_page", "SELECT content, category, page_number FROM book_page WHERE id >= book_page:athar_")}
-        />
-        <InventoryCard 
-            title="Classical Books"
-            sourceLabel="Shamela Dataset"
-            targetLabel="book"
-            stats={metrics?.shamela}
-            unit="Pages"
-            color="teal"
-            onClick={() => browseTable("book_page", "SELECT content, page_number FROM book_page WHERE id >= book_page:s")}
-        />
-        <InventoryCard 
-            title="Knowledge Atoms"
-            targetLabel="sentence"
-            stats={metrics?.sentences}
-            unit="Sentences"
-            color="purple"
-            onClick={() => browseTable("sentence", "SELECT text, source FROM sentence")}
-        />
-        <InventoryCard 
-            title="Named Entities"
-            targetLabel="entity"
-            stats={metrics?.entities}
-            unit="Entities"
-            color="rose"
-            onClick={() => browseTable("entity", "SELECT label, type FROM entity")}
-        />
-      </div>
-
-      {/* Interactive Pipeline Section */}
-      <Card className="bg-slate-900/50 border-slate-800 shadow-xl">
-          <CardHeader className="border-b border-slate-800/50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <Terminal className="h-5 w-5 text-indigo-400" />
-                    <CardTitle className="text-xl text-slate-300">Active Pipelines</CardTitle>
-                </div>
-                <Badge variant="outline" className="animate-pulse bg-emerald-500/5 text-emerald-500 border-emerald-500/20">System Live</Badge>
+  const renderJobsAccordion = (jobNames: string[]) => {
+      const filteredJobs = pythonJobs.filter(j => jobNames.includes(j.name));
+      if (filteredJobs.length === 0) {
+          return (
+              <div className="text-center py-8 text-slate-600 text-xs border border-slate-800/80 border-dashed rounded-xl bg-slate-900/10">
+                  No active or registered flows in this category.
               </div>
-          </CardHeader>
-          <CardContent className="pt-6">
-              <Accordion type="single" collapsible className="w-full space-y-3">
-                  {[...pythonJobs].map((job, idx) => {
-                      const info = PIPELINE_INFO[job.name] || {
-                        description: "External processing flow.",
-                        speed: "N/A",
-                        prediction: "N/A",
-                        mermaid: `graph LR\n  Start --> Process[Processing] --> End`
-                      };
-                      
-                      const isNewJob = [
-                          'atomize_quran_v2.py',
-                          'atomize_hadith_v5.py',
-                          'atomize_tafsir.py',
-                          'atomize_kitab.py',
-                          'populate_clean_sentences.py'
-                      ].includes(job.name);
+          );
+      }
+      return (
+          <Accordion type="single" collapsible className="w-full space-y-3">
+              {filteredJobs.map((job, idx) => {
+                  const info = PIPELINE_INFO[job.name] || {
+                    description: "External processing flow.",
+                    speed: "N/A",
+                    prediction: "N/A",
+                    mermaid: `graph LR\n  Start --> Process[Processing] --> End`
+                  };
+                  
+                  const isNewJob = [
+                      'atomize_quran_v2.py',
+                      'atomize_hadith_v5.py',
+                      'atomize_tafsir.py',
+                      'atomize_kitab.py',
+                      'populate_clean_sentences.py',
+                      'enrich_dictionary_data.py',
+                      'ingest_hf_enhanced_knowledge.py'
+                  ].includes(job.name);
 
-                      const jobStats = isNewJob 
-                          ? metrics?.jobs?.[job.name] 
-                          : (job.name === 'ingest_athar_final.py' ? metrics?.athar : null);
+                  const jobStats = isNewJob 
+                      ? metrics?.jobs?.[job.name] 
+                      : (job.name === 'ingest_athar_final.py' ? metrics?.athar : null);
 
-                      const isActive = jobStats?.active || (job.name === 'ingest_athar_final.py' && metrics?.athar?.speed > 0);
-                      const speedText = jobStats?.speed ? `~${jobStats.speed.toFixed(1)}/m` : info.speed;
-                      const etaText = (jobStats?.eta !== undefined && jobStats?.eta !== null) ? formatETA(jobStats.eta) : info.prediction;
-                      
-                      return (
-                          <AccordionItem key={job.name} value={`item-${idx}`} className="border border-slate-800 rounded-xl px-4 bg-slate-900/30 hover:bg-slate-900/50 transition-colors overflow-hidden">
-                              <AccordionTrigger className="hover:no-underline py-4">
-                                  <div className="flex items-center justify-between w-full pr-4 text-left">
-                                      <div className="flex items-center gap-3">
-                                          <div className={`p-2 rounded ${isActive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
-                                              {isActive ? <Zap className="h-4 w-4 animate-pulse" /> : <Play className="h-4 w-4" />}
-                                          </div>
-                                          <div>
-                                              <p className="font-mono text-sm text-slate-200">{job.name}</p>
-                                              <p className="text-xs text-slate-500">{info.description}</p>
-                                          </div>
+                  const isActive = jobStats?.active || (job.name === 'ingest_athar_final.py' && metrics?.athar?.speed > 0);
+                  const speedText = jobStats?.speed ? `~${jobStats.speed.toFixed(1)}/m` : info.speed;
+                  const etaText = (jobStats?.eta !== undefined && jobStats?.eta !== null) ? formatETA(jobStats.eta) : info.prediction;
+                  
+                  return (
+                      <AccordionItem key={job.name} value={`item-${idx}`} className="border border-slate-800 rounded-xl px-4 bg-slate-900/30 hover:bg-slate-900/50 transition-colors overflow-hidden">
+                          <AccordionTrigger className="hover:no-underline py-4">
+                              <div className="flex items-center justify-between w-full pr-4 text-left">
+                                  <div className="flex items-center gap-3">
+                                      <div className={`p-2 rounded ${isActive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
+                                          {isActive ? <Zap className="h-4 w-4 animate-pulse" /> : <Play className="h-4 w-4" />}
                                       </div>
-                                      <div className="flex items-center gap-4">
-                                        {isActive && (
-                                            <div className="text-right hidden md:block">
-                                                <p className="text-[10px] font-bold text-slate-500 uppercase">Live Speed</p>
-                                                <p className="text-xs font-mono text-emerald-400">{speedText}</p>
-                                            </div>
-                                        )}
-                                        {isActive ? (
-                                            <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 px-3">ACTIVE</Badge>
-                                        ) : (
-                                            <Badge variant="outline" className="text-slate-600 border-slate-800">IDLE</Badge>
-                                        )}
+                                      <div>
+                                          <p className="font-mono text-sm text-slate-200">{job.name}</p>
+                                          <p className="text-xs text-slate-500">{info.description}</p>
                                       </div>
                                   </div>
-                              </AccordionTrigger>
-                              <AccordionContent className="pt-2 pb-6 border-t border-slate-800/50">
-                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-4">
-                                      <div className="bg-slate-950/50 p-4 rounded-lg border border-slate-800/50 flex flex-col items-center min-h-[300px] justify-center relative">
-                                          <div className="absolute top-2 left-2 flex items-center gap-2">
-                                              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Logic Visualization</span>
-                                          </div>
-                                          {mermaidSvgs[job.name] ? (
-                                            <div 
-                                                className="mermaid-svg opacity-80 hover:opacity-100 transition-opacity w-full overflow-x-auto text-center"
-                                                dangerouslySetInnerHTML={{ __html: mermaidSvgs[job.name] }} 
-                                            />
-                                          ) : (
-                                            <div className="flex items-center gap-2 text-slate-700">
-                                                <RefreshCw className="h-4 w-4 animate-spin" />
-                                                <span className="text-xs">Generating flow map...</span>
-                                            </div>
-                                          )}
+                                  <div className="flex items-center gap-4">
+                                    {isActive && (
+                                        <div className="text-right hidden md:block">
+                                            <p className="text-[10px] font-bold text-slate-500 uppercase">Live Speed</p>
+                                            <p className="text-xs font-mono text-emerald-400">{speedText}</p>
+                                        </div>
+                                    )}
+                                    {isActive ? (
+                                        <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 px-3">ACTIVE</Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="text-slate-600 border-slate-800">IDLE</Badge>
+                                    )}
+                                  </div>
+                              </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-2 pb-6 border-t border-slate-800/50">
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-4">
+                                  <div className="bg-slate-950/50 p-4 rounded-lg border border-slate-800/50 flex flex-col items-center min-h-[300px] justify-center relative">
+                                      <div className="absolute top-2 left-2 flex items-center gap-2">
+                                          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Logic Visualization</span>
                                       </div>
-                                      <div className="space-y-6">
-                                          <div className="grid grid-cols-2 gap-4">
-                                              <div className="p-4 bg-slate-800/20 rounded-xl border border-slate-800/50">
-                                                  <div className="flex items-center gap-2 text-slate-500 mb-1">
-                                                      <Zap className="h-3 w-3" />
-                                                      <span className="text-[10px] uppercase font-bold">Performance</span>
-                                                  </div>
-                                                  <p className="text-xl font-bold text-slate-200">
-                                                      {speedText}
-                                                  </p>
+                                      {mermaidSvgs[job.name] ? (
+                                        <div 
+                                            className="mermaid-svg opacity-80 hover:opacity-100 transition-opacity w-full overflow-x-auto text-center"
+                                            dangerouslySetInnerHTML={{ __html: mermaidSvgs[job.name] }} 
+                                        />
+                                      ) : (
+                                        <div className="flex items-center gap-2 text-slate-700">
+                                            <RefreshCw className="h-4 w-4 animate-spin" />
+                                            <span className="text-xs">Generating flow map...</span>
+                                        </div>
+                                      )}
+                                  </div>
+                                  <div className="space-y-6">
+                                      <div className="grid grid-cols-2 gap-4">
+                                          <div className="p-4 bg-slate-800/20 rounded-xl border border-slate-800/50">
+                                              <div className="flex items-center gap-2 text-slate-500 mb-1">
+                                                  <Zap className="h-3 w-3" />
+                                                  <span className="text-[10px] uppercase font-bold">Performance</span>
                                               </div>
-                                              <div className="p-4 bg-slate-800/20 rounded-xl border border-slate-800/50">
-                                                  <div className="flex items-center gap-2 text-slate-500 mb-1">
-                                                      <Clock className="h-3 w-3" />
-                                                      <span className="text-[10px] uppercase font-bold">ETA</span>
-                                                  </div>
-                                                  <p className={`text-sm font-semibold ${isActive ? 'text-emerald-400' : 'text-slate-500'}`}>
-                                                      {etaText}
-                                                  </p>
-                                              </div>
-                                          </div>
-                                          <div className="p-5 bg-indigo-950/10 rounded-xl border border-indigo-500/10">
-                                              <h4 className="text-xs font-bold text-indigo-400 uppercase mb-2 flex items-center gap-2">
-                                                  <FileText className="h-3 w-3" />
-                                                  Pipeline Context
-                                              </h4>
-                                              <p className="text-xs text-slate-400 leading-relaxed italic">
-                                                  "This process handles heavy transformation. It leverages reciprocal rank fusion for indexing and utilizes the mxbai-embed-large model for semantic mapping."
+                                              <p className="text-xl font-bold text-slate-200">
+                                                  {speedText}
                                               </p>
                                           </div>
-                                          <div className="flex gap-2">
-                                              <Button size="sm" variant="outline" className="flex-1 border-slate-800 hover:bg-slate-800 text-[10px] h-9 uppercase font-bold">View Logs</Button>
-                                              <Button size="sm" className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-[10px] h-9 uppercase font-bold">Debug Flow</Button>
+                                          <div className="p-4 bg-slate-800/20 rounded-xl border border-slate-800/50">
+                                              <div className="flex items-center gap-2 text-slate-500 mb-1">
+                                                  <Clock className="h-3 w-3" />
+                                                  <span className="text-[10px] uppercase font-bold">ETA</span>
+                                              </div>
+                                              <p className={`text-sm font-semibold ${isActive ? 'text-emerald-400' : 'text-slate-500'}`}>
+                                                  {etaText}
+                                              </p>
                                           </div>
                                       </div>
+                                      <div className="p-5 bg-indigo-950/10 rounded-xl border border-indigo-500/10">
+                                          <h4 className="text-xs font-bold text-indigo-400 uppercase mb-2 flex items-center gap-2">
+                                              <FileText className="h-3 w-3" />
+                                              Pipeline Context
+                                          </h4>
+                                          <p className="text-xs text-slate-400 leading-relaxed italic">
+                                              "This process handles heavy transformation. It leverages reciprocal rank fusion for indexing and utilizes the mxbai-embed-large model for semantic mapping."
+                                          </p>
+                                      </div>
+                                      <div className="flex gap-2">
+                                          <Button size="sm" variant="outline" className="flex-1 border-slate-800 hover:bg-slate-800 text-[10px] h-9 uppercase font-bold">View Logs</Button>
+                                          <Button size="sm" className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-[10px] h-9 uppercase font-bold">Debug Flow</Button>
+                                      </div>
                                   </div>
-                              </AccordionContent>
-                          </AccordionItem>
-                      )
-                  })}
-              </Accordion>
-          </CardContent>
-      </Card>
+                              </div>
+                          </AccordionContent>
+                      </AccordionItem>
+                  )
+              })}
+          </Accordion>
+      );
+  };
+
+  return (
+    <div className="space-y-12">
+      {/* SECTION 1: Immutable Source Texts */}
+      <div className="space-y-6">
+        <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+          <div className="flex items-center gap-2">
+            <Layers className="h-5 w-5 text-emerald-400" />
+            <h2 className="text-2xl font-bold text-slate-200">Knowledge Graph Inventory</h2>
+          </div>
+          <Button 
+              size="sm" 
+              variant="ghost" 
+              onClick={fetchMetrics} 
+              className="text-slate-500 hover:text-emerald-400"
+              disabled={isRefreshing}
+          >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Updating...' : 'Refresh Stats'}
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <InventoryCard 
+              title="Quranic Corpus"
+              sourceLabel="quran api"
+              targetLabel="ayah"
+              stats={metrics?.quran}
+              unit="Ayahs"
+              color="emerald"
+              onClick={() => browseTable("ayah", "SELECT uthmani_text, surah_number, ayah_number, created_at FROM ayah")}
+          />
+          <InventoryCard 
+              title="Hadith Collections"
+              sourceLabel="650k sanadset"
+              targetLabel="hadith"
+              stats={metrics?.hadith}
+              unit="Records"
+              color="amber"
+              onClick={() => browseTable("hadith", "SELECT collection, hadith_number, matn_ar FROM hadith")}
+          />
+          <InventoryCard 
+              title="Athar Passages"
+              sourceLabel="Kandil7/Athar"
+              targetLabel="book_page"
+              stats={metrics?.athar}
+              unit="Passages"
+              color="blue"
+              onClick={() => browseTable("book_page", "SELECT content, category, page_number FROM book_page WHERE id >= book_page:athar_")}
+          />
+          <InventoryCard 
+              title="Classical Books"
+              sourceLabel="Shamela Dataset"
+              targetLabel="book"
+              stats={metrics?.shamela}
+              unit="Pages"
+              color="teal"
+              onClick={() => browseTable("book_page", "SELECT content, page_number FROM book_page WHERE id >= book_page:s")}
+          />
+        </div>
+      </div>
+
+      {/* SECTION 2: Sentence Processing & Knowledge Integration */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+          <FileText className="h-5 w-5 text-indigo-400" />
+          <h2 className="text-2xl font-bold text-slate-200">Sentence Processing & Knowledge Integration</h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <InventoryCard 
+              title="Knowledge Atoms"
+              targetLabel="sentence"
+              stats={metrics?.sentences}
+              unit="Sentences"
+              color="purple"
+              onClick={() => browseTable("sentence", "SELECT text, source FROM sentence")}
+          />
+          <InventoryCard 
+              title="Named Entities"
+              targetLabel="entity"
+              stats={metrics?.entities}
+              unit="Entities"
+              color="rose"
+              onClick={() => browseTable("entity", "SELECT label, type FROM entity")}
+          />
+          <InventoryCard 
+              title="Graph Relations"
+              sourceLabel="Knowledge links"
+              targetLabel="relation"
+              stats={metrics?.relations}
+              unit="Edges"
+              color="blue"
+              onClick={() => browseTable("defines", "SELECT parent, target, type FROM defines LIMIT 50")}
+          />
+        </div>
+
+        <Card className="bg-slate-900/50 border-slate-800 shadow-xl">
+            <CardHeader className="border-b border-slate-800/50 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                      <Terminal className="h-4 w-4 text-indigo-400" />
+                      <CardTitle className="text-base text-slate-300 font-semibold">Chunking & Sentence Extraction Flows</CardTitle>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] bg-indigo-500/5 text-indigo-400 border-indigo-500/20">Atomization</Badge>
+                </div>
+            </CardHeader>
+            <CardContent className="pt-4">
+                {renderJobsAccordion([
+                    'atomize_quran_v2.py',
+                    'atomize_hadith_v5.py',
+                    'atomize_tafsir.py',
+                    'atomize_kitab.py'
+                ])}
+            </CardContent>
+        </Card>
+      </div>
+
+      {/* SECTION 3: Vectorization & Embedding */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+          <Cpu className="h-5 w-5 text-sky-400" />
+          <h2 className="text-2xl font-bold text-slate-200">Vectorization & Semantic Mapping</h2>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="bg-slate-900/40 border-slate-800/80 p-6 flex flex-col justify-between shadow-lg min-h-[220px]">
+                <div>
+                    <div className="flex items-center justify-between mb-4">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Embedding Node</span>
+                        {metrics?.ollamaStatus === "online" ? (
+                            <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 px-2.5 py-0.5 animate-pulse">ONLINE</Badge>
+                        ) : (
+                            <Badge variant="outline" className="text-rose-500 border-rose-500/20 bg-rose-500/5 px-2.5 py-0.5">OFFLINE</Badge>
+                        )}
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-200 mb-1">Ollama Server</h3>
+                    <p className="font-mono text-xs text-slate-500">100.121.116.17:11434</p>
+                </div>
+                
+                <div className="mt-4 pt-4 border-t border-slate-800/50 flex justify-between items-center text-xs">
+                    <span className="text-slate-500">Active Model:</span>
+                    <span className="font-mono text-emerald-400 font-bold">mxbai-embed-large</span>
+                </div>
+            </Card>
+            <div className="lg:col-span-2">
+                <Card className="bg-slate-900/50 border-slate-800 shadow-xl h-full">
+                    <CardHeader className="border-b border-slate-800/50 py-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                              <Terminal className="h-4 w-4 text-sky-400" />
+                              <CardTitle className="text-base text-slate-300 font-semibold">Pre-Embedding Diacritic Cleaners</CardTitle>
+                          </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                        {renderJobsAccordion(['populate_clean_sentences.py'])}
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+      </div>
+
+      {/* SECTION 4: AI Knowledge Enrichment */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+          <Network className="h-5 w-5 text-amber-400" />
+          <h2 className="text-2xl font-bold text-slate-200">AI Knowledge Enrichment</h2>
+        </div>
+
+        <Card className="bg-slate-900/50 border-slate-800 shadow-xl">
+            <CardHeader className="border-b border-slate-800/50 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                      <Terminal className="h-4 w-4 text-amber-400" />
+                      <CardTitle className="text-base text-slate-300 font-semibold">Knowledge Enrichment Pipelines</CardTitle>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] bg-amber-500/5 text-amber-400 border-amber-500/20">Enrichment</Badge>
+                </div>
+            </CardHeader>
+            <CardContent className="pt-4">
+                {renderJobsAccordion([
+                    'enrich_dictionary_data.py',
+                    'ingest_hf_enhanced_knowledge.py',
+                    'ingest_athar_final.py'
+                ])}
+            </CardContent>
+        </Card>
+      </div>
 
       {/* Progress Reports Section */}
       <Card className="bg-slate-900/50 border-slate-800 shadow-xl">
