@@ -6,8 +6,8 @@ import { MarkdownDocsRenderer } from "@/components/markdown-renderer";
 
 export const dynamic = "force-dynamic";
 
-export default async function PublicDocPage({ params }: { params: { slug: string } }) {
-    const { slug } = params;
+export default async function PublicDocPage({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params;
     
     // Convert slug to file path, e.g., quran_ingestion -> quran/ingestion.md
     let relativePath = slug.replace('_', '/') + '.md';
