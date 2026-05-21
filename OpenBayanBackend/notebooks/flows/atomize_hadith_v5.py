@@ -148,23 +148,29 @@ def execute_sql(sql: str):
 @task(name="Atomize Hybrid Enterprise Task")
 def atomize_hadith_task(hadith: Dict[str, Any]):
     logger = get_run_logger()
-    
+
+    hid_raw = str(hadith['id'])
+    hid_inner = hid_raw.split(':')[-1].replace('⟨', '').replace('⟩', '').replace('`', '')
+
+    # Hardcode the correct source — hadith records don't have a source field
+    source_id = "source:hadith_650k_sanadset"
+
     isnad_part = hadith.get("isnad", "")
     matn_part = hadith.get("main_full", "") or hadith.get("matn_ar", "")
-    
+
     # Apply Enterprise Hybrid Boundary Detection if needed
     if not isnad_part and matn_part:
         boundary_idx = get_matn_boundary(matn_part)
         if boundary_idx != -1:
             isnad_part = matn_part[:boundary_idx]
             matn_part = matn_part[boundary_idx:]
-            logger.info(f"Boundary detected at index {boundary_idx} for Hadith {hadith['id']}")
 
     if not matn_part:
+        # Still mark as processed so we don't infinite-loop on empty records
+        execute_sql(f"UPDATE {hid_raw} SET processed_for_sentences = true;")
         return 0
 
-    # Chunk the Matn into atomic sentences
-    # Using punctuation anchors
+    # Chunk the Matn into atomic sentences using punctuation anchors
     sentences = re.split(r'(?<=[.؟!])\s+', matn_part)
     sentences = [s.strip() for s in sentences if s.strip()]
     
@@ -184,25 +190,23 @@ def atomize_hadith_task(hadith: Dict[str, Any]):
     if not sentences:
         sentences = [matn_part.strip()]
 
-    queries = ["BEGIN TRANSACTION;"]
-    
-    hid_raw = str(hadith['id'])
-    hid_inner = hid_raw.split(':')[-1].replace('⟨', '').replace('⟩', '').replace('`', '')
-    source_id = hadith.get("source", "source:hadith_general")
+    upsert_queries = ["BEGIN TRANSACTION;"]
+    sentences_added = 0
 
     for idx, segment in enumerate(sentences):
-        if len(segment) < 5: continue
-        
+        if len(segment) < 5:
+            continue
+
         clean_segment = strip_tashkeel(segment)
         embedding = get_embedding(clean_segment)
-        
+
         if not embedding:
             continue
-            
+
         sent_id = f"sentence:⟨hadith_{hid_inner}_s{idx}⟩"
         safe_text = segment.replace("'", "\\'")
         safe_clean = clean_segment.replace("'", "\\'")
-        
+
         q = f"""
             UPSERT {sent_id} SET
                 text = '{safe_text}',
@@ -211,21 +215,27 @@ def atomize_hadith_task(hadith: Dict[str, Any]):
                 parent = {hid_raw},
                 source = {source_id},
                 chunk_index = {idx},
+                transliterations = {{ en: "", ru: "", tr: "" }},
                 created_at = time::now();
         """
-        queries.append(q)
-    
-    # Update Isnad if we found it
+        upsert_queries.append(q)
+        sentences_added += 1
+
+    # Update Isnad if found (inside transaction is fine — it's a simple field SET)
     if isnad_part:
         safe_isnad = isnad_part.replace("'", "\\'")
-        queries.append(f"UPDATE {hid_raw} SET isnad = '{safe_isnad}';")
-    
-    queries.append(f"UPDATE {hid_raw} SET processed_for_sentences = true;")
-    queries.append("COMMIT TRANSACTION;")
-    
-    if len(queries) > 2:
-        execute_sql("\n".join(queries))
-    return len(sentences)
+        upsert_queries.append(f"UPDATE {hid_raw} SET isnad = '{safe_isnad}';")
+
+    upsert_queries.append("COMMIT TRANSACTION;")
+
+    if sentences_added > 0:
+        execute_sql("\n".join(upsert_queries))
+
+    # Mark as processed in a SEPARATE standalone query — outside the transaction
+    # This prevents silent rollback from complex backtick-quoted hadith IDs
+    execute_sql(f"UPDATE {hid_raw} SET processed_for_sentences = true;")
+    return sentences_added
+
 
 def update_progress_state(job_name: str, count: int, total: int, speed: float = 0, eta: float = 0):
     try:

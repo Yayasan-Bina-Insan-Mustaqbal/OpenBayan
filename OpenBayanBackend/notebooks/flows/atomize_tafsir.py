@@ -106,6 +106,7 @@ def atomize_tafsir_task(ayah: Dict[str, Any], tafsir_key: str):
                 parent = {ayah_id},
                 source = {source_id},
                 chunk_index = {idx},
+                transliterations = {{ en: "", ru: "", tr: "" }},
                 created_at = time::now();
         """
         queries.append(q)
@@ -161,77 +162,102 @@ def update_progress_state(job_name: str, count: int, total: int, speed: float = 
 def tafsir_atomization_flow(tafsir_key: str = "ar_saddi", batch_size: int = 50, limit: Optional[int] = None):
     logger = get_run_logger()
     logger.info(f"Bismillah. Starting Tafsir atomization for: {tafsir_key}")
-    
-    # 1. Fetch already processed parent IDs to avoid duplication
-    logger.info(f"Loading already atomized ayahs for {tafsir_key}...")
+
+    job_key = f"atomize_tafsir_{tafsir_key}.py"
     source_id = f"source:tafsir_{tafsir_key}"
-    existing_parents = set()
+
+    # Ensure source record exists
     try:
-        res_parents = execute_sql(f"SELECT parent FROM sentence WHERE source = {source_id} GROUP BY parent;")
-        if res_parents and res_parents[0].get("result"):
-            for r in res_parents[0]["result"]:
-                existing_parents.add(str(r["parent"]))
-        logger.info(f"Found {len(existing_parents)} ayahs already atomized for this tafsir.")
+        execute_sql(f"""
+            UPSERT {source_id} SET
+                name = 'Tafsir: {tafsir_key}',
+                lang = '{tafsir_key[:2]}',
+                type = 'tafsir',
+                key = '{tafsir_key}',
+                created_at = time::now();
+        """)
     except Exception as e:
-        logger.warning(f"Failed to fetch existing parents: {e}")
+        logger.warning(f"Could not upsert source record: {e}")
 
     total_ayahs = 6236
     try:
-        res = execute_sql(f"SELECT count() FROM ayah WHERE tafsir.{tafsir_key} != NONE AND tafsir.{tafsir_key} != '' GROUP ALL;")
+        res = execute_sql(
+            f"SELECT count() FROM ayah WHERE tafsir.{tafsir_key} != NONE "
+            f"AND tafsir.{tafsir_key} != '' GROUP ALL;"
+        )
         if res and res[0].get('result'):
             total_ayahs = res[0]['result'][0]['count']
     except Exception as e:
         logger.warning(f"Could not fetch total tafsir count: {e}")
 
-    processed_existing = len(existing_parents)
+    # Count already processed using a per-tafsir boolean flag field
+    processed_existing = 0
+    safe_key = tafsir_key.replace("-", "_")
+    try:
+        res = execute_sql(
+            f"SELECT count() FROM ayah "
+            f"WHERE processed_tafsir__{safe_key} = true GROUP ALL;"
+        )
+        if res and res[0].get('result'):
+            processed_existing = res[0]['result'][0]['count']
+        logger.info(f"Found {processed_existing} ayahs already processed for tafsir '{tafsir_key}'.")
+    except Exception as e:
+        logger.warning(f"Could not fetch processed count: {e}")
+
     start_time = time.time()
     processed_total = 0
-    
-    update_progress_state("atomize_tafsir.py", processed_existing, total_ayahs, 0, 0)
-    
+    offset = 0
+
+    update_progress_state(job_key, processed_existing, total_ayahs, 0, 0)
+
     while True:
-        # Fetch ayahs that have the requested tafsir
-        res = execute_sql(f"SELECT * FROM ayah WHERE tafsir.{tafsir_key} != NONE AND tafsir.{tafsir_key} != '' LIMIT 500")
-        ayahs = res[0].get('result', [])
-        
-        if not ayahs:
-            logger.info("Alhamdulillah! Finished processing available Tafsir records.")
-            update_progress_state("atomize_tafsir.py", total_ayahs, total_ayahs, 0, 0)
-            break
-            
-        # Filter out existing ones
-        batch = [a for a in ayahs if str(a["id"]) not in existing_parents]
-        
+        # Fetch unprocessed ayahs for this tafsir — use per-key boolean flag
+        res = execute_sql(
+            f"SELECT * FROM ayah "
+            f"WHERE tafsir.{tafsir_key} != NONE AND tafsir.{tafsir_key} != '' "
+            f"AND processed_tafsir__{safe_key} != true "
+            f"LIMIT {batch_size};"
+        )
+        batch = res[0].get('result', [])
+
         if not batch:
-            logger.info("Current batch already processed. Skipping...")
-            update_progress_state("atomize_tafsir.py", total_ayahs, total_ayahs, 0, 0)
+            logger.info(f"Alhamdulillah! Finished processing all Tafsir '{tafsir_key}' records.")
+            update_progress_state(job_key, total_ayahs, total_ayahs, 0, 0)
             break
 
-        for ayah in batch[:batch_size]:
+        for ayah in batch:
             try:
-                atomize_tafsir_task(ayah, tafsir_key) 
+                atomize_tafsir_task(ayah, tafsir_key)
+                # Mark this tafsir key as processed using a per-key boolean field
+                ayah_id = str(ayah['id'])
+                execute_sql(
+                    f"UPDATE {ayah_id} SET processed_tafsir__{safe_key} = true;"
+                )
                 processed_total += 1
-                
+
                 count = processed_existing + processed_total
                 elapsed = time.time() - start_time
                 speed = (processed_total / elapsed) * 60 if elapsed > 0 else 0
                 eta = ((total_ayahs - count) / speed) * 60 if speed > 0 else 0
-                update_progress_state("atomize_tafsir.py", count, total_ayahs, speed, eta)
-                
-                if processed_total % 50 == 0:
-                    logger.info(f"Progress: {processed_total} Ayahs processed for Tafsir.")
+                update_progress_state(job_key, count, total_ayahs, speed, eta)
+
+                if processed_total % 100 == 0:
+                    logger.info(f"[{tafsir_key}] Progress: {processed_total} Ayahs processed.")
             except Exception as e:
-                logger.error(f"Failed Ayah {ayah['id']}: {e}")
-        
+                logger.error(f"[{tafsir_key}] Failed Ayah {ayah['id']}: {e}")
+
         if limit and processed_total >= limit:
             break
-            
-    logger.info(f"Done. Total Ayahs processed: {processed_total}")
+
+        time.sleep(0.2)  # Throttle between batches
+
+    logger.info(f"[{tafsir_key}] Done. Total Ayahs processed: {processed_total}")
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--tafsir", type=str, default="ar_saddi", help="Tafsir slug (e.g. ar_saddi, ar_mukhtasar)")
     parser.add_argument("--batch", type=int, default=50)
+    parser.add_argument("--limit", type=int, default=None, help="Max number of ayahs to process")
     args = parser.parse_args()
-    tafsir_atomization_flow(tafsir_key=args.tafsir, batch_size=args.batch)
+    tafsir_atomization_flow(tafsir_key=args.tafsir, batch_size=args.batch, limit=args.limit)

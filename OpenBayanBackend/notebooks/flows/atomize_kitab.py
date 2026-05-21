@@ -82,33 +82,33 @@ def atomize_page_task(page: Dict[str, Any]):
     logger = get_run_logger()
     content = page.get("content", "")
     if not content or len(content.strip()) < 20:
+        # Still mark as processed so we don't loop on empty pages
+        execute_sql(f"UPDATE {str(page['id'])} SET processed_for_sentences = true;")
         return 0
-    
+
     # 1. Chunking: Recursive word-based with 15% overlap
     chunks = recursive_arabic_chunker(content, max_words=350, overlap_percent=0.15)
-    
-    queries = ["BEGIN TRANSACTION;"]
-    
-    page_id = str(page['id']) # e.g. book_page:`bukhari_p1`
+
+    page_id = str(page['id'])  # e.g. book_page:`shamela_..._p1`
     source_id = str(page['source'])
-    
-    # Extract inner ID for record generation
-    # SurrealDB IDs like book_page:`source_p1`
-    page_inner = page_id.split(':')[-1].replace('`', '')
+
+    # Extract inner ID for record generation (strip backticks from complex IDs)
+    page_inner = page_id.split(':')[-1].replace('`', '').replace(' ', '_')
+
+    upsert_queries = ["BEGIN TRANSACTION;"]
+    sentences_added = 0
 
     for idx, segment in enumerate(chunks):
         clean_segment = strip_tashkeel(segment)
         embedding = get_embedding(clean_segment)
-        
+
         if not embedding:
             continue
-            
-        # Composite ID: sentence:⟨kitab_bukhari_p1_s0⟩
-        sent_id = f"sentence:⟨kitab_{page_inner}_s{idx}⟩"
-        
+
+        sent_id = f"sentence:\u27e8kitab_{page_inner}_s{idx}\u27e9"
         safe_text = segment.replace("'", "\\'")
         safe_clean = clean_segment.replace("'", "\\'")
-        
+
         q = f"""
             UPSERT {sent_id} SET
                 text = '{safe_text}',
@@ -117,17 +117,21 @@ def atomize_page_task(page: Dict[str, Any]):
                 parent = {page_id},
                 source = {source_id},
                 chunk_index = {idx},
+                transliterations = {{ en: "", ru: "", tr: "" }},
                 created_at = time::now();
         """
-        queries.append(q)
-    
-    # Mark page as processed
-    queries.append(f"UPDATE {page_id} SET processed_for_sentences = true;")
-    queries.append("COMMIT TRANSACTION;")
-    
-    if len(queries) > 2:
-        execute_sql("\n".join(queries))
-    return len(chunks)
+        upsert_queries.append(q)
+        sentences_added += 1
+
+    upsert_queries.append("COMMIT TRANSACTION;")
+
+    if sentences_added > 0:
+        execute_sql("\n".join(upsert_queries))
+
+    # Mark page as processed in a SEPARATE standalone query
+    # (avoids complex ID quoting issues inside transactions)
+    execute_sql(f"UPDATE {page_id} SET processed_for_sentences = true;")
+    return sentences_added
 
 def update_progress_state(job_name: str, count: int, total: int, speed: float = 0, eta: float = 0):
     try:
