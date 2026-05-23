@@ -97,7 +97,7 @@ export default function BooksIngestionPage() {
                           <IconDatabase className="size-4" /> Data Provenance
                         </CardTitle>
                         <CardDescription className="text-emerald-600/80">
-                          Streamed from Hugging Face repository <strong><code>ieasybooks-org/shamela-waqfeya-library</code></strong>, representing thousands of classical Islamic digitized texts (Kitabs).
+                          Streamed from Hugging Face repositories: the **Shamela Waqfeya library** (<code>ieasybooks-org/shamela-waqfeya-library</code>) and the digitized **Athar Dataset** (comprising classical biographical and narrator works).
                         </CardDescription>
                       </CardHeader>
                     </Card>

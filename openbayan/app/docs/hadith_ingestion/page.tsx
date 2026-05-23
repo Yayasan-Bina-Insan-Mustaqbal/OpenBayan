@@ -97,7 +97,7 @@ export default function HadithIngestionPage() {
                           <IconDatabase className="size-4" /> Data Provenance
                         </CardTitle>
                         <CardDescription className="text-emerald-600/80">
-                          Acquired from the open-source Hugging Face dataset <strong><code>freococo/650k_sanadset</code></strong>, compiling 650k authentic narration chains and matn components.
+                          Primary ingestion leverages the Hugging Face dataset <strong><code>freococo/650k_sanadset</code></strong> alongside complementary Hadith corpuses (including standard compilations from Kutub al-Sittah).
                         </CardDescription>
                       </CardHeader>
                     </Card>
