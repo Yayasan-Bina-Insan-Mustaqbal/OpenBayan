@@ -8,6 +8,7 @@ import { SiteHeader } from "@/components/landing/site-header"
 import FooterSection from "@/components/landing/footer"
 import { HeroBackground } from "@/components/landing/hero-background"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { DocsNav } from "@/components/landing/docs-nav"
 
 export default function BooksIngestionPage() {
   return (
@@ -168,6 +169,8 @@ export default function BooksIngestionPage() {
             </div>
           </div>
         </section>
+
+        <DocsNav />
       </main>
 
       <FooterSection />
