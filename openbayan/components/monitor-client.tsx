@@ -163,7 +163,7 @@ export default function MonitorClient({ pythonJobs, progressFiles, documentation
       const svgs: Record<string, string> = {};
       for (const jobName of Object.keys(PIPELINE_INFO)) {
         try {
-          const res = renderMermaid(PIPELINE_INFO[jobName].mermaid, { theme: 'dark' });
+          const res = renderMermaid(PIPELINE_INFO[jobName].mermaid, { theme: 'dark' } as any);
           svgs[jobName] = res instanceof Promise ? await res : res;
         } catch (e) {
           console.error("Mermaid render failed for", jobName, e);

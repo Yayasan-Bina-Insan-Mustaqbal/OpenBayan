@@ -2,20 +2,17 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { IconArrowRight, IconMenu2, IconX } from "@tabler/icons-react"
+import { IconArrowRight, IconMenu2, IconX, IconBrandGithub, IconChevronDown } from "@tabler/icons-react"
 
 import { Logo } from "@/components/landing/logo"
 import { ThemeToggle } from "@/components/shared/theme-toggle"
 import { Button } from "@/components/ui/button"
-
-const menuItems = [
-  { name: "Search", href: "/#features" },
-  { name: "Connections", href: "/#connections" },
-  { name: "Pipeline", href: "/#pipeline" },
-  { name: "Sahifah", href: "/#sahifah" },
-  { name: "Future", href: "/#future" },
-  { name: "Docs", href: "/docs/quran_ingestion" },
-]
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export function SiteHeader() {
   const [menuState, setMenuState] = React.useState(false)
@@ -49,28 +46,66 @@ export function SiteHeader() {
             </div>
 
             <div className="hidden w-full flex-col gap-6 rounded-lg border bg-background p-6 shadow-lg shadow-muted lg:flex lg:w-fit lg:flex-row lg:items-center lg:border-transparent lg:bg-transparent lg:p-0 lg:shadow-none in-data-[state=active]:flex">
-              <ul className="flex flex-col gap-6 text-base lg:flex-row lg:gap-8 lg:text-sm">
-                {menuItems.map((item) => (
-                  <li key={item.name}>
-                    <Link
-                      href={item.href}
-                      className="block text-muted-foreground duration-150 hover:text-foreground"
-                      onClick={() => setMenuState(false)}
-                    >
-                      {item.name}
-                    </Link>
-                  </li>
-                ))}
+              <ul className="flex flex-col gap-6 text-base lg:flex-row lg:items-center lg:gap-8 lg:text-sm">
+                <li>
+                  <Link
+                    href="/search"
+                    className="block font-medium text-muted-foreground duration-150 hover:text-foreground"
+                    onClick={() => setMenuState(false)}
+                  >
+                    Search
+                  </Link>
+                </li>
+                
+                <li>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="flex items-center gap-1 font-medium text-muted-foreground duration-150 hover:text-foreground outline-none">
+                      Docs <IconChevronDown className="size-4" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuItem asChild>
+                        <Link href="/docs/quran_ingestion" className="cursor-pointer w-full" onClick={() => setMenuState(false)}>Quran Ingestion</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/docs/hadith_ingestion" className="cursor-pointer w-full" onClick={() => setMenuState(false)}>Hadith Ingestion</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/docs/books_ingestion" className="cursor-pointer w-full" onClick={() => setMenuState(false)}>Books Ingestion</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/docs/sentences_ingestion" className="cursor-pointer w-full" onClick={() => setMenuState(false)}>Sentences Ingestion</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/docs/dictionary_murad_ingestion" className="cursor-pointer w-full" onClick={() => setMenuState(false)}>MURAD Dictionary</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/docs/search" className="cursor-pointer w-full" onClick={() => setMenuState(false)}>Search Architecture</Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </li>
+                
+                <li>
+                  <a
+                    href="https://github.com/decaller/OpenBayan-KG"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 font-medium text-muted-foreground duration-150 hover:text-foreground"
+                    onClick={() => setMenuState(false)}
+                  >
+                    <IconBrandGithub className="size-5" /> GitHub
+                  </a>
+                </li>
               </ul>
 
-              <div className="flex flex-col gap-3 sm:flex-row lg:border-s lg:ps-6">
+              <div className="flex flex-col gap-3 sm:flex-row lg:border-s lg:ps-6 items-center">
                 <div className="hidden lg:block">
                   <ThemeToggle />
                 </div>
-                <Button asChild variant="outline" size="sm">
+                <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
                   <Link href="/login">Sign in</Link>
                 </Button>
-                <Button asChild size="sm">
+                <Button asChild size="sm" className="w-full sm:w-auto">
                   <Link href="/workspace">
                     Open workspace
                     <IconArrowRight data-icon="inline-end" />

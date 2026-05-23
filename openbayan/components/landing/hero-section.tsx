@@ -35,11 +35,16 @@ export default function HeroSection() {
               animate={{ opacity: 1, y: 0 }}
               className="relative mx-auto max-w-4xl text-center"
             >
+              <div className="mx-auto flex w-fit items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-1 pe-3 mb-4 text-amber-500">
+                <span className="rounded-md bg-amber-500/20 px-2 py-0.5 text-xs font-semibold">Active Beta</span>
+                <span className="text-xs font-medium">Under Heavy active construction and development</span>
+              </div>
+
               <Link
-                href="#features"
+                href="/search"
                 className="mx-auto flex w-fit items-center gap-2 rounded-lg border bg-background p-1 pe-3"
               >
-                <span className="rounded-md bg-muted px-2 py-1 text-xs">OpenBayan vision</span>
+                <span className="rounded-md bg-muted px-2 py-1 text-xs">OpenBayan search</span>
                 <span className="text-sm text-muted-foreground">Unbiased Islamic knowledge search</span>
                 <IconArrowRight className="size-4" />
               </Link>

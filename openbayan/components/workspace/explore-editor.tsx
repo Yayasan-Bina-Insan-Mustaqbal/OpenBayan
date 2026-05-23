@@ -1,7 +1,7 @@
 import * as React from "react"
 import { IconHistory, IconNews, IconTrendingUp } from "@tabler/icons-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { motion } from "motion/react"
+import { motion, type Variants } from "motion/react"
 
 const trendingSahifah = [
   { id: 1, title: "Linguistic Roots of Rahmah", author: "Dr. Al-Farsi", views: "1.2k", category: "Linguistics" },
@@ -19,7 +19,7 @@ const updatesNews = [
   { id: 2, title: "SurrealDB Migration Complete", date: "April 25", summary: "Graph relationships are now live for all root words." },
 ]
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
@@ -27,7 +27,7 @@ const containerVariants = {
   }
 }
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 10 },
   show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } }
 }

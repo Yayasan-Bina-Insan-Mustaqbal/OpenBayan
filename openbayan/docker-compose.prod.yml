@@ -1,0 +1,16 @@
+name: openbayan-frontend-prod
+
+services:
+  frontend-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - SURREAL_HTTP_URL=http://192.168.100.33:8000
+      - SURREAL_NAMESPACE=openbayan
+      - SURREAL_DATABASE=openbayan
+      - NEXTAUTH_URL=https://openbayan.insanmustaqbal.or.id
+      - NEXTAUTH_SECRET=f63c87f0b5d0c8d9e0f1a2b3c4d5e6f7

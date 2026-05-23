@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "deploy:prod": "sh ./deploy.sh"
   },
   "dependencies": {
     "@blocknote/core": "^0.49.0",

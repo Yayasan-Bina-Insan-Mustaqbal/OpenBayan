@@ -39,6 +39,14 @@ Rigorously adhere to the logical planes defined in `DATABASE.md`:
 - **Backend Stack:** Prefect (Orchestration) + SurrealDB (Database) + Ollama (AI/Embeddings).
 - **Frontend:** Next.js (located in `/openbayan`).
 
+## Frontend Deployment Standards
+
+- **Production Host:** The production Next.js frontend is located on the remote Tailscale server (`docker-openbayan-fe` at `100.101.207.74`).
+- **Production Port:** The application MUST always be deployed to and exposed on host port **`3000`** (serving at `http://100.101.207.74:3000`, publicly mapped to the production domain **`https://openbayan.insanmustaqbal.or.id`**).
+- **Automated Deployment:** 
+  - The AI agent MUST always build and launch the production application inside Docker containers using the production multi-stage `Dockerfile` and `docker-compose.prod.yml`.
+  - Deployment is fully automated: the AI agent should trigger the `./deploy.sh` script or run `npm run deploy:prod` from the `openbayan` directory to archive, upload, and deploy the application via Tailscale using the password stored in `.env`.
+
 ## Directory Conventions
 
 - `OpenBayanBackend/notebooks/flows/`: Permanent Prefect flows.
