@@ -91,6 +91,16 @@ export default function BooksIngestionPage() {
                         </CardDescription>
                       </CardHeader>
                     </Card>
+                    <Card className="border-emerald-500/20 bg-emerald-500/5">
+                      <CardHeader className="p-4">
+                        <CardTitle className="text-base flex items-center gap-2 text-emerald-500">
+                          <IconDatabase className="size-4" /> Data Provenance
+                        </CardTitle>
+                        <CardDescription className="text-emerald-600/80">
+                          Streamed from Hugging Face repository <strong><code>ieasybooks-org/shamela-waqfeya-library</code></strong>, representing thousands of classical Islamic digitized texts (Kitabs).
+                        </CardDescription>
+                      </CardHeader>
+                    </Card>
                   </div>
                 </div>
 

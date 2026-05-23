@@ -91,6 +91,16 @@ export default function DictionaryIngestionPage() {
                         </CardDescription>
                       </CardHeader>
                     </Card>
+                    <Card className="border-emerald-500/20 bg-emerald-500/5">
+                      <CardHeader className="p-4">
+                        <CardTitle className="text-base flex items-center gap-2 text-emerald-500">
+                          <IconDatabase className="size-4" /> Data Provenance
+                        </CardTitle>
+                        <CardDescription className="text-emerald-600/80">
+                          Compiled from the local dataset <strong><code>data/murad/data/rd_dataset.csv</code></strong>, establishing a unified terminology dictionary registered as <code>source:murad_dataset_2026</code>.
+                        </CardDescription>
+                      </CardHeader>
+                    </Card>
                   </div>
                 </div>
 
