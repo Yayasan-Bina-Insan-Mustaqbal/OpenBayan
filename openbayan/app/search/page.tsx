@@ -22,7 +22,7 @@ import { HeroBackground } from "@/components/landing/hero-background"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { queryGraph } from "@/lib/graph-client"
+import { queryClientAPI } from "@/lib/graph-client"
 
 type SearchResult = {
   id: string
@@ -69,8 +69,8 @@ export default function SearchPage() {
 
     try {
       const safeQuery = trimmed.replace(/"/g, '\\"')
-      // Query SurrealDB custom function fn::search_sentences
-      const data = await queryGraph<SearchResult>(`RETURN fn::search_sentences("${safeQuery}");`)
+      // Query SurrealDB custom function fn::search_sentences via API proxy
+      const data = await queryClientAPI<SearchResult>(`RETURN fn::search_sentences("${safeQuery}");`)
       setResults(data || [])
     } catch (err) {
       console.error(err)
@@ -80,6 +80,7 @@ export default function SearchPage() {
       setIsSearching(false)
     }
   }
+
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault()

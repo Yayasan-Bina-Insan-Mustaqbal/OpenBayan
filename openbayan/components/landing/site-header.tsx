@@ -58,6 +58,16 @@ export function SiteHeader() {
                 </li>
                 
                 <li>
+                  <Link
+                    href="/browse"
+                    className="block font-medium text-muted-foreground duration-150 hover:text-foreground"
+                    onClick={() => setMenuState(false)}
+                  >
+                    Browse
+                  </Link>
+                </li>
+                
+                <li>
                   <DropdownMenu>
                     <DropdownMenuTrigger className="flex items-center gap-1 font-medium text-muted-foreground duration-150 hover:text-foreground outline-none">
                       Docs <IconChevronDown className="size-4" />

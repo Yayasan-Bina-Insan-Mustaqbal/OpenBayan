@@ -50,3 +50,35 @@ export async function queryGraph<T = any>(query: string, vars: Record<string, an
   
   return [];
 }
+
+/**
+ * Client-Side API Query Proxy helper.
+ * Proxies queries through the server-side API route to bypass private LAN database access.
+ */
+export async function queryClientAPI<T = any>(sql: string): Promise<T[]> {
+  const response = await fetch("/api/query", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ sql }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Client API query failed: ${response.status} ${text}`);
+  }
+
+  const results = await response.json();
+  
+  // Proxy response is the SurrealDB array of result objects
+  if (Array.isArray(results) && results.length > 0) {
+    if (results[0].status === "ERR") {
+      throw new Error(`SurrealDB Error: ${results[0].detail}`);
+    }
+    return results[0].result as T[];
+  }
+  
+  return [];
+}
+
