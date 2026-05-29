@@ -45,11 +45,23 @@ def get_embedding(text: str):
     except Exception:
         return None
 
-def execute_sql(sql: str):
-    res = requests.post(SURREAL_URL, auth=SURREAL_AUTH, headers=SURREAL_HEADERS, data=sql.encode('utf-8'))
-    if res.status_code != 200:
-        raise Exception(f"SurrealDB Error: {res.text}")
-    return res.json()
+def execute_sql(sql: str, retries: int = 5, backoff: float = 2.0):
+    for attempt in range(retries):
+        try:
+            res = requests.post(
+                SURREAL_URL, 
+                auth=SURREAL_AUTH, 
+                headers=SURREAL_HEADERS, 
+                data=sql.encode('utf-8'), 
+                timeout=15
+            )
+            if res.status_code != 200:
+                raise Exception(f"SurrealDB Error: {res.text}")
+            return res.json()
+        except requests.exceptions.RequestException as e:
+            if attempt == retries - 1:
+                raise e
+            time.sleep(backoff * (2 ** attempt))
 
 def recursive_arabic_chunker(text: str, max_words: int = 350, overlap_percent: float = 0.15) -> List[str]:
     """
