@@ -3,8 +3,8 @@ import json
 import os
 import time
 
-# Connection Details (Points to the active LXC container at 192.168.100.33!)
-SURREAL_URL = "http://192.168.100.33:8000/sql"
+# Connection Details (Points to the active Tailscale LXC container at 100.64.8.38!)
+SURREAL_URL = "http://100.64.8.38:8000/sql"
 SURREAL_AUTH = ("root", "RwAbXjBc2z36z")
 SURREAL_HEADERS = {
     "surreal-ns": "openbayan",

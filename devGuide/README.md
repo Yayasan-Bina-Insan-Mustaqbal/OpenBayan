@@ -26,6 +26,7 @@ Welcome to the OpenBayan developer documentation. This directory contains detail
 - [Default Development Accounts](database/default_accounts.md) — Default credentials for seeded users.
 
 ### 🧠 AI & Knowledge Graph
+- [Ingestion Bottleneck Analysis](architecture/INGESTION_BOTTLENECK_ANALYSIS.md) — Analysis of the 2026 ingestion delay and batching solutions.
 - [Data Pipeline: Prefect Flows](ai-knowledge/data_pipeline_prefect_flows.md) — Orchestrating Arabic text ingestion and embedding generation.
 - [Pydantic AI for KG](ai-knowledge/pydantic_ai_knowledge_graph.md) — Typed knowledge graph extraction patterns.
 - [Ollama Quran Chunk Benchmark](ai-knowledge/ollama_quran_chunk_benchmark.md) — Benchmarking embedding strategies for Quranic text.

@@ -194,13 +194,11 @@ def process_hadith_batch(batch: List[Dict[str, Any]]):
         chunk_batch = all_chunks[i:i+BATCH_SIZE]
         texts_to_embed = [c[4] for c in chunk_batch]
         
-        embeddings = get_embeddings_bulk(texts_to_embed)
-        if len(embeddings) != len(texts_to_embed):
-            logger.error(f"Mismatch in embeddings. Expected {len(texts_to_embed)}, got {len(embeddings)}. Skipping batch.")
-            continue
+        embeddings = [None] * len(texts_to_embed)
+
             
         for (hid_raw, hid_inner, idx, segment, clean_segment), emb in zip(chunk_batch, embeddings):
-            if not emb: continue
+            
             
             sent_id = f"sentence:⟨hadith_{hid_inner}_s{idx}⟩"
             safe_text = segment.replace("'", "\\'")
@@ -211,7 +209,7 @@ def process_hadith_batch(batch: List[Dict[str, Any]]):
                 UPSERT {sent_id} SET
                     text = '{safe_text}',
                     simple_clean_text = '{safe_clean}',
-                    embedding = {json.dumps(emb)},
+                    embedding = NONE,
                     parent = {hid_raw},
                     source = {source_id},
                     chunk_index = {idx},

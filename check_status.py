@@ -7,7 +7,7 @@ import subprocess
 
 URL = "https://openbayan.insanmustaqbal.or.id"
 PREFECT_API = "http://100.64.8.38:4200/api/health"
-SURREAL_URL = "http://192.168.100.33:8000/sql"
+SURREAL_URL = "http://100.64.8.38:8000/sql"
 SURREAL_AUTH = ("root", "RwAbXjBc2z36z")
 SURREAL_HEADERS = {
     "surreal-ns": "openbayan",
@@ -22,8 +22,32 @@ TABLES = [
     "word", "root", "source", "bahs", "alamah"
 ]
 
+STATUS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "previous_status.json")
+
+def load_previous_status():
+    if os.path.exists(STATUS_FILE):
+        try:
+            with open(STATUS_FILE, "r") as f:
+                return json.load(f)
+        except:
+            pass
+    return {}
+
+PREVIOUS_DATA = load_previous_status()
+NEW_DATA = {"time_str": time.strftime('%Y-%m-%d %H:%M:%S'), "urls": {}, "tables": {}}
+
+def save_current_status():
+    try:
+        with open(STATUS_FILE, "w") as f:
+            json.dump(NEW_DATA, f, indent=2)
+    except:
+        pass
+
+
 def check_url(name, url):
     print(f"Checking {name:16}: {url}...", end=" ", flush=True)
+    prev = PREVIOUS_DATA.get("urls", {}).get(name, "Unknown")
+    prev_str = f" [Prev: {prev}]" if prev != "Unknown" else ""
     try:
         start = time.time()
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -31,49 +55,68 @@ def check_url(name, url):
             status = response.getcode()
             elapsed = time.time() - start
             if status == 200:
-                print(f"\033[1;32mUP\033[0m ({elapsed:.2f}s)")
+                print(f"\033[1;32mUP\033[0m ({elapsed:.2f}s)\033[0;90m{prev_str}\033[0m")
+                NEW_DATA["urls"][name] = "UP"
                 return True
             else:
-                print(f"\033[1;33mWARN\033[0m (Status: {status})")
+                print(f"\033[1;33mWARN\033[0m (Status: {status})\033[0;90m{prev_str}\033[0m")
+                NEW_DATA["urls"][name] = "WARN"
     except Exception as e:
-        print(f"\033[1;31mDOWN\033[0m (Error: {e})")
+        print(f"\033[1;31mDOWN\033[0m (Error: {e})\033[0;90m{prev_str}\033[0m")
+        NEW_DATA["urls"][name] = "DOWN"
     return False
 
-def check_surreal_db():
-    print(f"Checking {"SurrealDB SQL":16}: {SURREAL_URL}...", end=" ", flush=True)
-    
+def _run_surreal_query_remote(query):
     auth_str = f"{SURREAL_AUTH[0]}:{SURREAL_AUTH[1]}"
-    auth_b64 = base64.b64encode(auth_str.encode('utf-8')).decode('utf-8')
+    cmd_str = f"curl -s -X POST -H 'Accept: application/json' -H 'surreal-ns: openbayan' -H 'surreal-db: openbayan' -u '{auth_str}' -d '{query}' http://192.168.100.33:8000/sql"
     
+    askpass_path = "/tmp/askpass.sh"
+    if not os.path.exists(askpass_path):
+        try:
+            with open(askpass_path, 'w') as f:
+                f.write('#!/bin/bash\necho "cemara153"\n')
+            os.chmod(askpass_path, 0o755)
+        except Exception:
+            pass
+
+    env = os.environ.copy()
+    env['SSH_ASKPASS'] = askpass_path
+    env['SSH_ASKPASS_REQUIRE'] = 'force'
+    env['DISPLAY'] = ':99'
+
+    ssh_cmd = [
+        'setsid', 'ssh', '-o', 'StrictHostKeyChecking=no', 
+        'root@100.64.8.38', cmd_str
+    ]
+    res = subprocess.run(ssh_cmd, env=env, capture_output=True, text=True, timeout=180)
+    if res.returncode == 0:
+        return json.loads(res.stdout)
+    return None
+
+def check_surreal_db():
+    print(f"Checking {'SurrealDB SQL':16}: http://192.168.100.33:8000/sql (via DevServer)...", end=" ", flush=True)
+    prev = PREVIOUS_DATA.get("urls", {}).get("SurrealDB SQL", "Unknown")
+    prev_str = f" [Prev: {prev}]" if prev != "Unknown" else ""
     query = "SELECT count() FROM sentence GROUP ALL;"
-    
     try:
         start = time.time()
-        req = urllib.request.Request(
-            SURREAL_URL,
-            data=query.encode('utf-8'),
-            headers={
-                **SURREAL_HEADERS,
-                "Authorization": f"Basic {auth_b64}"
-            },
-            method="POST"
-        )
-        with urllib.request.urlopen(req, timeout=3) as response:
-            status = response.getcode()
-            elapsed = time.time() - start
-            if status == 200:
-                res_data = json.loads(response.read().decode('utf-8'))
-                count = 0
-                if res_data and isinstance(res_data, list) and len(res_data) > 0:
-                    result = res_data[0].get("result", [])
-                    if result:
-                        count = result[0].get("count", 0)
-                print(f"\033[1;32mUP\033[0m ({elapsed:.2f}s) | Live Chunks: {count:,}")
-                return True
-            else:
-                print(f"\033[1;33mWARN\033[0m (Status: {status})")
+        res_data = _run_surreal_query_remote(query)
+        elapsed = time.time() - start
+        
+        if res_data and isinstance(res_data, list) and len(res_data) > 0 and res_data[0].get('status') == "OK":
+            count = 0
+            result = res_data[0].get("result", [])
+            if result:
+                count = result[0].get("count", 0)
+            print(f"\033[1;32mUP\033[0m ({elapsed:.2f}s) | Live Chunks: {count:,}\033[0;90m{prev_str}\033[0m")
+            NEW_DATA["urls"]["SurrealDB SQL"] = "UP"
+            return True
+        else:
+            print(f"\033[1;33mWARN\033[0m (Unexpected Response)\033[0;90m{prev_str}\033[0m")
+            NEW_DATA["urls"]["SurrealDB SQL"] = "WARN"
     except Exception as e:
-        print(f"\033[1;31mDOWN/OFFLINE\033[0m (Direct LAN URL unreachable: {e})")
+        print(f"\033[1;31mDOWN/OFFLINE\033[0m (SurrealDB unreachable via DevServer: {e})\033[0;90m{prev_str}\033[0m")
+        NEW_DATA["urls"]["SurrealDB SQL"] = "DOWN"
     return False
 
 def check_active_flows():
@@ -128,82 +171,117 @@ def check_active_flows():
 def show_surreal_tables():
     print("\n\033[1;34m[ SurrealDB Live Table Sizes & Status ]\033[0m")
     
-    auth_str = f"{SURREAL_AUTH[0]}:{SURREAL_AUTH[1]}"
-    auth_b64 = base64.b64encode(auth_str.encode('utf-8')).decode('utf-8')
-    
+    prev_time = PREVIOUS_DATA.get("time_str", "Unknown")
+    prev_tables = PREVIOUS_DATA.get("tables", {})
+    if prev_tables:
+        print(f"\033[0;90mPrevious Check: {prev_time}\033[0m")
+        
     queries = [f"SELECT count() FROM {table} GROUP ALL;" for table in TABLES]
     batch_query = "\n".join(queries)
     
-    print(f"{'Table Name':16} | {'Status':12} | {'Live Record Count'}")
-    print("-" * 50)
+    print(f"{'Table Name':16} | {'Status':12} | {'Live Record Count':18} | {'Delta (Since Last)'}")
+    print("-" * 75)
     
     try:
-        req = urllib.request.Request(
-            SURREAL_URL,
-            data=batch_query.encode('utf-8'),
-            headers={
-                **SURREAL_HEADERS,
-                "Authorization": f"Basic {auth_b64}"
-            },
-            method="POST"
-        )
-        with urllib.request.urlopen(req, timeout=4) as response:
-            if response.getcode() == 200:
-                results = json.loads(response.read().decode('utf-8'))
-                for idx, table in enumerate(TABLES):
-                    count = 0
-                    status = "\033[1;32mACTIVE\033[0m"
-                    if idx < len(results):
+        results = _run_surreal_query_remote(batch_query)
+        if results:
+            for idx, table in enumerate(TABLES):
+                count = 0
+                status = "\033[1;32mACTIVE\033[0m"
+                if idx < len(results):
+                    if results[idx].get("status") == "OK":
                         result_list = results[idx].get("result", [])
                         if result_list:
                             count = result_list[0].get("count", 0)
-                    print(f"{table:16} | {status:12} | {count:,}")
-                return
+                    else:
+                        status = "\033[1;33mERROR\033[0m"
+                
+                prev_count = prev_tables.get(table, None)
+                delta_str = ""
+                if prev_count is not None:
+                    delta = count - prev_count
+                    if delta > 0:
+                        delta_str = f"\033[1;32m+{delta:,}\033[0m"
+                    elif delta < 0:
+                        delta_str = f"\033[1;31m{delta:,}\033[0m"
+                    else:
+                        delta_str = "\033[0;90m0\033[0m"
+                
+                NEW_DATA["tables"][table] = count
+                count_str = f"{count:,}"
+                print(f"{table:16} | {status:12} | {count_str:18} | {delta_str}")
+            return
     except Exception:
-        for table in TABLES:
-            print(f"{table:16} | \033[1;31mUNREACHABLE\033[0m | N/A")
+        pass
+    
+    for table in TABLES:
+        print(f"{table:16} | \033[1;31mUNREACHABLE\033[0m | N/A")
 
 def show_chunking_progress():
-    print("\n\033[1;34m[ Chunking & Ingestion Progress (Local Cache) ]\033[0m")
-    state_file = "ingestion_state.json"
-    if not os.path.exists(state_file):
-        state_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ingestion_state.json")
+    print("\n\033[1;34m[ Live Sentence Chunking Progress by Source ]\033[0m")
+    print("\033[0;90mCalculating live source breakdown (this may take ~45 seconds)...\033[0m")
+    
+    query = "SELECT source, count() FROM sentence GROUP BY source;"
+    try:
+        start = time.time()
+        results = _run_surreal_query_remote(query)
+        elapsed = time.time() - start
         
-    if os.path.exists(state_file):
-        try:
-            with open(state_file, 'r') as f:
-                data = json.load(f)
+        if results and isinstance(results, list) and len(results) > 0 and results[0].get('status') == "OK":
+            res_list = results[0].get("result", [])
             
-            print(f"{'Source':12} | {'Count / Target':20} | {'Last Updated'}")
-            print("-" * 60)
+            print(f"\033[1;32mDone\033[0m ({elapsed:.1f}s)")
+            print(f"{'Source ID':45} | {'Live Chunks / Est. Target':28} | {'Progress'}")
+            print("-" * 90)
             
-            sources = {
-                "quran": ("Quran Verses", 6236),
-                "hadith": ("Hadith Texts", 739676),
-                "athar": ("Athar Records", 6735250),
-                "shamela": ("Book Pages", 83915),
-                "sentences": ("Clean Chunks", None),
-                "entities": ("KG Entities", None)
-            }
+            # Sort by count descending
+            res_list = sorted(res_list, key=lambda x: x.get("count", 0), reverse=True)
             
-            for key, (label, target) in sources.items():
-                if key in data:
-                    item = data[key]
-                    count = item.get("count", 0)
-                    timestamp = item.get("time", 0)
-                    time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp)) if timestamp else "N/A"
-                    
-                    if target:
-                        progress = (count / target) * 100
-                        prog_str = f"{count:,} / {target:,} ({progress:.1f}%)"
+            total_chunks = 0
+            for item in res_list:
+                t = item.get("source", "unknown")
+                c = item.get("count", 0)
+                total_chunks += c
+                
+                # Cleanup the source string
+                t_clean = t.replace("source:", "").replace("`", "")
+                t_display = t_clean[:42] + "..." if len(t_clean) > 45 else t_clean
+                
+                target = None
+                if "quran_uthmani" in t_clean:
+                    target = 6236
+                elif "tafsir_" in t_clean:
+                    target = 6236
+                elif "hadith_" in t_clean:
+                    target = 739676
+                elif "athar_" in t_clean:
+                    target = 6735250
+                
+                if target:
+                    prog = (c / target) * 100
+                    prog_str = f"{prog:.2f}%"
+                    if prog >= 100:
+                        prog_str = f"\033[1;32m{prog_str}\033[0m"
+                    elif prog > 0:
+                        prog_str = f"\033[1;33m{prog_str}\033[0m"
                     else:
-                        prog_str = f"{count:,}"
-                        
-                    print(f"{label:12} | {prog_str:20} | {time_str}")
-        except Exception as e:
-            print(f"Error reading progress cache: {e}")
-    else:
-        print("Progress cache file 'ingestion_state.json' not found.")
+                        prog_str = f"\033[1;31m{prog_str}\033[0m"
+                    
+                    count_str = f"{c:,} / ~{target:,}"
+                else:
+                    count_str = f"{c:,}"
+                    prog_str = "N/A"
+                    
+                print(f"{t_display:45} | {count_str:28} | {prog_str}")
+                
+            print("-" * 90)
+            print(f"{'TOTAL':45} | {total_chunks:,} chunks embedded")
+            print("\n\033[0;90m* Note: Due to synchronous processing, ingestion flows are bottlenecked.")
+            print("* Please refer to INGESTION_BOTTLENECK_ANALYSIS.md for details.\033[0m")
+        else:
+            print("\033[1;31mFailed to parse live progress.\033[0m")
+    except Exception as e:
+        print(f"\033[1;31mError fetching live progress: {e}\033[0m")
 
 if __name__ == "__main__":
     print("\033[1;34m[ OpenBayan Service Health Status ]\033[0m")
@@ -213,3 +291,4 @@ if __name__ == "__main__":
     check_active_flows()
     show_surreal_tables()
     show_chunking_progress()
+    save_current_status()

@@ -1,6 +1,6 @@
 from surrealdb import Surreal
 
-db = Surreal("ws://192.168.100.33:8000/rpc")
+db = Surreal("ws://100.64.8.38:8000/rpc")
 db.signin({"user": "root", "pass": "RwAbXjBc2z36z"})
 db.use("openbayan", "openbayan")
 # Aggregate count results
