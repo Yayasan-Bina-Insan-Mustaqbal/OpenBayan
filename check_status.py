@@ -138,10 +138,12 @@ def check_active_flows():
     env['DISPLAY'] = ':99'
 
     flows_to_check = {
-        "atomize_hadith_v5.py": "Hadith Atomizer",
-        "atomize_tafsir.py": "Tafsir Atomizer",
-        "atomize_quran_v2.py": "Quran Atomizer",
-        "atomize_kitab.py": "Kitab Atomizer"
+        "atomize_hadith_fast.py": "Hadith Fast Atomizer",
+        "atomize_tafsir_fast_v2.py": "Tafsir Fast Atomizer",
+        "atomize_quran_fast.py": "Quran Fast Atomizer",
+        "atomize_kitab_fast_v2.py": "Kitab Fast Atomizer",
+        "daemon_translate_sentences.py": "Translation Daemon",
+        "daemon_vectorize_sentences.py": "Vectorization Daemon"
     }
 
     try:
