@@ -53,7 +53,7 @@ def execute_sql(sql: str, retries: int = 5, backoff: float = 2.0):
                 auth=SURREAL_AUTH, 
                 headers=SURREAL_HEADERS, 
                 data=sql.encode('utf-8'), 
-                timeout=15
+                timeout=300
             )
             if res.status_code != 200:
                 raise Exception(f"SurrealDB Error: {res.text}")
@@ -88,6 +88,7 @@ def atomize_tafsir_task(ayah: Dict[str, Any], tafsir_key: str):
     a_num = ayah['ayah_number']
     
     source_id = f"source:tafsir_{tafsir_key}"
+    queries.append(f"DELETE sentence WHERE parent = {ayah_id} AND source = {source_id};")
 
     for idx, segment in enumerate(chunks):
         if len(segment) < 10: continue
@@ -107,7 +108,8 @@ def atomize_tafsir_task(ayah: Dict[str, Any], tafsir_key: str):
             UPSERT {sent_id} SET
                 text = '{safe_text}',
                 simple_clean_text = '{safe_clean}',
-                embedding = NONE,
+                is_embedded = false,
+                is_translated_en = false,
                 parent = {ayah_id},
                 source = {source_id},
                 chunk_index = {idx},
@@ -201,7 +203,7 @@ def tafsir_atomization_flow(tafsir_key: str = "ar_saddi", batch_size: int = 50, 
     try:
         res = execute_sql(
             f"SELECT count() FROM ayah "
-            f"WHERE processed_tafsir__{safe_key} = true GROUP ALL;"
+            f"WHERE processed_v2_tafsir__{safe_key} = true GROUP ALL;"
         )
         if res and res[0].get('result'):
             processed_existing = res[0]['result'][0]['count']
@@ -220,7 +222,7 @@ def tafsir_atomization_flow(tafsir_key: str = "ar_saddi", batch_size: int = 50, 
         res = execute_sql(
             f"SELECT * FROM ayah "
             f"WHERE tafsir.{tafsir_key} != NONE AND tafsir.{tafsir_key} != '' "
-            f"AND processed_tafsir__{safe_key} != true "
+            f"AND processed_v2_tafsir__{safe_key} != true "
             f"LIMIT {batch_size};"
         )
         batch = res[0].get('result', [])
@@ -236,7 +238,7 @@ def tafsir_atomization_flow(tafsir_key: str = "ar_saddi", batch_size: int = 50, 
                 # Mark this tafsir key as processed using a per-key boolean field
                 ayah_id = str(ayah['id'])
                 execute_sql(
-                    f"UPDATE {ayah_id} SET processed_tafsir__{safe_key} = true;"
+                    f"UPDATE {ayah_id} SET processed_v2_tafsir__{safe_key} = true;"
                 )
                 processed_total += 1
 

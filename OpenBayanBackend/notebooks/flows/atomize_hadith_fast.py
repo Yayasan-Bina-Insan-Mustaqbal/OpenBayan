@@ -88,7 +88,7 @@ def get_matn_boundary(text: str) -> int:
 def execute_sql(sql: str, retries: int = 5, backoff: float = 2.0) -> List[Dict]:
     for attempt in range(retries):
         try:
-            res = requests.post(SURREAL_URL, auth=(SURREAL_USER, SURREAL_PASS), headers=SURREAL_HEADERS, data=sql.encode('utf-8'), timeout=180)
+            res = requests.post(SURREAL_URL, auth=(SURREAL_USER, SURREAL_PASS), headers=SURREAL_HEADERS, data=sql.encode('utf-8'), timeout=600)
             if res.status_code != 200:
                 raise Exception(f"SurrealDB Error: {res.text}")
             return res.json()
@@ -209,7 +209,8 @@ def process_hadith_batch(batch: List[Dict[str, Any]]):
                 UPSERT {sent_id} SET
                     text = '{safe_text}',
                     simple_clean_text = '{safe_clean}',
-                    embedding = NONE,
+                    is_embedded = false,
+                    is_translated_en = false,
                     parent = {hid_raw},
                     source = {source_id},
                     chunk_index = {idx},

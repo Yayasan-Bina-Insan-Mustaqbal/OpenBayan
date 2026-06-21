@@ -283,11 +283,96 @@ def show_chunking_progress():
     except Exception as e:
         print(f"\033[1;31mError fetching live progress: {e}\033[0m")
 
+def check_ollama_state():
+    print("\n\033[1;34m[ Ollama Server State (100.121.116.17) ]\033[0m")
+    askpass_path = "/tmp/askpass_ollama.sh"
+    if not os.path.exists(askpass_path):
+        try:
+            with open(askpass_path, 'w') as f:
+                f.write('#!/bin/bash\necho "Mustaqbal_153##"\n')
+            os.chmod(askpass_path, 0o755)
+        except Exception:
+            pass
+
+    env = os.environ.copy()
+    env['SSH_ASKPASS'] = askpass_path
+    env['SSH_ASKPASS_REQUIRE'] = 'force'
+    env['DISPLAY'] = ':99'
+
+    try:
+        cmd = [
+            'setsid', 'ssh', '-o', 'StrictHostKeyChecking=no', 
+            'smkmustaqbal@100.121.116.17', 'nvidia-smi --query-gpu=temperature.gpu,utilization.gpu,memory.used,memory.total --format=csv,noheader; echo "---"; ollama ps'
+        ]
+        res = subprocess.run(cmd, env=env, capture_output=True, text=True, timeout=10)
+        if res.returncode == 0:
+            output = res.stdout.strip()
+            parts = output.split('---')
+            gpu_out = parts[0].strip() if len(parts) > 0 else ""
+            ollama_out = parts[1].strip() if len(parts) > 1 else ""
+            
+            if gpu_out:
+                gpu_parts = gpu_out.split(',')
+                if len(gpu_parts) >= 4:
+                    util = gpu_parts[1].strip()
+                    temp = gpu_parts[0].strip()
+                    mem = f"{gpu_parts[2].strip()} / {gpu_parts[3].strip()}"
+                    print(f"GPU Usage  : \033[1;32m{util}%\033[0m (Temp: {temp}°C)")
+                    print(f"VRAM Usage : \033[1;33m{mem}\033[0m")
+            
+            print("Loaded AI Models:")
+            models_found = False
+            for line in ollama_out.split('\n'):
+                if line.strip() and not line.startswith('NAME'):
+                    model_name = line.split()[0]
+                    print(f"  - \033[1;36m{model_name}\033[0m")
+                    models_found = True
+            if not models_found:
+                print("  - None")
+        else:
+            print("\033[1;31mUnreachable (SSH Failed)\033[0m")
+    except Exception as e:
+        print(f"\033[1;31mError: {e}\033[0m")
+
+def check_devserver_state():
+    print("\n\033[1;34m[ DevServer State (100.64.8.38) ]\033[0m")
+    askpass_path = "/tmp/askpass.sh"
+    if not os.path.exists(askpass_path):
+        try:
+            with open(askpass_path, 'w') as f:
+                f.write('#!/bin/bash\necho "cemara153"\n')
+            os.chmod(askpass_path, 0o755)
+        except Exception:
+            pass
+
+    env = os.environ.copy()
+    env['SSH_ASKPASS'] = askpass_path
+    env['SSH_ASKPASS_REQUIRE'] = 'force'
+    env['DISPLAY'] = ':99'
+
+    try:
+        cmd = [
+            'setsid', 'ssh', '-o', 'StrictHostKeyChecking=no', 
+            'root@100.64.8.38', 'free -h | awk \'/^Mem:/ {print $3 " / " $2}\'; uptime -p'
+        ]
+        res = subprocess.run(cmd, env=env, capture_output=True, text=True, timeout=10)
+        if res.returncode == 0:
+            lines = res.stdout.strip().split('\n')
+            if len(lines) >= 2:
+                print(f"RAM Usage : \033[1;33m{lines[0].strip()}\033[0m")
+                print(f"Uptime    : \033[1;32m{lines[1].strip()}\033[0m")
+        else:
+            print("\033[1;31mUnreachable (SSH Failed)\033[0m")
+    except Exception as e:
+        print(f"\033[1;31mError: {e}\033[0m")
+
 if __name__ == "__main__":
     print("\033[1;34m[ OpenBayan Service Health Status ]\033[0m")
     check_url("Production Web", URL)
     check_url("Prefect API", PREFECT_API)
     check_surreal_db()
+    check_devserver_state()
+    check_ollama_state()
     check_active_flows()
     show_surreal_tables()
     show_chunking_progress()

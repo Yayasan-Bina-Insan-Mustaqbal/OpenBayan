@@ -1,1 +1,118 @@
-{"hadith": {"count": 739676, "time": 1779118837.6987984}, "athar": {"count": 6735250, "time": 1779118837.6987984}, "shamela": {"count": 83915, "time": 1779118837.6987984}, "quran": {"count": 6236, "time": 1779118837.6987984}, "sentences": {"count": 120907, "time": 1779118837.6987984}, "entities": {"count": 87293, "time": 1779118837.6987984}}
+{
+    "system_status": {
+        "production_web": "UP (0.10s)",
+        "prefect_api": "UP (0.04s)",
+        "surreal_db": "UP"
+    },
+    "tables": {
+        "ayah": {
+            "count": 6236,
+            "status": "COMPLETED"
+        },
+        "hadith": {
+            "count": 739676,
+            "status": "COMPLETED"
+        },
+        "sentences": {
+            "count": 198422,
+            "status": "INGESTING"
+        },
+        "entities": {
+            "count": 87293,
+            "status": "STABLE"
+        },
+        "category": {
+            "count": 1314,
+            "status": "STABLE"
+        },
+        "word": {
+            "count": 60970,
+            "status": "STABLE"
+        },
+        "root": {
+            "count": 21024,
+            "status": "STABLE"
+        }
+    },
+    "chunking_progress_by_source": {
+        "tafsir_ar_muyassar": {
+            "count": 12798,
+            "target": 6236,
+            "progress_percent": 205.23
+        },
+        "quran_uthmani": {
+            "count": 10519,
+            "target": 6236,
+            "progress_percent": 168.68
+        },
+        "tafsir_id_wajiz": {
+            "count": 9123,
+            "target": 6236,
+            "progress_percent": 146.30
+        },
+        "tafsir_ar_jalalayn": {
+            "count": 7541,
+            "target": 6236,
+            "progress_percent": 120.93
+        },
+        "tafsir_ar_waseet": {
+            "count": 7286,
+            "target": 6236,
+            "progress_percent": 116.84
+        },
+        "tafsir_ar_miqbas": {
+            "count": 6901,
+            "target": 6236,
+            "progress_percent": 110.66
+        },
+        "tafsir_ar_baghawi": {
+            "count": 6440,
+            "target": 6236,
+            "progress_percent": 103.27
+        },
+        "tafsir_id_tahlili": {
+            "count": 5933,
+            "target": 6236,
+            "progress_percent": 95.14
+        },
+        "tafsir_ar_saddi": {
+            "count": 4671,
+            "target": 6236,
+            "progress_percent": 74.90
+        },
+        "tafsir_ar_qurtubi": {
+            "count": 3787,
+            "target": 6236,
+            "progress_percent": 60.73
+        },
+        "murad_dataset_2026": {
+            "count": 95716,
+            "target": null,
+            "progress_percent": null
+        },
+        "shamela_dictionaries": {
+            "count": 24911,
+            "target": 83915,
+            "progress_percent": 29.69
+        },
+        "athar_book_10006": {
+            "count": 1654,
+            "target": 6735250,
+            "progress_percent": 0.02
+        },
+        "hadith_650k_sanadset": {
+            "count": 862,
+            "target": 739676,
+            "progress_percent": 0.12
+        }
+    },
+    "active_ingestion_daemons": [
+        "atomize_kitab_fast_v2.py",
+        "atomize_tafsir_fast_v2.py",
+        "daemon_translate_dictionary.py",
+        "daemon_translate_sentences.py",
+        "daemon_vectorize_sentences.py"
+    ],
+    "last_updated_time": "2026-06-21T18:54:25+07:00",
+    "last_updated_unix": 1782042865.0
+}

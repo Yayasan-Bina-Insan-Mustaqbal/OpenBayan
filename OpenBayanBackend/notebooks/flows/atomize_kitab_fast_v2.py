@@ -53,7 +53,7 @@ def execute_sql(sql: str, retries: int = 5, backoff: float = 2.0):
                 auth=SURREAL_AUTH, 
                 headers=SURREAL_HEADERS, 
                 data=sql.encode('utf-8'), 
-                timeout=15
+                timeout=300
             )
             if res.status_code != 200:
                 raise Exception(f"SurrealDB Error: {res.text}")
@@ -69,7 +69,7 @@ def atomize_page_task(page: Dict[str, Any]):
     content = page.get("content", "")
     if not content or len(content.strip()) < 20:
         # Still mark as processed so we don't loop on empty pages
-        execute_sql(f"UPDATE {str(page['id'])} SET processed_for_sentences = true;")
+        execute_sql(f"UPDATE {str(page['id'])} SET processed_v2 = true;")
         return 0
 
     # 1. Chunking: Organic Arabic punctuation regex
@@ -83,6 +83,7 @@ def atomize_page_task(page: Dict[str, Any]):
     page_inner = page_id.split(':')[-1].replace('`', '').replace(' ', '_')
 
     upsert_queries = ["BEGIN TRANSACTION;"]
+    upsert_queries.append(f"DELETE sentence WHERE parent = {page_id};")
     sentences_added = 0
 
     for idx, segment in enumerate(chunks):
@@ -99,7 +100,8 @@ def atomize_page_task(page: Dict[str, Any]):
             UPSERT {sent_id} SET
                 text = '{safe_text}',
                 simple_clean_text = '{safe_clean}',
-                embedding = NONE,
+                is_embedded = false,
+                is_translated_en = false,
                 parent = {page_id},
                 source = {source_id},
                 chunk_index = {idx},
@@ -116,7 +118,7 @@ def atomize_page_task(page: Dict[str, Any]):
 
     # Mark page as processed in a SEPARATE standalone query
     # (avoids complex ID quoting issues inside transactions)
-    execute_sql(f"UPDATE {page_id} SET processed_for_sentences = true;")
+    execute_sql(f"UPDATE {page_id} SET processed_v2 = true;")
     return sentences_added
 
 def update_progress_state(job_name: str, count: int, total: int, speed: float = 0, eta: float = 0):
@@ -177,7 +179,7 @@ def kitab_atomization_flow(source_id: Optional[str] = None, batch_size: int = 20
 
     processed_existing = 0
     try:
-        query = "SELECT count() FROM book_page WHERE processed_for_sentences = true"
+        query = "SELECT count() FROM book_page WHERE processed_v2 = true"
         if source_id:
             query += f" AND source = {source_id}"
         query += " GROUP ALL;"
@@ -194,7 +196,7 @@ def kitab_atomization_flow(source_id: Optional[str] = None, batch_size: int = 20
     
     while True:
         # Fetch pages that are not yet atomized
-        query = "SELECT * FROM book_page WHERE processed_for_sentences != true"
+        query = "SELECT * FROM book_page WHERE processed_v2 != true"
         if source_id:
             query += f" AND source = {source_id}"
         query += f" LIMIT {batch_size}"

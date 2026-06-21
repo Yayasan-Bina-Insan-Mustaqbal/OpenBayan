@@ -1,24 +1,9 @@
 {
-  "time_str": "2026-06-20 07:56:18",
+  "time_str": "2026-06-21 18:47:04",
   "urls": {
     "Production Web": "UP",
     "Prefect API": "UP",
     "SurrealDB SQL": "UP"
   },
-  "tables": {
-    "ayah": 6236,
-    "hadith": 739676,
-    "category": 1314,
-    "topic": 0,
-    "classified_as": 7660,
-    "entity_relation": 51613,
-    "book_page": 9682306,
-    "entity": 87293,
-    "sentence": 178127,
-    "word": 60970,
-    "root": 21024,
-    "source": 9351,
-    "bahs": 0,
-    "alamah": 0
-  }
+  "tables": {}
 }

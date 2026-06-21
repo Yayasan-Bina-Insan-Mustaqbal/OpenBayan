@@ -88,7 +88,8 @@ def atomize_ayah(ayah: Dict[str, Any]):
             UPSERT sentence:`{sent_id}` SET
                 text = '{safe_text}',
                 simple_clean_text = '{safe_clean}',
-                embedding = NONE,
+                is_embedded = false,
+                is_translated_en = false,
                 parent = {ayah['id']},
                 source = source:quran_uthmani,
                 chunk_index = {idx},

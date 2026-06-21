@@ -76,7 +76,7 @@ def process_batch(records: list):
     for rid, trans in translations:
         # Use MERGE to safely add metadata.translations.en without destroying existing metadata
         safe_trans = trans.replace("'", "\\'")
-        q = f"UPDATE {rid} MERGE {{ metadata: {{ translations: {{ en: '{safe_trans}' }} }} }};"
+        q = f"UPDATE {rid} MERGE {{ metadata: {{ translations: {{ en: '{safe_trans}' }} }}, is_translated_en: true }};"
         queries.append(q)
     queries.append("COMMIT TRANSACTION;")
     
@@ -95,7 +95,7 @@ def daemon_loop(source_type: str = None, batch_size: int = 100):
     
     while True:
         # Query sentences that lack English translations
-        where_clause = "metadata.translations.en IS NONE"
+        where_clause = "is_translated_en = false"
         if source_type:
             # We can filter by source if needed. Wait, source is a record pointer like source:hadith_...
             # We can use CONTAINS or string matching on the id

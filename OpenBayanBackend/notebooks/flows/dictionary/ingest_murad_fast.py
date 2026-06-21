@@ -76,7 +76,9 @@ def ingest_batch(batch: List[dict]):
                 db.query("""
                     UPSERT $id SET
                         text = $txt, parent = $pr, source = $src,
-                        embedding = NONE, chunk_index = 0,
+                        is_embedded = false,
+                        is_translated_en = false,
+                        chunk_index = 0,
                         transliterations = {en: "", ru: "", tr: ""};
                     RELATE $id->defines->$wid;
                 """, {
